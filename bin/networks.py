@@ -1,31 +1,45 @@
 import numpy as np
+import torch
 import torch.nn as nn
-import torchvision
-import torchvision.transforms as transforms
+import torch.nn.functional as F
 
 
 class BassetNetwork(torch.nn.Module):
 
     def __init__(self):
         super(BassetNetwork, self).__init__()
-        self.conv1 = nn.Conv2d(1, 300, kernel_size=(4, 19), stride=1, padding=0)
-        self.bn1 = nn.BatchNorm2d(300)
-        self.conv2 = nn.Conv2d(300, 200, kernel_size=(4, 11), stride=1, padding=0)
-        self.bn2 = nn.BatchNorm2d(200)
-        self.conv3 = nn.Conv2d(200, 200, kernel_size=(4, 7), stride=1, padding=0)
-        self.bn3 = nn.BatchNorm2d(200)
-        self.dense1 = nn.Linear(in_features=200, out_features=50)
-        self.dense1_bn = nn.BatchNorm1d(50)
-        self.dense2 = nn.Linear(50, 10)
-
-
-        self.pool = torch.nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(1, 300, kernel_size=(4, 19), stride=1, padding=0),
+            nn.BatchNorm2d(300),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=3, stride=1))
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(300, 200, kernel_size=(4, 11), stride=1, padding=0),
+            nn.BatchNorm2d(200),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=4, stride=1))
+        self.layer3 = nn.Sequential(
+            nn.Conv2d(200, 200, kernel_size=(4, 7), stride=1, padding=0),
+            nn.BatchNorm2d(200),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=4, stride=1))
+        self.fc1 = nn.Sequential(
+            nn.Linear(in_features=200, out_features=1000),
+            nn.ReLU(),
+            nn.Dropout())
+        self.fc2 = nn.Sequential(
+            nn.Linear(in_features=1000, out_features=164),
+            nn.ReLU(),
+            nn.Dropout())
+        self.fc3 = nn.Linear(164, 2)
 
     def forward(self, x):
-        x = F.max_pool2d(F.relu(self.bn1(self.conv1(x)), 3))
-        x = F.max_pool2d(F.relu(self.bn2(self.conv2(x)), 4))
-        x = F.max_pool2d(F.relu(self.bn3(self.conv3(x)), 4))
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
         x = x.view(-1, 320)  # reshape
-        x = F.relu(self.dense1_bn(self.dense1(x)))
-        x = F.relu(self.dense2(x))
+        x = self.fc1(x)
+        x = self.fc2(x)
+        x = self.fc3(x)
         return F.log_softmax(x)
+
