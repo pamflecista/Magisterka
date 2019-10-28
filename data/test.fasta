@@ -1,0 +1,8 @@
+>active_enhancer + 0 1
+GAGAGGCACT
+>active_promotor - 1 1
+CACCGTACTA
+>nonactive_promotor + 1 0
+AGATCACCGA
+>nonactive_nonpromotor + 0 0
+GGTAGGCATG
