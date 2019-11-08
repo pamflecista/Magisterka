@@ -9,6 +9,7 @@ import torch
 from os import listdir
 from os import path
 from .exceptions import *
+from warnings import warn
 
 
 class SeqsDataset(Dataset):
@@ -28,7 +29,7 @@ class SeqsDataset(Dataset):
             for i, directory in enumerate(dirs):
                 for f in listdir(directory):
                     if path.isfile(path.join(directory, f)) and f.endswith(filetype):
-                        name = '{}/{}'.format(directory.split('/')[-1], f.strip('.{}'.format(filetype)))
+                        name = f.strip('.{}'.format(filetype))
                         if name not in locs:
                             locs[name] = i
                         else:
@@ -49,7 +50,8 @@ class SeqsDataset(Dataset):
         self.IDs = ids
         self.locs = locs
         self.filetype = filetype
-        self.label_coding = {'promoter': 1, 'nonpromoter': 0, 'active': 1, 'inactive': 0}
+        self.label_coding = {'promoter': 1.0, 'nonpromoter': 0.0, 'active': 1.0, 'inactive': 0.0}
+        self.possible_labels = ['00', '01', '10', '11']
         self.encoder = OHEncoder()
 
     def __len__(self):
@@ -57,30 +59,40 @@ class SeqsDataset(Dataset):
 
     def __getitem__(self, index, info=False):
         ID = self.IDs[index]
-        with open(path.join(self.dirs[self.locs[ID]], ID, self.filetype), 'r') as file:
+        filename = path.join(self.dirs[self.locs[ID]], '{}.{}'.format(ID, self.filetype))
+        with open(filename, 'r') as file:
             for line in file:
                 if line.startswith('>'):
-                    ch, strand, t1, t2 = line.strip('\n> ').split(' ')
+                    ch, midpoint, strand, t1, t2 = line.strip('\n> ').split(' ')
                     label = [self.label_coding[t1], self.label_coding[t2]]
                 elif line:
                     seq = line.strip().upper()
                     break
+            if file.readline().strip():
+                warn('In file {} is more than one sequence!'.format(filename))
         if info:
-            return ch, strand, label, seq
-        X = torch.Tensor(self.encoder(seq))
-        y = torch.Tensor(label)
+            return ch, midpoint, strand, label, seq
+        X = torch.tensor(self.encoder(seq))
+        X = X.reshape(1, *X.size())
+        y = torch.tensor(label)
         return X, y
 
-    def get_chr(self, ch):
-        indeces = []
-        labels = {}
+    def get_chrs(self, chr_lists):
+        indices = [[] for _ in range(len(chr_lists))]
+        labels = [{el: 0 for el in self.possible_labels} for _ in range(len(chr_lists))]
+        seq_len = None
         for i in range(self.__len__()):
-            c, _, label, _ = self.__getitem__(i, info=True)
-            if int(c.strip('ch')) == ch:
-                indeces.append(i)
-                l = '{}{}'.format(*label)
-                labels[l] = labels.setdefault(l, 0) + 1
-        return indeces, labels
+            c, _, _, label, seq = self.__getitem__(i, info=True)
+            if seq_len is None:
+                seq_len = len(seq)
+            else:
+                assert len(seq) == seq_len
+            for j, chr_list in enumerate(chr_lists):
+                if int(c.strip('chr').replace('X', '23').replace('Y', '23')) in chr_list:
+                    indices[j].append(i)
+                    l = '{}{}'.format(*list(map(int, label)))
+                    labels[j][l] += 1
+        return indices, labels, seq_len
 
 
 class OHEncoder:
@@ -91,4 +103,4 @@ class OHEncoder:
 
     def __call__(self, seq):
         s = np.array([el for el in seq]).reshape(-1, 1)
-        return self.encoder.transform(s)
+        return self.encoder.transform(s).T
