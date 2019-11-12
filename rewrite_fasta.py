@@ -11,11 +11,23 @@ args = parser.parse_args()
 
 
 def rewrite_fasta(file, path=None):
+    with open(file, 'r') as f:
+        i = 0
+        line = f.readline()
+        while i < 2 and line:
+            if line.startswith('>'):
+                i += 1
+            line = f.readline()
+        if i == 1:
+            print('No rewriting was done: given file contains only one sequence.')
+            return 1, ['/'.join(file.split('/')[:-1])]
+    paths = []
     if path is None:
         f = file.split('/')
         path = os.path.join('/', *f[:-1], '.'.join(f[-1].split('.')[:-1]))
         if not os.path.isdir(path):
             os.mkdir(path)
+            paths.append(path)
     i = 0
     with open(file, 'r') as f:
         for line in f:
@@ -28,6 +40,12 @@ def rewrite_fasta(file, path=None):
                 w.write(line)
                 w.close()
     print('Based on {} {} sequences were written into separated files in {}'.format(file, i, path))
+    return i, paths
 
 
-rewrite_fasta(args.file, args.output)
+if __name__ == '__main__':
+    if os.path.isdir(args.file):
+        for f in [el for el in os.listdir(args.file) if os.path.isfile(os.path.join(args.file, el))]:
+            rewrite_fasta(os.path.join(args.file, f), args.output)
+    else:
+        rewrite_fasta(args.file, args.output)

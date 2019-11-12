@@ -10,14 +10,14 @@ class ParameterError(Exception):
         return repr("Value {} for parameter {} is wrong! It should be {}.".format(self.wrong, self.param, self.good))
 
 
-class DataTypeError(Exception):
+class GivenDataError(Exception):
 
-    def __init__(self, dirs, wrong):
+    def __init__(self, dirs, filetype):
         self.dirs = dirs
-        self.wrong = wrong
+        self.required = filetype
 
     def __str__(self):
-        return repr('Data from {} have inconsistent types: {}.'.format(self.dirs, self.wrong))
+        return repr('Wrong data was given: {} (required type of file is {}).'.format(self.dirs, self.required))
 
 
 class RepeatedFileError(Exception):

@@ -1,54 +1,57 @@
 from sklearn.preprocessing import OneHotEncoder as Encoder
 import numpy as np
+from torch.utils.data import Dataset
 import torch
-from torch.utils.data import DataLoader, Dataset
-from Bio.Seq import Seq
-from Bio import SeqIO
-import sys
-import torch
-from os import listdir
-from os import path
+from os import listdir, path, walk
 from .exceptions import *
 from warnings import warn
+from rewrite_fasta import rewrite_fasta
 
 
 class SeqsDataset(Dataset):
 
-    def __init__(self, dirs, IDs=None, filetype='fasta'):
-        if isinstance(dirs, str):
-            dirs = [dirs]
-        if len(dirs) == 1:
-            dirs = [path.join(dirs[0], o) for o in listdir(dirs[0])
-                    if path.isdir(path.join(dirs[0], o))]
-        self.dirs = dirs
+    def __init__(self, data, filetype='fasta'):
 
         # Establishing files' IDs and their directories
-        ids, locs = [], {}
-        if IDs is None:
-            ids = []
-            for i, directory in enumerate(dirs):
-                for f in listdir(directory):
-                    if path.isfile(path.join(directory, f)) and f.endswith(filetype):
-                        name = f.strip('.{}'.format(filetype))
-                        if name not in locs:
-                            locs[name] = i
-                        else:
-                            raise RepeatedFileError(name, dirs[locs[name]], directory)
-                        ids.append(name)
-        else:
-            for f, d in IDs.items():
-                if f.endswith(filetype):
-                    name = '{}/{}'.format(dirs[d].split('/')[-1], f.strip('.{}'.format(filetype)))
-                    if name not in locs:
-                        locs[name] = d
-                    else:
-                        raise RepeatedFileError(name, dirs[locs[name]], dirs[d])
-                    ids.append(name)
+        if isinstance(data, str):
+            if data.endswith(filetype):
+                i, paths = rewrite_fasta(data)
+                if i == 1:
+                    warn('Only one sequence found in the given data!')
+                data = paths
+            elif path.isdir(data):
+                data = [data]
+            else:
+                raise GivenDataError(data, filetype)
+        ids = []
+        dirs = []
+        locs = {}
+        for dd in data:
+            if path.isfile(dd) and dd.endswith(filetype):
+                name = dd.strip('.{}'.format(filetype))
+                ids.append(name)
+                d = '/'.join(dd.split('/')[:-1])
+                if name not in locs:
+                    locs[name] = d
                 else:
-                    raise TypeError
-
+                    RepeatedFileError(name, dirs[locs[name]], d)
+            for r, _, f in walk(dd):
+                fs = [el for el in f if el.endswith(filetype)]
+                if len(fs) > 0:
+                    if r not in dirs:
+                        dirs.append(r)
+                for file in fs:
+                    name = file.strip('.{}'.format(filetype))
+                    ids.append(name)
+                    if name not in locs:
+                        locs[name] = dirs.index(r)
+                    else:
+                        RepeatedFileError(name, dirs[locs[name]], r)
+        if len(ids) == 0:
+            warn('No files of the {} type was found in the given data'.format(filetype))
         self.IDs = ids
         self.locs = locs
+        self.dirs = dirs
         self.filetype = filetype
         self.label_coding = {'promoter': 1.0, 'nonpromoter': 0.0, 'active': 1.0, 'inactive': 0.0}
         self.possible_labels = ['00', '01', '10', '11']

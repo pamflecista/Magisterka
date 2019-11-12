@@ -8,6 +8,7 @@ import argparse
 from bin.funcs import *
 from warnings import warn
 from bin.networks import BassetNetwork
+import math
 
 parser = argparse.ArgumentParser(description='Train network based on given data')
 parser.add_argument('data', action='store', metavar='DIR', type=str, nargs='+',
@@ -37,7 +38,7 @@ if use_cuda:
 else:
     print('--- CUDA not available ---')
 
-batch_size = 30
+batch_size = 15
 shuffle = True
 num_workers = 6
 max_epochs = 100
@@ -60,10 +61,13 @@ valid_sampler = SubsetRandomSampler(val_indices)
 train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
 val_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=valid_sampler)
 
+num_batches = math.ceil(len(train_indices) / batch_size)
+
 model = BassetNetwork(seq_len)
 optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
-loss_fn = nn.CrossEntropyLoss()
+loss_fn = nn.MSELoss()
 best_acc = 0.0
+print('\n--- Training ---')
 for epoch in range(max_epochs):
     model.train()
     train_acc = 0.0
@@ -73,7 +77,7 @@ for epoch in range(max_epochs):
             seqs = seqs.cuda()
             labels = labels.cuda()
         seqs = seqs.float()
-        labels = labels.long()
+        labels = labels.float()
 
         optimizer.zero_grad()
         outputs = model(seqs)
@@ -82,16 +86,19 @@ for epoch in range(max_epochs):
 
         optimizer.step()
 
-        train_loss += loss.cpu().data[0] * seqs.size(0)
-        _, prediction = torch.max(outputs.data, 1)
+        train_loss += loss.cpu().data * seqs.size(0)
 
-        train_acc += torch.sum(prediction == labels.data)
+        train_acc += torch.sum(torch.tensor(list(map(round, map(float, outputs.flatten())))).reshape(outputs.shape) ==
+                               labels.long())
 
-    # Call the learning rate adjustment function
+        if i % 10 == 0:
+            print('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
+
+    # # Call the learning rate adjustment function
     # adjust_learning_rate(epoch)
 
-    train_acc = train_acc / train_len
-    train_loss = train_loss / train_len
+    train_acc = float(train_acc) / train_len
+    train_loss = float(train_loss) / train_len
 
     with torch.set_grad_enabled(False):
         model.eval()
@@ -101,11 +108,13 @@ for epoch in range(max_epochs):
             if use_cuda:
                 seqs = seqs.cuda()
                 labels = labels.cuda()
+            seqs = seqs.float()
+            labels = labels.float()
 
             outputs = model(seqs)
-            _, prediction = torch.max(outputs.data, 1)
 
-            val_acc += torch.sum(prediction == labels.data)
+            val_acc += torch.sum(torch.tensor(list(map(round, map(float, outputs.flatten())))).reshape(outputs.shape) ==
+                                 labels.long())
 
         val_acc = val_acc / val_len
 
