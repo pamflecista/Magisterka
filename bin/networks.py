@@ -13,7 +13,7 @@ class BassetNetwork(torch.nn.Module):
         num_channels = [300, 200, 200]
         kernel_widths = [19, 11, 7]
         paddings = [int((w-1)/2) for w in kernel_widths]
-        num_units = [1000, 2]
+        num_units = [1000, 4]
 
         self.layer1 = nn.Sequential(
             nn.Conv2d(1, num_channels[0], kernel_size=(4, kernel_widths[0]), padding=(0, paddings[0])),

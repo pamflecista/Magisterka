@@ -53,8 +53,8 @@ class SeqsDataset(Dataset):
         self.locs = locs
         self.dirs = dirs
         self.filetype = filetype
-        self.label_coding = {'promoter': 1.0, 'nonpromoter': 0.0, 'active': 1.0, 'inactive': 0.0}
-        self.possible_labels = ['00', '01', '10', '11']
+        self.classes = ['promoter active', 'nonpromoter active', 'promoter inactive', 'nonpromoter inactive']
+        self.num_classes = len(self.classes)
         self.encoder = OHEncoder()
 
     def __len__(self):
@@ -67,7 +67,7 @@ class SeqsDataset(Dataset):
             for line in file:
                 if line.startswith('>'):
                     ch, midpoint, strand, t1, t2 = line.strip('\n> ').split(' ')
-                    label = [self.label_coding[t1], self.label_coding[t2]]
+                    label = self.classes.index('{} {}'.format(t1, t2))
                 elif line:
                     seq = line.strip().upper()
                     break
@@ -82,7 +82,7 @@ class SeqsDataset(Dataset):
 
     def get_chrs(self, chr_lists):
         indices = [[] for _ in range(len(chr_lists))]
-        labels = [{el: 0 for el in self.possible_labels} for _ in range(len(chr_lists))]
+        labels = [{el: 0 for el in range(self.num_classes)} for _ in range(len(chr_lists))]
         seq_len = None
         for i in range(self.__len__()):
             c, _, _, label, seq = self.__getitem__(i, info=True)
@@ -93,8 +93,7 @@ class SeqsDataset(Dataset):
             for j, chr_list in enumerate(chr_lists):
                 if int(c.strip('chr').replace('X', '23').replace('Y', '23')) in chr_list:
                     indices[j].append(i)
-                    l = '{}{}'.format(*list(map(int, label)))
-                    labels[j][l] += 1
+                    labels[j][label] += 1
         return indices, labels, seq_len
 
 
