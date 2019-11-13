@@ -1,14 +1,6 @@
 import argparse
 import os
 
-parser = argparse.ArgumentParser(description='Rewrite sequences to separated files')
-parser.add_argument('file', action='store', metavar='FILE', type=str,
-                    help='Fasta file to rewrite')
-parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str,
-                    help='Directory into which the sequences should be rewritten, by default it is directory of the '
-                         'input file in which new folder is created.')
-args = parser.parse_args()
-
 
 def rewrite_fasta(file, path=None):
     with open(file, 'r') as f:
@@ -44,6 +36,14 @@ def rewrite_fasta(file, path=None):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Rewrite sequences to separated files')
+    parser.add_argument('file', action='store', metavar='FILE', type=str,
+                        help='Fasta file to rewrite')
+    parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str,
+                        help='Directory into which the sequences should be rewritten, by default it is directory of the'
+                             ' input file in which new folder is created.')
+    args = parser.parse_args()
+
     if os.path.isdir(args.file):
         for f in [el for el in os.listdir(args.file) if os.path.isfile(os.path.join(args.file, el))]:
             rewrite_fasta(os.path.join(args.file, f), args.output)
