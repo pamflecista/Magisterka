@@ -142,7 +142,7 @@ for epoch in range(num_epochs):
             outputs = model(seqs)
 
             val_acc += torch.sum(torch.tensor(list(map(round, map(float, outputs.flatten())))).reshape(outputs.shape) ==
-                                 labels.long())
+                                 labels.cpu().long())
 
         val_acc = float(val_acc) / (val_len*2)
 
