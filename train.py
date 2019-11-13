@@ -9,6 +9,7 @@ from bin.funcs import *
 from warnings import warn
 from bin.networks import BassetNetwork
 import math
+import os
 
 parser = argparse.ArgumentParser(description='Train network based on given data')
 parser.add_argument('data', action='store', metavar='DIR', type=str, nargs='+',
@@ -22,7 +23,11 @@ parser.add_argument('-val', action='store', metavar='CHR', type=str, default='14
 parser.add_argument('-test', action='store', metavar='CHR', type=str, default='19-22',
                     help='Chromosome(s) for testing, if negative it means the number of chromosomes '
                          'which should be randomly chosen. Default = 19-22')
+parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str, default='./',
+                    help='Output directory')
 args = parser.parse_args()
+
+output = args.output
 
 train_chr = read_chrstr(args.train)
 val_chr = read_chrstr(args.val)
@@ -120,7 +125,7 @@ for epoch in range(max_epochs):
 
     # Save the model if the test acc is greater than our current best
     if val_acc > best_acc:
-        torch.save(model.state_dict(), "BassetNetwork_{}.model".format(epoch))
+        torch.save(model.state_dict(), os.path.join(output, "BassetNetwork_{}.model".format(epoch)))
         best_acc = val_acc
 
     # Print the metrics
