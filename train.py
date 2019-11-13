@@ -117,7 +117,7 @@ for epoch in range(num_epochs):
         train_loss += loss.cpu().data * seqs.size(0)
 
         train_acc += torch.sum(torch.tensor(list(map(round, map(float, outputs.flatten())))).reshape(outputs.shape) ==
-                               labels.long())
+                               labels.cpu().long())
 
         if i % 10 == 0:
             print('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
