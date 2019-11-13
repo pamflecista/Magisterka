@@ -103,6 +103,7 @@ for epoch in range(num_epochs):
         if use_cuda:
             seqs = seqs.cuda()
             labels = labels.cuda()
+            model.cuda()
         seqs = seqs.float()
         labels = labels.float()
 
