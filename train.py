@@ -102,8 +102,8 @@ for epoch in range(max_epochs):
     # # Call the learning rate adjustment function
     # adjust_learning_rate(epoch)
 
-    train_acc = float(train_acc) / train_len
-    train_loss = float(train_loss) / train_len
+    train_acc = float(train_acc) / train_len*2
+    train_loss = float(train_loss) / train_len*2
 
     with torch.set_grad_enabled(False):
         model.eval()
@@ -121,7 +121,7 @@ for epoch in range(max_epochs):
             val_acc += torch.sum(torch.tensor(list(map(round, map(float, outputs.flatten())))).reshape(outputs.shape) ==
                                  labels.long())
 
-        val_acc = val_acc / val_len
+        val_acc = float(val_acc) / val_len*2
 
     # Save the model if the test acc is greater than our current best
     if val_acc > best_acc:
@@ -129,4 +129,4 @@ for epoch in range(max_epochs):
         best_acc = val_acc
 
     # Print the metrics
-    print("Epoch {}, Train Accuracy: {} , Train Loss: {} , Test Accuracy: {}".format(epoch, train_acc, train_loss, val_acc))
+    print("Epoch {}, Train Accuracy: {} , Train Loss: {} , Test Accuracy: {}".format(epoch+1, train_acc, train_loss, val_acc))
