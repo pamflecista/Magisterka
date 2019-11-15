@@ -12,6 +12,7 @@ import os
 from statistics import mean
 import logging
 from time import time
+import shutil
 
 NET_TYPES = {
     'Basset': BassetNetwork
@@ -54,7 +55,7 @@ parser.add_argument('-test', action='store', metavar='CHR', type=str, default='1
                     help='Chromosome(s) for testing, if negative it means the number of chromosomes '
                          'which should be randomly chosen. Default: 19-22')
 parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str, default=None,
-                    help='Output directory, default: [PATH]/results/')
+                    help='Output directory, default: [PATH]/results/[NAMESPACE]')
 parser.add_argument('-p', '--path', action='store', metavar='DIR', type=str, default=None,
                     help='Working directory, default: ./')
 parser.add_argument('--namespace', action='store', metavar='NAME', type=str, default=None,
@@ -93,9 +94,10 @@ else:
 if args.output is not None:
     output = args.output
 else:
-    output = os.path.join(path, 'results')
-    if not os.path.isdir(output):
-        os.mkdir(output)
+    output = os.path.join(path, 'results', namespace)
+    if os.path.isdir(output):
+        shutil.rmtree(output)
+    os.mkdir(output)
 
 
 handlers = [logging.FileHandler(os.path.join(output, '{}.log'.format(namespace))),
