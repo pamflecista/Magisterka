@@ -85,6 +85,10 @@ if args.path is not None:
     data_dir = [os.path.join(path, d) for d in args.data]
 else:
     data_dir = args.data
+    if os.path.isdir(data_dir[0]):
+        path = data_dir[0]
+    else:
+        path = '/' + '/'.join(data_dir[0].split('/')[:-1])
 
 if args.output is not None:
     output = args.output
@@ -98,7 +102,7 @@ handlers = [logging.FileHandler(os.path.join(output, '{}.log'.format(namespace))
             logging.StreamHandler()]
 logging.basicConfig(level=logging.INFO, format='%(message)s', handlers=handlers)
 
-logging.info('Analysis {} begins!\nInput data: {}\nOutput directory: {}\n'.format(namespace, path, output))
+logging.info('Analysis {} begins!\nInput data: {}\nOutput directory: {}\n'.format(namespace, '; '.join(data_dir), output))
 
 t0 = time()
 train_chr = read_chrstr(args.train)
@@ -182,7 +186,7 @@ for epoch in range(num_epochs):
     # Call the learning rate adjustment function
     adjust_learning_rate(epoch, optimizer)
 
-    train_acc = [float(acc) / data_labels[0][i] for i, acc in enumerate(train_acc)]
+    train_acc = [float(acc) / data_labels[0][i] if data_labels[0][i] > 0 else 0.0 for i, acc in enumerate(train_acc)]
     train_loss = train_loss / num_batches
 
     with torch.set_grad_enabled(False):
@@ -194,7 +198,7 @@ for epoch in range(num_epochs):
                 seqs = seqs.cuda()
                 labels = labels.cuda()
             seqs = seqs.float()
-            labels = labels.float()
+            labels = labels.long()
 
             outputs = model(seqs)
 
@@ -203,18 +207,18 @@ for epoch in range(num_epochs):
                 if ind == label:
                     val_acc[label] += 1
 
-        val_acc = [float(acc) / data_labels[1][i] for i, acc in enumerate(val_acc)]
+        val_acc = [float(acc) / data_labels[1][i] if data_labels[0][i] > 0 else 0.0 for i, acc in enumerate(val_acc)]
 
     # Save the model if the test acc is greater than our current best
-    if val_acc > best_acc:
-        torch.save(model.state_dict(), os.path.join(output, "{}_{}.model".format(namespace, epoch)))
-        best_acc = val_acc
+    if mean(val_acc) > best_acc:
+        torch.save(model.state_dict(), os.path.join(output, "{}_{}.model".format(namespace, epoch+1)))
+        best_acc = mean(val_acc)
 
     # Print the metrics
-    logging.info("Epoch {} finished in {:.2f} min\nTrain accuracy:".format((time() - t0)/60, epoch+1))
+    logging.info("Epoch {} finished in {:.2f} min\n-- Train accuracy --".format(epoch+1, (time() - t0)/60))
     for cl, acc in zip(dataset.classes, train_acc):
         logging.info('{} - {:.3}'.format(cl, acc))
-    logging.info("Mean train accuracy - {:.3}\nTrain loss: {:.3}\nValidation Accuracy:".format(mean(train_acc), train_loss))
+    logging.info("Mean train accuracy - {:.3}\nTrain loss: {:.3}\n-- Validation Accuracy --".format(mean(train_acc), train_loss))
     for cl, acc in zip(dataset.classes, val_acc):
         logging.info('{} - {:.3}'.format(cl, acc))
     logging.info("Mean validation accuracy - {:.3}\n".format(mean(val_acc)))
