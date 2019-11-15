@@ -27,7 +27,7 @@ class SeqsDataset(Dataset):
         dirs = []
         locs = {}
         for dd in data:
-            if path.isfile(dd) and dd.endswith(filetype):
+            if os.path.isfile(dd) and dd.endswith(filetype):
                 name = dd.strip('.{}'.format(filetype))
                 ids.append(name)
                 d = '/'.join(dd.split('/')[:-1])
@@ -35,7 +35,7 @@ class SeqsDataset(Dataset):
                     locs[name] = d
                 else:
                     RepeatedFileError(name, dirs[locs[name]], d)
-            for r, _, f in walk(dd):
+            for r, _, f in os.walk(dd):
                 fs = [el for el in f if el.endswith(filetype)]
                 if len(fs) > 0:
                     if r not in dirs:
@@ -62,7 +62,7 @@ class SeqsDataset(Dataset):
 
     def __getitem__(self, index, info=False):
         ID = self.IDs[index]
-        filename = path.join(self.dirs[self.locs[ID]], '{}.{}'.format(ID, self.filetype))
+        filename = os.path.join(self.dirs[self.locs[ID]], '{}.{}'.format(ID, self.filetype))
         with open(filename, 'r') as file:
             for line in file:
                 if line.startswith('>'):

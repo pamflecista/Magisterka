@@ -6,10 +6,16 @@ from torch.optim import Adam
 from torch.utils.data.sampler import SubsetRandomSampler
 import argparse
 from bin.funcs import *
-from warnings import warn
 from bin.networks import BassetNetwork
 import math
 import os
+from statistics import mean
+import logging
+from time import time
+
+NET_TYPES = {
+    'Basset': BassetNetwork
+}
 
 
 def adjust_learning_rate(epoch, optimizer):
@@ -34,31 +40,45 @@ def adjust_learning_rate(epoch, optimizer):
 
 parser = argparse.ArgumentParser(description='Train network based on given data')
 parser.add_argument('data', action='store', metavar='DIR', type=str, nargs='+',
-                    help='Folder with the data for training and validation, if PATH given it is added to this '
-                         'directory: [PATH]/[DATA]')
+                    help='Folder with the data for training and validation, if PATH is given, data is supposed to be '
+                         'in PATH directory: [PATH]/[DATA]')
+parser.add_argument('-n', '--network', action='store', metavar='NAME', type=str, default='Basset',
+                    help='Type of the network to train, default: Basset Network')
 parser.add_argument('-train', action='store', metavar='CHR', type=str, default='1-13',
                     help='Chromosome(s) for training, if negative it means the number of chromosomes '
-                         'which should be randomly chosen. Default = 1-13')
+                         'which should be randomly chosen. Default: 1-13')
 parser.add_argument('-val', action='store', metavar='CHR', type=str, default='14-18',
                     help='Chromosome(s) for validation, if negative it means the number of chromosomes '
-                         'which should be randomly chosen. Default = 14-18')
+                         'which should be randomly chosen. Default: 14-18')
 parser.add_argument('-test', action='store', metavar='CHR', type=str, default='19-22',
                     help='Chromosome(s) for testing, if negative it means the number of chromosomes '
-                         'which should be randomly chosen. Default = 19-22')
+                         'which should be randomly chosen. Default: 19-22')
 parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str, default=None,
-                    help='Output directory, by default: [PATH]/results/')
+                    help='Output directory, default: [PATH]/results/')
 parser.add_argument('-p', '--path', action='store', metavar='DIR', type=str, default=None,
-                    help='Working directory, default=./')
-parser.add_argument('-b', '--batch_size', action='store', metavar='INT', type=int, default=30,
-                    help='Size of the batch, default is 30')
+                    help='Working directory, default: ./')
+parser.add_argument('--namespace', action='store', metavar='NAME', type=str, default=None,
+                    help='Namespace of the analysis, default: [NETWORK]')
+parser.add_argument('--run', action='store', metavar='NUMBER', type=str, default='0',
+                    help='Number of the analysis, by default NAMESPACE is set to [NETWORK][RUN]')
+parser.add_argument('-b', '--batch_size', action='store', metavar='INT', type=int, default=64,
+                    help='Size of the batch, default: 64')
 parser.add_argument('--num_workers', action='store', metavar='INT', type=int, default=4,
-                    help='How many subprocesses to use for data loading, default is 4')
-parser.add_argument('--num_epochs', action='store', metavar='INT', type=int, default=100,
-                    help='Number of epochs to run, default is 100')
-
+                    help='How many subprocesses to use for data loading, default: 4')
+parser.add_argument('--num_epochs', action='store', metavar='INT', type=int, default=500,
+                    help='Maximum number of epochs to run, default: 500')
+parser.add_argument('--acc_threshold', action='store', metavar='FLOAT', type=float, default=0.9,
+                    help='Threshold of the validation accuracy - if gained training process stops, default: 0.9')
 args = parser.parse_args()
 
-batch_size, num_workers, num_epochs = args.batch_size, args.num_workers, args.num_epochs
+batch_size, num_workers, num_epochs, acc_threshold = args.batch_size, args.num_workers, args.num_epochs, \
+                                                     args.acc_threshold
+
+network = NET_TYPES[args.network]
+if args.namespace is None:
+    namespace = args.network + args.run
+else:
+    namespace = args.namespace
 
 if args.path is not None:
     path = args.path
@@ -73,30 +93,46 @@ else:
     if not os.path.isdir(output):
         os.mkdir(output)
 
+
+handlers = [logging.FileHandler(os.path.join(output, '{}.log'.format(namespace))),
+            logging.StreamHandler()]
+logging.basicConfig(level=logging.INFO, format='%(message)s', handlers=handlers)
+
+logging.info('Analysis {} begins!\nInput data: {}\nOutput directory: {}\n'.format(namespace, path, output))
+
+t0 = time()
 train_chr = read_chrstr(args.train)
 val_chr = read_chrstr(args.val)
+test_chr = read_chrstr(args.test)
 if set(train_chr) & set(val_chr):
-    warn('Chromosomes for training and chromosomes for validation overlap!')
-
+    logging.warning('WARNING - Chromosomes for training and validation overlap!')
+elif set(train_chr) & set(test_chr):
+    logging.warning('WARNING - Chromosomes for training and testing overlap!')
+elif set(val_chr) & set(test_chr):
+    logging.warning('WARNING - Chromosomes for validation and testing overlap!')
 
 # CUDA for PyTorch
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
 if use_cuda:
-    print('--- CUDA available ---')
+    logging.info('--- CUDA available ---')
 else:
-    print('--- CUDA not available ---')
+    logging.info('--- CUDA not available ---')
 
 dataset = SeqsDataset(data_dir)
 
-# Creating data indices for training and validation splits:
-indices, data_labels, seq_len = dataset.get_chrs([train_chr, val_chr])
-train_indices, val_indices = indices
-train_len, val_len = len(train_indices), len(val_indices)
-for i, (n, c) in enumerate(zip(['training', 'validation'], [args.train, args.val])):
-    print('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, c, len(indices[i])))
-    print('{} - promoter active\n{} - nonpromoter active\n{} - promoter inactive\n{} - nonpromoter inactive'
+# Creating data indices for training, validation and test splits:
+indices, data_labels, seq_len = dataset.get_chrs([train_chr, val_chr, test_chr])
+train_indices, val_indices, test_indices = indices
+for i, (n, c, ind) in enumerate(zip(['train', 'valid', 'test'], [args.train, args.val, args.test],
+                                    [train_indices, val_indices, test_indices])):
+    logging.info('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, c, len(indices[i])))
+    logging.info('{} - promoter active\n{} - nonpromoter active\n{} - promoter inactive\n{} - nonpromoter inactive'
           .format(data_labels[i][0], data_labels[i][1], data_labels[i][2], data_labels[i][3]))
+    # Writing IDs for each split into file
+    with open(os.path.join(output, '{}_{}.txt'.format(namespace, n)), 'w') as f:
+        for j in ind:
+            f.write(dataset.IDs[j] + '\n')
 
 train_sampler = SubsetRandomSampler(train_indices)
 valid_sampler = SubsetRandomSampler(val_indices)
@@ -104,14 +140,18 @@ valid_sampler = SubsetRandomSampler(val_indices)
 train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
 val_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=valid_sampler)
 
+logging.info('\nTraining, validation and testing datasets built in {:.2f} s'.format(time() - t0))
+
 num_batches = math.ceil(len(train_indices) / batch_size)
 
-model = BassetNetwork(seq_len)
+model = network(seq_len)
 optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
-loss_fn = nn.CrossEntropyLoss(reduction='mean')
+loss_fn = nn.CrossEntropyLoss()
 best_acc = 0.0
-print('\n--- Training ---')
+logging.info('\n--- Training ---')
+t = time()
 for epoch in range(num_epochs):
+    t0 = time()
     model.train()
     train_acc = [0.0] * dataset.num_classes
     train_loss = 0.0
@@ -131,24 +171,23 @@ for epoch in range(num_epochs):
         optimizer.step()
 
         train_loss += loss.cpu().data
-
         _, indices = torch.max(outputs, axis=1)
-        # ERROR HERE
-        train_acc = [train_acc[l] + 1 if equal else train_acc[l] for equal, l in
-                     zip(indices == labels.cpu(), labels.cpu())]
+        for ind, label in zip(indices, labels.cpu()):
+            if ind == label:
+                train_acc[label] += 1
 
         if i % 10 == 0:
-            print('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
+            logging.info('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
 
     # Call the learning rate adjustment function
     adjust_learning_rate(epoch, optimizer)
 
-    train_acc = [float(acc) / data_labels[i] for i, acc in enumerate(train_acc)]
-    train_loss = float(train_loss) / num_batches
+    train_acc = [float(acc) / data_labels[0][i] for i, acc in enumerate(train_acc)]
+    train_loss = train_loss / num_batches
 
     with torch.set_grad_enabled(False):
         model.eval()
-        val_acc = 0.0
+        val_acc = [0.0] * dataset.num_classes
         for i, (seqs, labels) in enumerate(val_loader):
 
             if use_cuda:
@@ -159,16 +198,29 @@ for epoch in range(num_epochs):
 
             outputs = model(seqs)
 
-            val_acc += torch.sum(torch.tensor(list(map(round, map(float, outputs.flatten())))).reshape(outputs.shape) ==
-                                 labels.cpu().long())
+            _, indices = torch.max(outputs, axis=1)
+            for ind, label in zip(indices, labels.cpu()):
+                if ind == label:
+                    val_acc[label] += 1
 
-        val_acc = float(val_acc) / (val_len*2)
+        val_acc = [float(acc) / data_labels[1][i] for i, acc in enumerate(val_acc)]
 
     # Save the model if the test acc is greater than our current best
     if val_acc > best_acc:
-        torch.save(model.state_dict(), os.path.join(output, "BassetNetwork_{}.model".format(epoch)))
+        torch.save(model.state_dict(), os.path.join(output, "{}_{}.model".format(namespace, epoch)))
         best_acc = val_acc
 
     # Print the metrics
-    print("Epoch {}, Train Accuracy: {:.3} , Train Loss: {:.3} , Test Accuracy: {:.3}".format(epoch+1, train_acc,
-                                                                                              train_loss, val_acc))
+    logging.info("Epoch {} finished in {:.2f} min\nTrain accuracy:".format((time() - t0)/60, epoch+1))
+    for cl, acc in zip(dataset.classes, train_acc):
+        logging.info('{} - {:.3}'.format(cl, acc))
+    logging.info("Mean train accuracy - {:.3}\nTrain loss: {:.3}\nValidation Accuracy:".format(mean(train_acc), train_loss))
+    for cl, acc in zip(dataset.classes, val_acc):
+        logging.info('{} - {:.3}'.format(cl, acc))
+    logging.info("Mean validation accuracy - {:.3}\n".format(mean(val_acc)))
+
+    if mean(val_acc) >= acc_threshold:
+        logging.info('Validation accuracy threshold reached!')
+        break
+
+logging.info('Training for {} finished in {:.2f} min'.format(namespace, (time() - t)/60))
