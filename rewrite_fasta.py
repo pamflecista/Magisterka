@@ -2,7 +2,7 @@ import argparse
 import os
 
 
-def rewrite_fasta(file, path=None):
+def rewrite_fasta(file, outdir=None):
     with open(file, 'r') as f:
         i = 0
         line = f.readline()
@@ -12,27 +12,25 @@ def rewrite_fasta(file, path=None):
             line = f.readline()
         if i == 1:
             print('No rewriting was done: given file contains only one sequence.')
-            return 1, ['/'.join(file.split('/')[:-1])]
-    paths = []
-    if path is None:
+            return 1, ['/'+'/'.join(file.split('/')[:-1])]
+    if outdir is None:
         f = file.split('/')
-        path = os.path.join('/', *f[:-1], '.'.join(f[-1].split('.')[:-1]))
-        if not os.path.isdir(path):
-            os.mkdir(path)
-            paths.append(path)
+        outdir = os.path.join('/'+'/'.join(f[:-1]), '.'.join(f[-1].split('.')[:-1]))
+        if not os.path.isdir(outdir):
+            os.mkdir(outdir)
     i = 0
     with open(file, 'r') as f:
         for line in f:
             if line.startswith('>'):
                 filename = ':'.join(line.split(' ')[1:3]).strip('chr ') + '.fasta'
-                w = open(os.path.join(path, filename), 'w')
+                w = open(os.path.join(outdir, filename), 'w')
                 w.write(line)
                 i += 1
             else:
                 w.write(line)
                 w.close()
-    print('Based on {} {} sequences were written into separated files in {}'.format(file, i, path))
-    return i, paths
+    print('Based on {} {} sequences were written into separated files in {}'.format(file, i, outdir))
+    return i, outdir
 
 
 if __name__ == '__main__':

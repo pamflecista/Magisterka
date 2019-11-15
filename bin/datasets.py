@@ -2,7 +2,7 @@ from sklearn.preprocessing import OneHotEncoder as Encoder
 import numpy as np
 from torch.utils.data import Dataset
 import torch
-from os import listdir, path, walk
+import os
 from .exceptions import *
 from warnings import warn
 from rewrite_fasta import rewrite_fasta
@@ -15,11 +15,11 @@ class SeqsDataset(Dataset):
         # Establishing files' IDs and their directories
         if isinstance(data, str):
             if data.endswith(filetype):
-                i, paths = rewrite_fasta(data)
+                i, path = rewrite_fasta(data)
                 if i == 1:
                     warn('Only one sequence found in the given data!')
-                data = paths
-            elif path.isdir(data):
+                data = [path]
+            elif os.path.isdir(data):
                 data = [data]
             else:
                 raise GivenDataError(data, filetype)
