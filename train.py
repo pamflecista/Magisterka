@@ -130,6 +130,7 @@ dataset = SeqsDataset(data_dir)
 # Creating data indices for training, validation and test splits:
 indices, data_labels, seq_len = dataset.get_chrs([train_chr, val_chr, test_chr])
 train_indices, val_indices, test_indices = indices
+train_len, val_len = len(train_indices), len(val_indices)
 for i, (n, c, ind) in enumerate(zip(['train', 'valid', 'test'], [args.train, args.val, args.test],
                                     [train_indices, val_indices, test_indices])):
     logging.info('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, c, len(indices[i])))
@@ -148,7 +149,7 @@ val_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler
 
 logging.info('\nTraining, validation and testing datasets built in {:.2f} s'.format(time() - t0))
 
-num_batches = math.ceil(len(train_indices) / batch_size)
+num_batches = math.ceil(train_len / batch_size)
 
 model = network(seq_len)
 optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
@@ -217,13 +218,13 @@ for epoch in range(num_epochs):
         best_acc = mean(val_acc)
 
     # Print the metrics
-    logging.info("Epoch {} finished in {:.2f} min\nTrain loss: {:.3}\n-- Train accuracy --".format(
-        epoch+1, (time() - t0)/60, train_loss))
-    for cl, acc in zip(dataset.classes, train_acc):
-        logging.info('{} - {:.3}'.format(cl, acc))
-    logging.info("-- Validation Accuracy --".format())
-    for cl, acc in zip(dataset.classes, val_acc):
-        logging.info('{} - {:.3}'.format(cl, acc))
+    logging.info("Epoch {} finished in {:.2f} min\nTrain loss: {:.3}\n-- Train accuracy ({} seqs) --".format(
+        epoch+1, (time() - t0)/60, train_loss, train_len))
+    for cl, acc, seqs in zip(dataset.classes, train_acc, data_labels[0]):
+        logging.info('{} ({} seqs) - {:.3}'.format(cl, seqs, acc))
+    logging.info("-- Validation Accuracy ({} seqs) --".format(val_len))
+    for cl, acc, seqs in zip(dataset.classes, val_acc, data_labels[1]):
+        logging.info('{} ({} seqs) - {:.3}'.format(cl, seqs, acc))
     logging.info("-- Mean train accuracy - {:.3}\n-- Mean valid accuracy - {:.3}\n".format(
         mean(train_acc), mean(val_acc)))
 

@@ -82,7 +82,7 @@ class SeqsDataset(Dataset):
 
     def get_chrs(self, chr_lists):
         indices = [[] for _ in range(len(chr_lists))]
-        labels = [{el: 0 for el in range(self.num_classes)} for _ in range(len(chr_lists))]
+        labels = [[0 for _ in range(self.num_classes)] for _ in range(len(chr_lists))]
         seq_len = None
         for i in range(self.__len__()):
             c, _, _, label, seq = self.__getitem__(i, info=True)
