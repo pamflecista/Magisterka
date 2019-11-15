@@ -221,10 +221,10 @@ for epoch in range(num_epochs):
     logging.info("Epoch {} finished in {:.2f} min\nTrain loss: {:.3}\n-- Train accuracy ({} seqs) --".format(
         epoch+1, (time() - t0)/60, train_loss, train_len))
     for cl, acc, seqs in zip(dataset.classes, train_acc, data_labels[0]):
-        logging.info('{} ({} seqs) - {:.3}'.format(cl, seqs, acc))
+        logging.info('{:>20} :{:>5} seqs - {:.3}'.format(cl, seqs, acc))
     logging.info("-- Validation Accuracy ({} seqs) --".format(val_len))
     for cl, acc, seqs in zip(dataset.classes, val_acc, data_labels[1]):
-        logging.info('{} ({} seqs) - {:.3}'.format(cl, seqs, acc))
+        logging.info('{:>20} :{:>5} seqs - {:.3}'.format(cl, seqs, acc))
     logging.info("-- Mean train accuracy - {:.3}\n-- Mean valid accuracy - {:.3}\n".format(
         mean(train_acc), mean(val_acc)))
 
