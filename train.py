@@ -152,7 +152,7 @@ model = network(seq_len)
 optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
 loss_fn = nn.CrossEntropyLoss()
 best_acc = 0.0
-logging.info('\n--- Training ---')
+logging.info('\n--- TRAINING ---')
 t = time()
 for epoch in range(num_epochs):
     t0 = time()
@@ -215,13 +215,15 @@ for epoch in range(num_epochs):
         best_acc = mean(val_acc)
 
     # Print the metrics
-    logging.info("Epoch {} finished in {:.2f} min\n-- Train accuracy --".format(epoch+1, (time() - t0)/60))
+    logging.info("Epoch {} finished in {:.2f} min\nTrain loss: {:.3}\n-- Train accuracy --".format(
+        epoch+1, (time() - t0)/60, train_loss))
     for cl, acc in zip(dataset.classes, train_acc):
         logging.info('{} - {:.3}'.format(cl, acc))
-    logging.info("Mean train accuracy - {:.3}\nTrain loss: {:.3}\n-- Validation Accuracy --".format(mean(train_acc), train_loss))
+    logging.info("-- Validation Accuracy --".format())
     for cl, acc in zip(dataset.classes, val_acc):
         logging.info('{} - {:.3}'.format(cl, acc))
-    logging.info("Mean validation accuracy - {:.3}\n".format(mean(val_acc)))
+    logging.info("-- Mean train accuracy - {:.3}\n-- Mean valid accuracy - {:.3}\n".format(
+        mean(train_acc), mean(val_acc)))
 
     if mean(val_acc) >= acc_threshold:
         logging.info('Validation accuracy threshold reached!')
