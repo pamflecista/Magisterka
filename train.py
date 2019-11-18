@@ -168,7 +168,7 @@ t = time()
 for epoch in range(num_epochs):
     t0 = time()
     model.train()
-    train_acc = [0.0] * dataset.num_classes
+    tp, tn, fp, fn = [[0.0] * dataset.num_classes for _ in range(4)]
     train_loss = 0.0
     for i, (seqs, labels) in enumerate(train_loader):
         if use_cuda:
@@ -189,7 +189,13 @@ for epoch in range(num_epochs):
         _, indices = torch.max(outputs, axis=1)
         for ind, label in zip(indices, labels.cpu()):
             if ind == label:
-                train_acc[label] += 1
+                tp[label] += 1
+            else:
+                fn[label] += 1
+                fp[ind] += 1
+            for j in range(dataset.num_classes):
+                if j not in [ind, label]:
+                    tn[j] += 1
 
         if i % 10 == 0:
             logging.info('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
@@ -198,12 +204,14 @@ for epoch in range(num_epochs):
     if not args.no_adjust_lr:
         adjust_learning_rate(epoch, optimizer)
 
-    train_acc = [float(acc) / data_labels[0][i] if data_labels[0][i] > 0 else 0.0 for i, acc in enumerate(train_acc)]
+    train_acc = [float(acc) / data_labels[0][i] if data_labels[0][i] > 0 else 0.0 for i, acc in enumerate(tp)]
+    train_sens = [float(a) / (a + b) if (a + b) > 0 else 0.0 for a, b in zip(tp, fn)]
+    train_spec = [float(a) / (a + b) if (a + b) > 0 else 0.0 for a, b in zip(fp, tn)]
     train_loss = train_loss / num_batches
 
     with torch.set_grad_enabled(False):
         model.eval()
-        val_acc = [0.0] * dataset.num_classes
+        tp, tn, fp, fn = [[0.0] * dataset.num_classes for _ in range(4)]
         for i, (seqs, labels) in enumerate(val_loader):
 
             if use_cuda:
@@ -217,9 +225,17 @@ for epoch in range(num_epochs):
             _, indices = torch.max(outputs, axis=1)
             for ind, label in zip(indices, labels.cpu()):
                 if ind == label:
-                    val_acc[label] += 1
+                    tp[label] += 1
+                else:
+                    fn[label] += 1
+                    fp[ind] += 1
+                for j in range(dataset.num_classes):
+                    if j not in [ind, label]:
+                        tn[j] += 1
 
-        val_acc = [float(acc) / data_labels[1][i] if data_labels[0][i] > 0 else 0.0 for i, acc in enumerate(val_acc)]
+        val_acc = [float(acc) / data_labels[1][i] if data_labels[1][i] > 0 else 0.0 for i, acc in enumerate(tp)]
+        val_sens = [float(a) / (a + b) if (a + b) > 0 else 0.0 for a, b in zip(tp, fn)]
+        val_spec = [float(a) / (a + b) if (a + b) > 0 else 0.0 for a, b in zip(fp, tn)]
 
     # Save the model if the test acc is greater than our current best
     if mean(val_acc) > best_acc:
@@ -227,15 +243,17 @@ for epoch in range(num_epochs):
         best_acc = mean(val_acc)
 
     # Print the metrics
-    logging.info("Epoch {} finished in {:.2f} min\nTrain loss: {:.3}\n-- Train accuracy ({} seqs) --".format(
-        epoch+1, (time() - t0)/60, train_loss, train_len))
-    for cl, acc, seqs in zip(dataset.classes, train_acc, data_labels[0]):
-        logging.info('{:>20} :{:>5} seqs - {:.3}'.format(cl, seqs, acc))
-    logging.info("-- Validation Accuracy ({} seqs) --".format(val_len))
-    for cl, acc, seqs in zip(dataset.classes, val_acc, data_labels[1]):
-        logging.info('{:>20} :{:>5} seqs - {:.3}'.format(cl, seqs, acc))
-    logging.info("-- Mean train accuracy - {:.3}\n-- Mean valid accuracy - {:.3}\n".format(
-        mean(train_acc), mean(val_acc)))
+    logging.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}\n"
+                 "-- Training ({} seqs) --".format(epoch+1, (time() - t0)/60, train_loss,
+                                                   '', 'SENSITIVITY',
+                                                   'SPECIFICITY', train_len))
+    for cl, acc, seqs, sens, spec in zip(dataset.classes, train_acc, data_labels[0], train_sens, train_spec):
+        logging.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
+    logging.info("-- Validation ({} seqs) --".format(val_len))
+    for cl, acc, seqs, sens, spec in zip(dataset.classes, val_acc, data_labels[1], val_sens, val_spec):
+        logging.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
+    logging.info("-- Means for training   - {:1.3f}, {:1.3f}\n-- Means for validation - {:1.3f}, {:1.3f}\n".
+                 format(*list(map(mean, [train_sens, train_spec, val_sens, val_spec]))))
 
     if mean(val_acc) >= acc_threshold:
         logging.info('Validation accuracy threshold reached!')
