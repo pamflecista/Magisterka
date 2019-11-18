@@ -2,7 +2,7 @@ from bin.datasets import SeqsDataset
 import torch
 import torch.nn as nn
 from torch.utils import data
-from torch.optim import Adam
+import torch.optim as optim
 from torch.utils.data.sampler import SubsetRandomSampler
 import argparse
 from bin.funcs import *
@@ -18,21 +18,26 @@ NET_TYPES = {
     'Basset': BassetNetwork
 }
 
+OPTIMIZERS = {
+    'RMSprop': optim.RMSprop,
+    'Adam': optim.Adam
+}
+
 
 def adjust_learning_rate(epoch, optimizer):
-    lr = 0.001
+    lr = 0.01
 
-    if epoch > 180:
+    if epoch > 300:
         lr = lr / 1000000
-    elif epoch > 150:
+    elif epoch > 250:
         lr = lr / 100000
-    elif epoch > 120:
+    elif epoch > 200:
         lr = lr / 10000
-    elif epoch > 90:
+    elif epoch > 150:
         lr = lr / 1000
-    elif epoch > 60:
+    elif epoch > 100:
         lr = lr / 100
-    elif epoch > 30:
+    elif epoch > 50:
         lr = lr / 10
 
     for param_group in optimizer.param_groups:
@@ -62,6 +67,8 @@ parser.add_argument('--namespace', action='store', metavar='NAME', type=str, def
                     help='Namespace of the analysis, default: [NETWORK]')
 parser.add_argument('--run', action='store', metavar='NUMBER', type=str, default='0',
                     help='Number of the analysis, by default NAMESPACE is set to [NETWORK][RUN]')
+parser.add_argument('--optimizer', action='store', metavar='NAME', type=str, default='RMSprop',
+                    help='Optimization algorithm to use for training the network, default = RMSprop')
 parser.add_argument('-b', '--batch_size', action='store', metavar='INT', type=int, default=64,
                     help='Size of the batch, default: 64')
 parser.add_argument('--num_workers', action='store', metavar='INT', type=int, default=4,
@@ -70,12 +77,15 @@ parser.add_argument('--num_epochs', action='store', metavar='INT', type=int, def
                     help='Maximum number of epochs to run, default: 500')
 parser.add_argument('--acc_threshold', action='store', metavar='FLOAT', type=float, default=0.9,
                     help='Threshold of the validation accuracy - if gained training process stops, default: 0.9')
+parser.add_argument('--no_adjust_lr', action='store_true',
+                    help='No reduction of learning rate during training')
 args = parser.parse_args()
 
 batch_size, num_workers, num_epochs, acc_threshold = args.batch_size, args.num_workers, args.num_epochs, \
                                                      args.acc_threshold
 
 network = NET_TYPES[args.network]
+optim_method = OPTIMIZERS[args.optimizer]
 if args.namespace is None:
     namespace = args.network + args.run
 else:
@@ -152,7 +162,7 @@ logging.info('\nTraining, validation and testing datasets built in {:.2f} s'.for
 num_batches = math.ceil(train_len / batch_size)
 
 model = network(seq_len)
-optimizer = Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
+optimizer = optim_method(model.parameters(), lr=0.01, weight_decay=0.0001)
 loss_fn = nn.CrossEntropyLoss()
 best_acc = 0.0
 logging.info('\n--- TRAINING ---')
@@ -187,7 +197,8 @@ for epoch in range(num_epochs):
             logging.info('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
 
     # Call the learning rate adjustment function
-    adjust_learning_rate(epoch, optimizer)
+    if not args.no_adjust_lr:
+        adjust_learning_rate(epoch, optimizer)
 
     train_acc = [float(acc) / data_labels[0][i] if data_labels[0][i] > 0 else 0.0 for i, acc in enumerate(train_acc)]
     train_loss = train_loss / num_batches
