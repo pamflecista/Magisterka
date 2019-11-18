@@ -25,19 +25,17 @@ OPTIMIZERS = {
 
 
 def adjust_learning_rate(epoch, optimizer):
-    lr = 0.01
+    lr = 0.001
 
-    if epoch > 300:
-        lr = lr / 1000000
-    elif epoch > 250:
+    if epoch > 500:
         lr = lr / 100000
-    elif epoch > 200:
+    elif epoch > 400:
         lr = lr / 10000
-    elif epoch > 150:
+    elif epoch > 300:
         lr = lr / 1000
-    elif epoch > 100:
+    elif epoch > 200:
         lr = lr / 100
-    elif epoch > 50:
+    elif epoch > 100:
         lr = lr / 10
 
     for param_group in optimizer.param_groups:
