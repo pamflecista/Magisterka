@@ -109,10 +109,22 @@ else:
         shutil.rmtree(output)
     os.mkdir(output)
 
+formatter = logging.Formatter('%(message)s')
 
-handlers = [logging.FileHandler(os.path.join(output, '{}.log'.format(namespace))),
-            logging.StreamHandler()]
-logging.basicConfig(level=logging.INFO, format='%(message)s', handlers=handlers)
+logger = logging.getLogger('verbose')
+cmd_handler, log_handler = logging.StreamHandler(), logging.FileHandler(os.path.join(output, '{}.log'.format(namespace)))
+cmd_handler.setFormatter(formatter)
+log_handler.setFormatter(formatter)
+cmd_handler.setLevel(logging.INFO)
+log_handler.setLevel(logging.INFO)
+logger.addHandler(cmd_handler)
+logger.addHandler(log_handler)
+
+results_table = logging.getLogger('results')
+results_handler = logging.FileHandler(os.path.join(output, '{}_results.tsv'.format(namespace)))
+results_handler.setFormatter(formatter)
+results_handler.setLevel(logging.INFO)
+results_table.addHandler(results_handler)
 
 logging.info('Analysis {} begins!\nInput data: {}\nOutput directory: {}\n'.format(namespace, '; '.join(data_dir), output))
 
@@ -143,15 +155,14 @@ num_classes = dataset.num_classes
 indices, data_labels, seq_len = dataset.get_chrs([train_chr, val_chr, test_chr])
 train_indices, val_indices, test_indices = indices
 train_len, val_len = len(train_indices), len(val_indices)
-for i, (n, c, ind) in enumerate(zip(['train', 'valid', 'test'], [args.train, args.val, args.test],
-                                    [train_indices, val_indices, test_indices])):
-    logging.info('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, c, len(indices[i])))
-    logging.info('{} - promoter active\n{} - nonpromoter active\n{} - promoter inactive\n{} - nonpromoter inactive'
-          .format(data_labels[i][0], data_labels[i][1], data_labels[i][2], data_labels[i][3]))
+for i, (n, ch, ind) in enumerate(zip(['train', 'valid', 'test'], [args.train, args.val, args.test],
+                                     [train_indices, val_indices, test_indices])):
+    logging.info('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, ch, len(indices[i])))
+    for j, cl in enumerate(dataset.classes):
+        logging.info('{} - {}\n'.format(data_labels[i][j], cl))
     # Writing IDs for each split into file
     with open(os.path.join(output, '{}_{}.txt'.format(namespace, n)), 'w') as f:
-        for j in ind:
-            f.write(dataset.IDs[j] + '\n')
+        f.write('\n'.join([dataset.IDs[j] for j in ind]))
 
 train_sampler = SubsetRandomSampler(train_indices)
 valid_sampler = SubsetRandomSampler(val_indices)
@@ -205,7 +216,7 @@ for epoch in range(num_epochs):
     for cl in range(num_classes):
         tp = confusion_matrix[cl][cl]
         fn = sum([confusion_matrix[row][cl] for row in range(num_classes) if row != cl])
-        tn = sum([confusion_matrix[row][col] for row, col in product(range(num_classes), range(num_classes))
+        tn = sum([confusion_matrix[row][col] for row, col in product(range(num_classes), repeat=2)
                   if row != cl and col != cl])
         fp = sum([confusion_matrix[cl][col] for col in range(num_classes) if col != cl])
         train_sens += [float(tp) / (tp + fn) if (tp + fn) > 0 else 0.0]
@@ -233,7 +244,7 @@ for epoch in range(num_epochs):
         for cl in range(num_classes):
             tp = confusion_matrix[cl][cl]
             fn = sum([confusion_matrix[row][cl] for row in range(num_classes) if row != cl])
-            tn = sum([confusion_matrix[row][col] for row, col in product(range(num_classes), range(num_classes))
+            tn = sum([confusion_matrix[row][col] for row, col in product(range(num_classes), repeat=2)
                       if row != cl and col != cl])
             fp = sum([confusion_matrix[cl][col] for col in range(num_classes) if col != cl])
             val_sens += [float(tp) / (tp + fn) if (tp + fn) > 0 else 0.0]
