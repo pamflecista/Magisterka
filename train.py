@@ -13,6 +13,8 @@ from statistics import mean
 import logging
 from time import time
 import shutil
+import numpy as np
+from itertools import product
 
 NET_TYPES = {
     'Basset': BassetNetwork
@@ -135,6 +137,8 @@ else:
 
 dataset = SeqsDataset(data_dir)
 
+num_classes = dataset.num_classes
+
 # Creating data indices for training, validation and test splits:
 indices, data_labels, seq_len = dataset.get_chrs([train_chr, val_chr, test_chr])
 train_indices, val_indices, test_indices = indices
@@ -168,7 +172,7 @@ t = time()
 for epoch in range(num_epochs):
     t0 = time()
     model.train()
-    tp, tn, fp, fn = [[0.0] * dataset.num_classes for _ in range(4)]
+    confusion_matrix = np.zeros((num_classes, num_classes))
     train_loss = 0.0
     for i, (seqs, labels) in enumerate(train_loader):
         if use_cuda:
@@ -188,14 +192,7 @@ for epoch in range(num_epochs):
         train_loss += loss.cpu().data
         _, indices = torch.max(outputs, axis=1)
         for ind, label in zip(indices, labels.cpu()):
-            if ind == label:
-                tp[label] += 1
-            else:
-                fn[label] += 1
-                fp[ind] += 1
-            for j in range(dataset.num_classes):
-                if j not in [ind, label]:
-                    tn[j] += 1
+            confusion_matrix[ind][label] += 1
 
         if i % 10 == 0:
             logging.info('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
@@ -204,14 +201,20 @@ for epoch in range(num_epochs):
     if not args.no_adjust_lr:
         adjust_learning_rate(epoch, optimizer)
 
-    train_acc = [float(acc) / data_labels[0][i] if data_labels[0][i] > 0 else 0.0 for i, acc in enumerate(tp)]
-    train_sens = [float(a) / (a + b) if (a + b) > 0 else 0.0 for a, b in zip(tp, fn)]
-    train_spec = [float(a) / (a + b) if (a + b) > 0 else 0.0 for a, b in zip(fp, tn)]
+    train_sens, train_spec = [], []
+    for cl in range(num_classes):
+        tp = confusion_matrix[cl][cl]
+        fn = sum([confusion_matrix[row][cl] for row in range(num_classes) if row != cl])
+        tn = sum([confusion_matrix[row][col] for row, col in product(range(num_classes), range(num_classes))
+                  if row != cl and col != cl])
+        fp = sum([confusion_matrix[cl][col] for col in range(num_classes) if col != cl])
+        train_sens += [float(tp) / (tp + fn) if (tp + fn) > 0 else 0.0]
+        train_spec += [float(tn) / (tn + fp) if (tn + fp) > 0 else 0.0]
     train_loss = train_loss / num_batches
 
     with torch.set_grad_enabled(False):
         model.eval()
-        tp, tn, fp, fn = [[0.0] * dataset.num_classes for _ in range(4)]
+        confusion_matrix = np.zeros((num_classes, num_classes))
         for i, (seqs, labels) in enumerate(val_loader):
 
             if use_cuda:
@@ -224,38 +227,38 @@ for epoch in range(num_epochs):
 
             _, indices = torch.max(outputs, axis=1)
             for ind, label in zip(indices, labels.cpu()):
-                if ind == label:
-                    tp[label] += 1
-                else:
-                    fn[label] += 1
-                    fp[ind] += 1
-                for j in range(dataset.num_classes):
-                    if j not in [ind, label]:
-                        tn[j] += 1
+                confusion_matrix[ind][label] += 1
 
-        val_acc = [float(acc) / data_labels[1][i] if data_labels[1][i] > 0 else 0.0 for i, acc in enumerate(tp)]
-        val_sens = [float(a) / (a + b) if (a + b) > 0 else 0.0 for a, b in zip(tp, fn)]
-        val_spec = [float(a) / (a + b) if (a + b) > 0 else 0.0 for a, b in zip(fp, tn)]
+        val_sens, val_spec = [], []
+        for cl in range(num_classes):
+            tp = confusion_matrix[cl][cl]
+            fn = sum([confusion_matrix[row][cl] for row in range(num_classes) if row != cl])
+            tn = sum([confusion_matrix[row][col] for row, col in product(range(num_classes), range(num_classes))
+                      if row != cl and col != cl])
+            fp = sum([confusion_matrix[cl][col] for col in range(num_classes) if col != cl])
+            val_sens += [float(tp) / (tp + fn) if (tp + fn) > 0 else 0.0]
+            val_spec += [float(tn) / (tn + fp) if (tn + fp) > 0 else 0.0]
 
     # Save the model if the test acc is greater than our current best
-    if mean(val_acc) > best_acc:
+    if mean(val_sens) > best_acc:
         torch.save(model.state_dict(), os.path.join(output, "{}_{}.model".format(namespace, epoch+1)))
-        best_acc = mean(val_acc)
+        best_acc = mean(val_sens)
 
     # Print the metrics
-    logging.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}\n"
-                 "-- Training ({} seqs) --".format(epoch+1, (time() - t0)/60, train_loss,
-                                                   '', 'SENSITIVITY',
-                                                   'SPECIFICITY', train_len))
-    for cl, acc, seqs, sens, spec in zip(dataset.classes, train_acc, data_labels[0], train_sens, train_spec):
+    logging.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}"
+                 .format(epoch+1, (time() - t0)/60, train_loss, '', 'SENSITIVITY', 'SPECIFICITY'))
+    logging.info("--{:>18s} :{:>5} seqs{:>15}".format('TRAINING', train_len, "--"))
+    for cl, seqs, sens, spec in zip(dataset.classes,data_labels[0], train_sens, train_spec):
         logging.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
-    logging.info("-- Validation ({} seqs) --".format(val_len))
-    for cl, acc, seqs, sens, spec in zip(dataset.classes, val_acc, data_labels[1], val_sens, val_spec):
+    logging.info("--{:>18s} :{:>5} seqs{:>15}".format('VALIDATION', val_len, "--"))
+    for cl, seqs, sens, spec in zip(dataset.classes, data_labels[1], val_sens, val_spec):
         logging.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
-    logging.info("-- Means for training   - {:1.3f}, {:1.3f}\n-- Means for validation - {:1.3f}, {:1.3f}\n".
-                 format(*list(map(mean, [train_sens, train_spec, val_sens, val_spec]))))
+    logging.info(
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec])), "--"))
+    logging.info(
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".format('VALIDATION MEANS', *list(map(mean, [val_sens, val_spec])), "--"))
 
-    if mean(val_acc) >= acc_threshold:
+    if mean(val_sens) >= acc_threshold:
         logging.info('Validation accuracy threshold reached!')
         break
 
