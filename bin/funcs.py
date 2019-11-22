@@ -1,3 +1,7 @@
+from statistics import mean
+from itertools import product
+
+
 def make_chrstr(chrlist):
 
     cl = chrlist.copy()
@@ -38,3 +42,28 @@ def read_chrstr(chrstr):
     chrlist.sort()
 
     return chrlist
+
+
+def calculate_metrics(confusion_matrix, losses):
+    num_classes = confusion_matrix.shape[0]
+    sens, spec = [], []
+    for cl in range(num_classes):
+        tp = confusion_matrix[cl][cl]
+        fn = sum([confusion_matrix[row][cl] for row in range(num_classes) if row != cl])
+        tn = sum([confusion_matrix[row][col] for row, col in product(range(num_classes), repeat=2)
+                  if row != cl and col != cl])
+        fp = sum([confusion_matrix[cl][col] for col in range(num_classes) if col != cl])
+        sens += [float(tp) / (tp + fn) if (tp + fn) > 0 else 0.0]
+        spec += [float(tn) / (tn + fp) if (tn + fp) > 0 else 0.0]
+    loss = [mean(el) if el else None for el in losses]
+    return loss, sens, spec
+
+
+def write_params(params, glob, file):
+    with open(file, 'w') as f:
+        for name, value in params.items():
+            v = glob[value]
+            if isinstance(v, list):
+                f.write('{}: {}\n'.format(name, '; '.join(list(map(str, v)))))
+            else:
+                f.write('{}: {}\n'.format(name, v))

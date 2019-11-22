@@ -55,6 +55,7 @@ class SeqsDataset(Dataset):
         self.filetype = filetype
         self.classes = ['promoter active', 'nonpromoter active', 'promoter inactive', 'nonpromoter inactive']
         self.num_classes = len(self.classes)
+        self.num_seqs = len(self.IDs)
         self.encoder = OHEncoder()
 
     def __len__(self):

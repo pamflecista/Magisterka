@@ -14,7 +14,7 @@ import logging
 from time import time
 import shutil
 import numpy as np
-from itertools import product
+
 
 NET_TYPES = {
     'Basset': BassetNetwork
@@ -23,6 +23,31 @@ NET_TYPES = {
 OPTIMIZERS = {
     'RMSprop': optim.RMSprop,
     'Adam': optim.Adam
+}
+
+LOSS_FUNCTIONS = {
+    'CrossEntropyLoss': nn.CrossEntropyLoss,
+    'MSELoss': nn.MSELoss
+}
+
+PARAMS = {
+    'Name of the analysis': 'namespace',
+    'Network type': 'network_name',
+    'Possible classes': 'classes',
+    'Number of epochs': 'num_epochs',
+    'Number of seqs': 'num_seqs',
+    'Batch size': 'batch_size',
+    'Training chr': 'train_chr',
+    'Validation chr': 'val_chr',
+    'Test chr': 'test_chr',
+    'Data directory': 'data_dir',
+    'Random seed': 'seed',
+    'CUDA available': 'use_cuda',
+    'Optimizer': 'optimizer_name',
+    'Loss function': 'lossfn_name',
+    'Learning rate': 'lr',
+    'Adjusting lr': 'adjust_lr',
+    'Weight decay': 'weight_decay'
 }
 
 
@@ -67,8 +92,12 @@ parser.add_argument('--namespace', action='store', metavar='NAME', type=str, def
                     help='Namespace of the analysis, default: [NETWORK]')
 parser.add_argument('--run', action='store', metavar='NUMBER', type=str, default='0',
                     help='Number of the analysis, by default NAMESPACE is set to [NETWORK][RUN]')
+parser.add_argument('--seed', action='store', metavar='NUMBER', type=int, default='0',
+                    help='Set random seed, default: 0')
 parser.add_argument('--optimizer', action='store', metavar='NAME', type=str, default='RMSprop',
                     help='Optimization algorithm to use for training the network, default = RMSprop')
+parser.add_argument('--loss_fn', action='store', metavar='NAME', type=str, default='CrossEntropyLoss',
+                    help='Loss function for training the network, default = CrossEntropyLoss')
 parser.add_argument('-b', '--batch_size', action='store', metavar='INT', type=int, default=64,
                     help='Size of the batch, default: 64')
 parser.add_argument('--num_workers', action='store', metavar='INT', type=int, default=4,
@@ -84,8 +113,22 @@ args = parser.parse_args()
 batch_size, num_workers, num_epochs, acc_threshold = args.batch_size, args.num_workers, args.num_epochs, \
                                                      args.acc_threshold
 
-network = NET_TYPES[args.network]
-optim_method = OPTIMIZERS[args.optimizer]
+network_name = args.network
+optimizer_name = args.optimizer
+lossfn_name = args.loss_fn
+network = NET_TYPES[network_name]
+optim_method = OPTIMIZERS[optimizer_name]
+lossfn = LOSS_FUNCTIONS[lossfn_name]
+lr = 0.01
+weight_decay = 0.0001
+# set the random seed
+seed = args.seed
+torch.manual_seed(seed)
+np.random.seed(seed)
+if args.no_adjust_lr:
+    adjust_lr = False
+else:
+    adjust_lr = True
 if args.namespace is None:
     namespace = args.network + args.run
 else:
@@ -109,47 +152,45 @@ else:
         shutil.rmtree(output)
     os.mkdir(output)
 
+# Define files for logs and for results
 formatter = logging.Formatter('%(message)s')
-
 logger = logging.getLogger('verbose')
-cmd_handler, log_handler = logging.StreamHandler(), logging.FileHandler(os.path.join(output, '{}.log'.format(namespace)))
-cmd_handler.setFormatter(formatter)
-log_handler.setFormatter(formatter)
-cmd_handler.setLevel(logging.INFO)
-log_handler.setLevel(logging.INFO)
-logger.addHandler(cmd_handler)
-logger.addHandler(log_handler)
-
 results_table = logging.getLogger('results')
+cmd_handler = logging.StreamHandler()
+log_handler = logging.FileHandler(os.path.join(output, '{}.log'.format(namespace)))
 results_handler = logging.FileHandler(os.path.join(output, '{}_results.tsv'.format(namespace)))
-results_handler.setFormatter(formatter)
-results_handler.setLevel(logging.INFO)
-results_table.addHandler(results_handler)
+for logg, handlers in zip([logger, results_table], [[cmd_handler, log_handler], [results_handler]]):
+    for handler in handlers:
+        handler.setFormatter(formatter)
+        logg.addHandler(handler)
+    logg.setLevel(logging.INFO)
 
-logging.info('Analysis {} begins!\nInput data: {}\nOutput directory: {}\n'.format(namespace, '; '.join(data_dir), output))
+logger.info('Analysis {} begins!\nInput data: {}\nOutput directory: {}\n'.format(namespace, '; '.join(data_dir), output))
+results_table.info('Epoch\tStage\tLosses\tSensitivites\tSpecificities')
 
 t0 = time()
 train_chr = read_chrstr(args.train)
 val_chr = read_chrstr(args.val)
 test_chr = read_chrstr(args.test)
 if set(train_chr) & set(val_chr):
-    logging.warning('WARNING - Chromosomes for training and validation overlap!')
+    logger.warning('WARNING - Chromosomes for training and validation overlap!')
 elif set(train_chr) & set(test_chr):
-    logging.warning('WARNING - Chromosomes for training and testing overlap!')
+    logger.warning('WARNING - Chromosomes for training and testing overlap!')
 elif set(val_chr) & set(test_chr):
-    logging.warning('WARNING - Chromosomes for validation and testing overlap!')
+    logger.warning('WARNING - Chromosomes for validation and testing overlap!')
 
 # CUDA for PyTorch
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
 if use_cuda:
-    logging.info('--- CUDA available ---')
+    logger.info('--- CUDA available ---')
 else:
-    logging.info('--- CUDA not available ---')
+    logger.info('--- CUDA not available ---')
 
 dataset = SeqsDataset(data_dir)
-
 num_classes = dataset.num_classes
+num_seqs = dataset.num_seqs
+classes = dataset.classes
 
 # Creating data indices for training, validation and test splits:
 indices, data_labels, seq_len = dataset.get_chrs([train_chr, val_chr, test_chr])
@@ -157,9 +198,9 @@ train_indices, val_indices, test_indices = indices
 train_len, val_len = len(train_indices), len(val_indices)
 for i, (n, ch, ind) in enumerate(zip(['train', 'valid', 'test'], [args.train, args.val, args.test],
                                      [train_indices, val_indices, test_indices])):
-    logging.info('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, ch, len(indices[i])))
+    logger.info('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, ch, len(indices[i])))
     for j, cl in enumerate(dataset.classes):
-        logging.info('{} - {}\n'.format(data_labels[i][j], cl))
+        logger.info('{} - {}'.format(data_labels[i][j], cl))
     # Writing IDs for each split into file
     with open(os.path.join(output, '{}_{}.txt'.format(namespace, n)), 'w') as f:
         f.write('\n'.join([dataset.IDs[j] for j in ind]))
@@ -170,21 +211,24 @@ valid_sampler = SubsetRandomSampler(val_indices)
 train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
 val_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=valid_sampler)
 
-logging.info('\nTraining, validation and testing datasets built in {:.2f} s'.format(time() - t0))
+logger.info('\nTraining, validation and testing datasets built in {:.2f} s'.format(time() - t0))
 
 num_batches = math.ceil(train_len / batch_size)
 
 model = network(seq_len)
-optimizer = optim_method(model.parameters(), lr=0.01, weight_decay=0.0001)
-loss_fn = nn.CrossEntropyLoss()
+optimizer = optim_method(model.parameters(), lr=lr, weight_decay=weight_decay)
+loss_fn = lossfn()
 best_acc = 0.0
-logging.info('\n--- TRAINING ---')
+# write parameters values into file
+write_params(PARAMS, globals(), os.path.join(output, '{}_params.txt'.format(namespace)))
+logger.info('\n--- TRAINING ---')
 t = time()
 for epoch in range(num_epochs):
     t0 = time()
     model.train()
     confusion_matrix = np.zeros((num_classes, num_classes))
-    train_loss = 0.0
+    train_loss_neurons = [[] for _ in range(num_classes)]
+    train_loss_reduced = 0.0
     for i, (seqs, labels) in enumerate(train_loader):
         if use_cuda:
             seqs = seqs.cuda()
@@ -200,34 +244,40 @@ for epoch in range(num_epochs):
 
         optimizer.step()
 
-        train_loss += loss.cpu().data
+        for o, l in zip(outputs, labels):
+            train_loss_neurons[l].append(-math.log((math.exp(o[l]))/(sum([math.exp(el) for el in o]))))
+        train_loss_reduced += loss.cpu().data
+
         _, indices = torch.max(outputs, axis=1)
         for ind, label in zip(indices, labels.cpu()):
             confusion_matrix[ind][label] += 1
 
         if i % 10 == 0:
-            logging.info('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
+            logger.info('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
 
     # Call the learning rate adjustment function
     if not args.no_adjust_lr:
         adjust_learning_rate(epoch, optimizer)
 
-    train_sens, train_spec = [], []
-    for cl in range(num_classes):
-        tp = confusion_matrix[cl][cl]
-        fn = sum([confusion_matrix[row][cl] for row in range(num_classes) if row != cl])
-        tn = sum([confusion_matrix[row][col] for row, col in product(range(num_classes), repeat=2)
-                  if row != cl and col != cl])
-        fp = sum([confusion_matrix[cl][col] for col in range(num_classes) if col != cl])
-        train_sens += [float(tp) / (tp + fn) if (tp + fn) > 0 else 0.0]
-        train_spec += [float(tn) / (tn + fp) if (tn + fp) > 0 else 0.0]
-    train_loss = train_loss / num_batches
+    # Calculate metrics
+    train_losses, train_sens, train_spec = calculate_metrics(confusion_matrix, train_loss_neurons)
+    train_loss_reduced = train_loss_reduced / num_batches
+    assert math.floor(mean([el for el in train_losses if el])*10/10) == math.floor(float(train_loss_reduced)*10/10)
+
+    # Write results to the table
+    results_table.info('{}\t{}\t{}\t{}\t{}'.format(
+        epoch + 1,
+        'train',
+        ', '.join(['{:.2f}'.format(el) if el else '-' for el in train_losses]),
+        ', '.join(['{:.2f}'.format(el) for el in train_sens]),
+        ', '.join(['{:.2f}'.format(el) for el in train_spec])
+    ))
 
     with torch.set_grad_enabled(False):
         model.eval()
         confusion_matrix = np.zeros((num_classes, num_classes))
+        val_loss_neurons = [[] for _ in range(num_classes)]
         for i, (seqs, labels) in enumerate(val_loader):
-
             if use_cuda:
                 seqs = seqs.cuda()
                 labels = labels.cuda()
@@ -236,19 +286,24 @@ for epoch in range(num_epochs):
 
             outputs = model(seqs)
 
+            for o, l in zip(outputs, labels):
+                val_loss_neurons[l].append(-math.log((math.exp(o[l])) / (sum([math.exp(el) for el in o]))))
+
             _, indices = torch.max(outputs, axis=1)
             for ind, label in zip(indices, labels.cpu()):
                 confusion_matrix[ind][label] += 1
 
-        val_sens, val_spec = [], []
-        for cl in range(num_classes):
-            tp = confusion_matrix[cl][cl]
-            fn = sum([confusion_matrix[row][cl] for row in range(num_classes) if row != cl])
-            tn = sum([confusion_matrix[row][col] for row, col in product(range(num_classes), repeat=2)
-                      if row != cl and col != cl])
-            fp = sum([confusion_matrix[cl][col] for col in range(num_classes) if col != cl])
-            val_sens += [float(tp) / (tp + fn) if (tp + fn) > 0 else 0.0]
-            val_spec += [float(tn) / (tn + fp) if (tn + fp) > 0 else 0.0]
+    # Calculate metrics
+    val_losses, val_sens, val_spec = calculate_metrics(confusion_matrix, val_loss_neurons)
+
+    # Write results to the table
+    results_table.info('{}\t{}\t{}\t{}\t{}'.format(
+        epoch + 1,
+        'valid',
+        ', '.join(['{:.2f}'.format(el) if el else '-' for el in val_losses]),
+        ', '.join(['{:.2f}'.format(el) for el in val_sens]),
+        ', '.join(['{:.2f}'.format(el) for el in val_spec])
+    ))
 
     # Save the model if the test acc is greater than our current best
     if mean(val_sens) > best_acc:
@@ -256,21 +311,21 @@ for epoch in range(num_epochs):
         best_acc = mean(val_sens)
 
     # Print the metrics
-    logging.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}"
-                 .format(epoch+1, (time() - t0)/60, train_loss, '', 'SENSITIVITY', 'SPECIFICITY'))
-    logging.info("--{:>18s} :{:>5} seqs{:>15}".format('TRAINING', train_len, "--"))
+    logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}"
+                 .format(epoch+1, (time() - t0)/60, train_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY'))
+    logger.info("--{:>18s} :{:>5} seqs{:>15}".format('TRAINING', train_len, "--"))
     for cl, seqs, sens, spec in zip(dataset.classes,data_labels[0], train_sens, train_spec):
-        logging.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
-    logging.info("--{:>18s} :{:>5} seqs{:>15}".format('VALIDATION', val_len, "--"))
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
+    logger.info("--{:>18s} :{:>5} seqs{:>15}".format('VALIDATION', val_len, "--"))
     for cl, seqs, sens, spec in zip(dataset.classes, data_labels[1], val_sens, val_spec):
-        logging.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
-    logging.info(
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
+    logger.info(
         "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec])), "--"))
-    logging.info(
+    logger.info(
         "--{:>18s} : {:1.3f}, {:1.3f}{:>12}\n\n".format('VALIDATION MEANS', *list(map(mean, [val_sens, val_spec])), "--"))
 
     if mean(val_sens) >= acc_threshold:
-        logging.info('Validation accuracy threshold reached!')
+        logger.info('Validation accuracy threshold reached!')
         break
 
-logging.info('Training for {} finished in {:.2f} min'.format(namespace, (time() - t)/60))
+logger.info('Training for {} finished in {:.2f} min'.format(namespace, (time() - t)/60))
