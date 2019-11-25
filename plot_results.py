@@ -23,6 +23,8 @@ parser.add_argument('-c', '--column', action='store', metavar='NUM', nargs='+', 
                     help='Column(s) to plot, default: 3')
 parser.add_argument('--train', action='store_true',
                     help='Use values from training, default values from validation are used')
+parser.add_argument('--not_valid', action='store_true',
+                    help='Do not print values from validation')
 parser.add_argument('--seed', action='store', metavar='NUMBER', type=int, default='0',
                     help='Set random seed, default: 0')
 args = parser.parse_args()
@@ -53,8 +55,9 @@ columns = [el - 1 for el in args.column]
 
 train = False
 valid = True
-if args.train and not args.valid:
+if args.train:
     train = True
+if args.not_valid:
     valid = False
 
 stages = [el for el in STAGES.keys() if globals()[el]]
@@ -84,7 +87,7 @@ def plot_one(ax, x, y, line):
 
 fig, axes = plt.subplots(nrows=len(columns), ncols=len(stages), figsize=(12, 8), squeeze=False)
 for i, (stage, value) in enumerate(zip(stages, values)):
-    axes[i, 0].set_title(STAGES[stage])
+    axes[0, i].set_title(STAGES[stage])
     for j, c in enumerate(columns):
         a = axes[j][i]
         a.set_ylabel(header[c])
