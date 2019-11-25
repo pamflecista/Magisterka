@@ -322,9 +322,9 @@ for epoch in range(num_epochs):
     train_means = list(map(mean, [train_sens, train_spec]))
     valid_means = list(map(mean, [val_sens, val_spec]))
     logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".format('TRAINING MEANS', *train_means, "--"))
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".format('TRAINING MEANS', train_means[0], train_means[1], "--"))
     logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}\n\n".format('VALIDATION MEANS', *valid_means, "--"))
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}\n\n".format('VALIDATION MEANS', valid_means[0], valid_means[1], "--"))
 
     if mean(val_sens) >= acc_threshold:
         logger.info('Validation accuracy threshold reached!')
