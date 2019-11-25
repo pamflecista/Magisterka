@@ -319,10 +319,12 @@ for epoch in range(num_epochs):
     logger.info("--{:>18s} :{:>5} seqs{:>15}".format('VALIDATION', val_len, "--"))
     for cl, seqs, sens, spec in zip(dataset.classes, data_labels[1], val_sens, val_spec):
         logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
+    train_means = list(map(mean, [train_sens, train_spec]))
+    valid_means = list(map(mean, [val_sens, val_spec]))
     logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".format('TRAINING MEANS', *[mean for mean in map(mean, [train_sens, train_spec])], "--"))
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".format('TRAINING MEANS', *train_means, "--"))
     logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}\n\n".format('VALIDATION MEANS', *[mean for mean in map(mean, [val_sens, val_spec])], "--"))
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}\n\n".format('VALIDATION MEANS', *valid_means, "--"))
 
     if mean(val_sens) >= acc_threshold:
         logger.info('Validation accuracy threshold reached!')
