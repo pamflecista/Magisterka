@@ -95,4 +95,7 @@ for i, (stage, value) in enumerate(zip(stages, values)):
         for n in range(neurons):
             x = [el[n] for el in value[j]]
             plot_one(a, epochs, x, '.--')
+
 plt.show()
+plotname = '-'.join([s[:5].lower() for s in stages]) + ':' + '-'.join([header[el][:4].lower() for el in columns])
+fig.savefig(os.path.join(path, namespace + '_{}.png'.format(plotname)))
