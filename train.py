@@ -87,7 +87,7 @@ parser.add_argument('-test', action='store', metavar='CHR', type=str, default='1
 parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str, default=None,
                     help='Output directory, default: [PATH]/results/[NAMESPACE]')
 parser.add_argument('-p', '--path', action='store', metavar='DIR', type=str, default=None,
-                    help='Working directory, default: ./')
+                    help='Working directory.')
 parser.add_argument('--namespace', action='store', metavar='NAME', type=str, default=None,
                     help='Namespace of the analysis, default: [NETWORK]')
 parser.add_argument('--run', action='store', metavar='NUMBER', type=str, default='0',
@@ -314,15 +314,15 @@ for epoch in range(num_epochs):
     logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}"
                  .format(epoch+1, (time() - t0)/60, train_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY'))
     logger.info("--{:>18s} :{:>5} seqs{:>15}".format('TRAINING', train_len, "--"))
-    for cl, seqs, sens, spec in zip(dataset.classes,data_labels[0], train_sens, train_spec):
+    for cl, seqs, sens, spec in zip(dataset.classes, data_labels[0], train_sens, train_spec):
         logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
     logger.info("--{:>18s} :{:>5} seqs{:>15}".format('VALIDATION', val_len, "--"))
     for cl, seqs, sens, spec in zip(dataset.classes, data_labels[1], val_sens, val_spec):
         logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
     logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec])), "--"))
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".format('TRAINING MEANS', *[mean for mean in map(mean, [train_sens, train_spec])], "--"))
     logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}\n\n".format('VALIDATION MEANS', *list(map(mean, [val_sens, val_spec])), "--"))
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}\n\n".format('VALIDATION MEANS', *[mean for mean in map(mean, [val_sens, val_spec])], "--"))
 
     if mean(val_sens) >= acc_threshold:
         logger.info('Validation accuracy threshold reached!')
