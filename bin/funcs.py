@@ -67,3 +67,12 @@ def write_params(params, glob, file):
                 f.write('{}: {}\n'.format(name, '; '.join(list(map(str, v)))))
             else:
                 f.write('{}: {}\n'.format(name, v))
+
+
+def read_classes(file):
+    with open(file, 'r') as f:
+        for line in f:
+            if line.startswith('Possible classes'):
+                neurons = line.split(':')[1].strip().split('; ')
+                break
+    return neurons

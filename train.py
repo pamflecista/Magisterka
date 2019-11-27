@@ -166,7 +166,7 @@ for logg, handlers in zip([logger, results_table], [[cmd_handler, log_handler], 
     logg.setLevel(logging.INFO)
 
 logger.info('Analysis {} begins!\nInput data: {}\nOutput directory: {}\n'.format(namespace, '; '.join(data_dir), output))
-results_table.info('Epoch\tStage\tLosses\tSensitivites\tSpecificities')
+results_table.info('Epoch\tStage\tLoss\tSensitivity\tSpecificity')
 
 t0 = time()
 train_chr = read_chrstr(args.train)
@@ -277,6 +277,8 @@ for epoch in range(num_epochs):
         model.eval()
         confusion_matrix = np.zeros((num_classes, num_classes))
         val_loss_neurons = [[] for _ in range(num_classes)]
+        if epoch == num_epochs - 1:
+            output_values = [[] for _ in range(num_classes)]
         for i, (seqs, labels) in enumerate(val_loader):
             if use_cuda:
                 seqs = seqs.cuda()
@@ -290,8 +292,17 @@ for epoch in range(num_epochs):
                 val_loss_neurons[l].append(-math.log((math.exp(o[l])) / (sum([math.exp(el) for el in o]))))
 
             _, indices = torch.max(outputs, axis=1)
-            for ind, label in zip(indices, labels.cpu()):
+            for ind, label, outp in zip(indices, labels.cpu(), outputs):
                 confusion_matrix[ind][label] += 1
+                if epoch == num_epochs - 1:
+                    output_values[ind].append(outp)
+
+    # If it is a last epoch write neurons' outputs
+    if epoch == num_epochs - 1:
+        logger.info('Last epoch - writing neurons outputs for each class!')
+        for i, n in enumerate(classes):
+            m = np.array([[el[j] for el in output_values[i]] for j in range(num_classes)])
+            np.save(os.path.join(output, '{}_outputs_{}'.format(namespace, n.replace(' ', '-'))), m)
 
     # Calculate metrics
     val_losses, val_sens, val_spec = calculate_metrics(confusion_matrix, val_loss_neurons)
