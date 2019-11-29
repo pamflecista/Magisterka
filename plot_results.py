@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from statistics import mean
 import math
+from bin.funcs import basic_params, parse_arguments
 
 STAGES = {
     'train': 'Training',
@@ -20,52 +21,33 @@ parser = argparse.ArgumentParser(description='Plot results based on given table'
 parser.add_argument('-t', '--table', action='store', metavar='NAME', type=str, default=None,
                     help='Results table with data to plot, if PATH is given, file is supposed to be '
                          'in PATH directory: [PATH]/[NAME], default: [PATH]/[NAMESPACE]_results.tsv')
-parser.add_argument('--param', action='store', metavar='NAME', type=str, default=None,
-                    help='File with parameters of the network, from which results should be plotted, '
-                         'if PATH is given, file is supposed to be in PATH directory: [PATH]/[NAME], '
-                         'default: [PATH]/[NAMESPACE]_params.txt')
-parser.add_argument('--namespace', action='store', metavar='NAME', type=str, default=None,
-                    help='Namespace of the analysis, default: established based on [TABLE]')
-parser.add_argument('-p', '--path', action='store', metavar='DIR', type=str, default=None,
-                    help='Working directory.')
-parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str, default=None,
-                    help='Output directory, default: [PATH]/results/[NAMESPACE]')
+parser = basic_params(parser, plotting=True)
 parser.add_argument('-c', '--column', action='store', metavar='COL', nargs='+', type=str, default=['loss'],
                     help='Number of name of column(s) to plot, default: loss')
 parser.add_argument('--train', action='store_true',
                     help='Use values from training, default values from validation are used')
 parser.add_argument('--not_valid', action='store_true',
                     help='Do not print values from validation')
-parser.add_argument('--seed', action='store', metavar='NUMBER', type=int, default='0',
-                    help='Set random seed, default: 0')
 args = parser.parse_args()
 
-if args.namespace is not None:
-    namespace = args.namespace
-elif args.table is not None:
-    namespace = args.table.split('/')[-1].strip('_results.tsv')
-else:
-    namespace = args.path.split('/')[-1]
 
-if args.path is not None:
-    path = args.path
-    if args.table is not None:
+path, output, namespace, seed = parse_arguments(args, args.table)
+
+if args.table is not None:
+    if args.path is not None:
         table = os.path.join(args.path, args.table)
     else:
-        table = os.path.join(args.path, namespace + '_results.tsv')
-    if args.param is not None:
-        param = os.path.join(args.path, args.param)
-    else:
-        param = os.path.join(args.path, namespace + '_params.txt')
+        table = args.table
 else:
-    table = args.table
-    param = args.param
-    path = '/'.join(table.split('/'))[:-1]
+    table = os.path.join(path, namespace + '_results.tsv')
 
-if args.output is not None:
-    output = args.output
+if args.param is not None:
+    if args.path is not None:
+        param = os.path.join(path, args.param)
+    else:
+        param = args.param
 else:
-    output = path
+    param = os.path.join(path, namespace + '_params.txt')
 
 columns = args.column
 
@@ -81,7 +63,7 @@ values = [[[] for _ in columns] for el in stages]
 
 epoch = 1
 epochs = [epoch]
-with open(os.path.join(path, table), 'r') as f:
+with open(table, 'r') as f:
     header = f.readline().strip().split('\t')
     colnum = []
     for c in columns:
@@ -133,4 +115,4 @@ for i, (stage, value) in enumerate(zip(stages, values)):
 plt.legend()
 plt.show()
 plotname = '-'.join([s[:5].lower() for s in stages]) + ':' + '-'.join([header[el][:4].lower() for el in colnum])
-fig.savefig(os.path.join(path, namespace + '_{}.png'.format(plotname)))
+fig.savefig(os.path.join(output, namespace + '_{}.png'.format(plotname)))

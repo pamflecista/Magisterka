@@ -1,5 +1,7 @@
 from statistics import mean
 from itertools import product
+import os
+import shutil
 
 
 def make_chrstr(chrlist):
@@ -76,3 +78,40 @@ def read_classes(file):
                 neurons = line.split(':')[1].strip().split('; ')
                 break
     return neurons
+
+
+def basic_params(parser, plotting=False):
+    parser.add_argument('-p', '--path', action='store', metavar='DIR', type=str, default=None,
+                        help='Working directory.')
+    parser.add_argument('--namespace', action='store', metavar='NAME', type=str, default=None,
+                        help='Namespace of the analysis, default: established based on input file')
+    parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str, default=None,
+                        help='Output directory, default: [PATH]/results/[NAMESPACE]')
+    parser.add_argument('--seed', action='store', metavar='NUMBER', type=int, default='0',
+                        help='Set random seed, default: 0')
+    if plotting:
+        parser.add_argument('--param', action='store', metavar='NAME', type=str, default=None,
+                            help='File with parameters of the network, from which results should be plotted, ' +
+                                 'if PATH is given, file is supposed to be in PATH directory: [PATH]/[NAME], ' +
+                                 'default: [PATH]/[NAMESPACE]_params.txt')
+    return parser
+
+
+def parse_arguments(args, file, namesp=None):
+    if args.path is not None:
+        path = args.path
+    else:
+        path = '/' + '/'.join(file.strip('/').split('/')[:-1])
+    if args.namespace is not None:
+        namespace = args.namespace
+    elif namesp is not None:
+        namespace = namesp
+    elif file is not None:
+        namespace = file.strip('/').split('/')[-1].split('_')[0]
+    else:
+        namespace = path.strip('/').split('/')[-1]
+    if args.output is not None:
+        output = args.output
+    else:
+        output = os.path.join(path, 'results', namespace)
+    return path, output, namespace, args.seed

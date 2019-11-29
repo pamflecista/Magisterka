@@ -12,7 +12,6 @@ import os
 from statistics import mean
 import logging
 from time import time
-import shutil
 import numpy as np
 
 
@@ -71,39 +70,32 @@ def adjust_learning_rate(epoch, optimizer):
 
 parser = argparse.ArgumentParser(description='Train network based on given data')
 parser.add_argument('data', action='store', metavar='DIR', type=str, nargs='+',
-                    help='Folder with the data for training and validation, if PATH is given, data is supposed to be '
+                    help='Folder with the data for training and validation, if PATH is given, data is supposed to be ' +
                          'in PATH directory: [PATH]/[DATA]')
 parser.add_argument('-n', '--network', action='store', metavar='NAME', type=str, default='Basset',
                     help='Type of the network to train, default: Basset Network')
-parser.add_argument('-train', action='store', metavar='CHR', type=str, default='1-13',
-                    help='Chromosome(s) for training, if negative it means the number of chromosomes '
-                         'which should be randomly chosen. Default: 1-13')
-parser.add_argument('-val', action='store', metavar='CHR', type=str, default='14-18',
-                    help='Chromosome(s) for validation, if negative it means the number of chromosomes '
-                         'which should be randomly chosen. Default: 14-18')
-parser.add_argument('-test', action='store', metavar='CHR', type=str, default='19-22',
-                    help='Chromosome(s) for testing, if negative it means the number of chromosomes '
-                         'which should be randomly chosen. Default: 19-22')
-parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str, default=None,
-                    help='Output directory, default: [PATH]/results/[NAMESPACE]')
-parser.add_argument('-p', '--path', action='store', metavar='DIR', type=str, default=None,
-                    help='Working directory.')
-parser.add_argument('--namespace', action='store', metavar='NAME', type=str, default=None,
-                    help='Namespace of the analysis, default: [NETWORK]')
+parser = basic_params(parser)
 parser.add_argument('--run', action='store', metavar='NUMBER', type=str, default='0',
                     help='Number of the analysis, by default NAMESPACE is set to [NETWORK][RUN]')
-parser.add_argument('--seed', action='store', metavar='NUMBER', type=int, default='0',
-                    help='Set random seed, default: 0')
+parser.add_argument('--train', action='store', metavar='CHR', type=str, default='1-13',
+                    help='Chromosome(s) for training, if negative it means the number of chromosomes ' +
+                         'which should be randomly chosen. Default: 1-13')
+parser.add_argument('--val', action='store', metavar='CHR', type=str, default='14-18',
+                    help='Chromosome(s) for validation, if negative it means the number of chromosomes ' +
+                         'which should be randomly chosen. Default: 14-18')
+parser.add_argument('--test', action='store', metavar='CHR', type=str, default='19-22',
+                    help='Chromosome(s) for testing, if negative it means the number of chromosomes ' +
+                         'which should be randomly chosen. Default: 19-22')
 parser.add_argument('--optimizer', action='store', metavar='NAME', type=str, default='RMSprop',
                     help='Optimization algorithm to use for training the network, default = RMSprop')
 parser.add_argument('--loss_fn', action='store', metavar='NAME', type=str, default='CrossEntropyLoss',
                     help='Loss function for training the network, default = CrossEntropyLoss')
-parser.add_argument('-b', '--batch_size', action='store', metavar='INT', type=int, default=64,
+parser.add_argument('--batch_size', action='store', metavar='INT', type=int, default=64,
                     help='Size of the batch, default: 64')
 parser.add_argument('--num_workers', action='store', metavar='INT', type=int, default=4,
                     help='How many subprocesses to use for data loading, default: 4')
-parser.add_argument('--num_epochs', action='store', metavar='INT', type=int, default=500,
-                    help='Maximum number of epochs to run, default: 500')
+parser.add_argument('--num_epochs', action='store', metavar='INT', type=int, default=300,
+                    help='Maximum number of epochs to run, default: 300')
 parser.add_argument('--acc_threshold', action='store', metavar='FLOAT', type=float, default=0.9,
                     help='Threshold of the validation accuracy - if gained training process stops, default: 0.9')
 parser.add_argument('--no_adjust_lr', action='store_true',
@@ -113,6 +105,26 @@ args = parser.parse_args()
 batch_size, num_workers, num_epochs, acc_threshold = args.batch_size, args.num_workers, args.num_epochs, \
                                                      args.acc_threshold
 
+path, output, namespace, seed = parse_arguments(args, args.data[0], namesp=args.network + args.run)
+# create folder for the output files
+if os.path.isdir(output):
+    shutil.rmtree(output)
+try:
+    os.mkdir(output)
+except FileNotFoundError:
+    os.mkdir(os.path.join(path, 'results'))
+    os.mkdir(output)
+# establish data directories
+if args.path is not None:
+    data_dir = [os.path.join(path, d) for d in args.data]
+else:
+    data_dir = args.data
+    if os.path.isdir(data_dir[0]):
+        path = data_dir[0]
+# set the random seed
+torch.manual_seed(seed)
+np.random.seed(seed)
+# set other params
 network_name = args.network
 optimizer_name = args.optimizer
 lossfn_name = args.loss_fn
@@ -121,36 +133,10 @@ optim_method = OPTIMIZERS[optimizer_name]
 lossfn = LOSS_FUNCTIONS[lossfn_name]
 lr = 0.01
 weight_decay = 0.0001
-# set the random seed
-seed = args.seed
-torch.manual_seed(seed)
-np.random.seed(seed)
 if args.no_adjust_lr:
     adjust_lr = False
 else:
     adjust_lr = True
-if args.namespace is None:
-    namespace = args.network + args.run
-else:
-    namespace = args.namespace
-
-if args.path is not None:
-    path = args.path
-    data_dir = [os.path.join(path, d) for d in args.data]
-else:
-    data_dir = args.data
-    if os.path.isdir(data_dir[0]):
-        path = data_dir[0]
-    else:
-        path = '/' + '/'.join(data_dir[0].split('/')[:-1])
-
-if args.output is not None:
-    output = args.output
-else:
-    output = os.path.join(path, 'results', namespace)
-    if os.path.isdir(output):
-        shutil.rmtree(output)
-    os.mkdir(output)
 
 # Define files for logs and for results
 formatter = logging.Formatter('%(message)s')
