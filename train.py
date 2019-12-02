@@ -151,7 +151,7 @@ for logg, handlers in zip([logger, results_table], [[cmd_handler, log_handler], 
         logg.addHandler(handler)
     logg.setLevel(logging.INFO)
 
-logger.info('Analysis {} begins!\nInput data: {}\nOutput directory: {}\n'.format(namespace, '; '.join(data_dir), output))
+logger.info('\nAnalysis {} begins!\nInput data: {}\nOutput directory: {}\n'.format(namespace, '; '.join(data_dir), output))
 results_table.info('Epoch\tStage\tLoss\tSensitivity\tSpecificity')
 
 t0 = time()
