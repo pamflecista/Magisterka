@@ -105,7 +105,7 @@ args = parser.parse_args()
 batch_size, num_workers, num_epochs, acc_threshold = args.batch_size, args.num_workers, args.num_epochs, \
                                                      args.acc_threshold
 
-path, output, namespace, seed = parse_arguments(args, args.data[0], namesp=args.network + args.run)
+path, output, namespace, seed = parse_arguments(args, args.data, namesp=args.network + args.run)
 # create folder for the output files
 if os.path.isdir(output):
     shutil.rmtree(output)
@@ -287,7 +287,7 @@ for epoch in range(num_epochs):
     if epoch == num_epochs - 1:
         logger.info('Last epoch - writing neurons outputs for each class!')
         for i, n in enumerate(classes):
-            m = np.array([[el[j] for el in output_values[i]] for j in range(num_classes)])
+            m = np.array([[el[j].cpu() for el in output_values[i]] for j in range(num_classes)])
             np.save(os.path.join(output, '{}_outputs_{}'.format(namespace, n.replace(' ', '-'))), m)
 
     # Calculate metrics

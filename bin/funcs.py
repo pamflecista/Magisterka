@@ -100,6 +100,11 @@ def basic_params(parser, plotting=False):
 def parse_arguments(args, file, namesp=None):
     if args.path is not None:
         path = args.path
+    elif isinstance(file, list):
+        path = '/' + '/'.join(file[0].strip('/').split('/')[:-1])
+        for f in file[1:]:
+            p = '/' + '/'.join(f.strip('/').split('/')[:-1])
+            path = ''.join([el for el, le in zip(p, path) if el == le])
     else:
         path = '/' + '/'.join(file.strip('/').split('/')[:-1])
     if args.namespace is not None:
@@ -113,5 +118,8 @@ def parse_arguments(args, file, namesp=None):
     if args.output is not None:
         output = args.output
     else:
-        output = os.path.join(path, 'results', namespace)
+        if 'results' in path:
+            output = path
+        else:
+            output = os.path.join(path, 'results', namespace)
     return path, output, namespace, args.seed

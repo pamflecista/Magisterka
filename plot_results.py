@@ -23,7 +23,7 @@ parser.add_argument('-t', '--table', action='store', metavar='NAME', type=str, d
                          'in PATH directory: [PATH]/[NAME], default: [PATH]/[NAMESPACE]_results.tsv')
 parser = basic_params(parser, plotting=True)
 parser.add_argument('-c', '--column', action='store', metavar='COL', nargs='+', type=str, default=['loss'],
-                    help='Number of name of column(s) to plot, default: loss')
+                    help='Number or name of column(s) to plot, default: loss')
 parser.add_argument('--train', action='store_true',
                     help='Use values from training, default values from validation are used')
 parser.add_argument('--not_valid', action='store_true',

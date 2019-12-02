@@ -90,7 +90,7 @@ class SeqsDataset(Dataset):
             if seq_len is None:
                 seq_len = len(seq)
             else:
-                assert len(seq) == seq_len
+                assert len(seq) == seq_len, 'Sequence {}: length {}'.format(self.IDs[i], len(seq))
             for j, chr_list in enumerate(chr_lists):
                 if int(c.strip('chr').replace('X', '23').replace('Y', '23')) in chr_list:
                     indices[j].append(i)
