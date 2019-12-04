@@ -77,15 +77,15 @@ parser.add_argument('-n', '--network', action='store', metavar='NAME', type=str,
 parser = basic_params(parser)
 parser.add_argument('--run', action='store', metavar='NUMBER', type=str, default='0',
                     help='Number of the analysis, by default NAMESPACE is set to [NETWORK][RUN]')
-parser.add_argument('--train', action='store', metavar='CHR', type=str, default='1-13',
+parser.add_argument('--train', action='store', metavar='CHR', type=str, default='1-16',
                     help='Chromosome(s) for training, if negative it means the number of chromosomes ' +
-                         'which should be randomly chosen. Default: 1-13')
-parser.add_argument('--val', action='store', metavar='CHR', type=str, default='14-18',
+                         'which should be randomly chosen. Default: 1-16')
+parser.add_argument('--val', action='store', metavar='CHR', type=str, default='17-20',
                     help='Chromosome(s) for validation, if negative it means the number of chromosomes ' +
-                         'which should be randomly chosen. Default: 14-18')
-parser.add_argument('--test', action='store', metavar='CHR', type=str, default='19-22',
+                         'which should be randomly chosen. Default: 17-20')
+parser.add_argument('--test', action='store', metavar='CHR', type=str, default='21-23',
                     help='Chromosome(s) for testing, if negative it means the number of chromosomes ' +
-                         'which should be randomly chosen. Default: 19-22')
+                         'which should be randomly chosen. Default: 21-23')
 parser.add_argument('--optimizer', action='store', metavar='NAME', type=str, default='RMSprop',
                     help='Optimization algorithm to use for training the network, default = RMSprop')
 parser.add_argument('--loss_fn', action='store', metavar='NAME', type=str, default='CrossEntropyLoss',
@@ -175,13 +175,13 @@ else:
 
 dataset = SeqsDataset(data_dir)
 num_classes = dataset.num_classes
-num_seqs = dataset.num_seqs
 classes = dataset.classes
 
 # Creating data indices for training, validation and test splits:
 indices, data_labels, seq_len = dataset.get_chrs([train_chr, val_chr, test_chr])
 train_indices, val_indices, test_indices = indices
 train_len, val_len = len(train_indices), len(val_indices)
+num_seqs = ' + '.join([str(len(el)) for el in [train_indices, val_indices, test_indices]])
 for i, (n, ch, ind) in enumerate(zip(['train', 'valid', 'test'], [args.train, args.val, args.test],
                                      [train_indices, val_indices, test_indices])):
     logger.info('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, ch, len(indices[i])))
@@ -281,7 +281,7 @@ for epoch in range(num_epochs):
             for ind, label, outp in zip(indices, labels.cpu(), outputs):
                 confusion_matrix[ind][label] += 1
                 if epoch == num_epochs - 1:
-                    output_values[ind].append(outp)
+                    output_values[label].append(outp)
 
     # If it is a last epoch write neurons' outputs
     if epoch == num_epochs - 1:

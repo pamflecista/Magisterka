@@ -66,7 +66,10 @@ def write_params(params, glob, file):
         for name, value in params.items():
             v = glob[value]
             if isinstance(v, list):
-                f.write('{}: {}\n'.format(name, '; '.join(list(map(str, v)))))
+                if 'chr' in value:
+                    f.write('{}: {}\n'.format(name, make_chrstr(v)))
+                else:
+                    f.write('{}: {}\n'.format(name, '; '.join(list(map(str, v)))))
             else:
                 f.write('{}: {}\n'.format(name, v))
 

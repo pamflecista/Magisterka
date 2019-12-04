@@ -25,14 +25,15 @@ class SeqsDataset(Dataset):
                 raise GivenDataError(data, filetype)
         ids = []
         dirs = []
-        locs = {}
+        locs = {}  # seq-name : index of element in dirs from which it was obtained
         for dd in data:
             if os.path.isfile(dd) and dd.endswith(filetype):
                 name = dd.strip('.{}'.format(filetype))
                 ids.append(name)
                 d = '/'.join(dd.split('/')[:-1])
+                dirs.append(d)
                 if name not in locs:
-                    locs[name] = d
+                    locs[name] = dirs.index(d)
                 else:
                     RepeatedFileError(name, dirs[locs[name]], d)
             for r, _, f in os.walk(dd):
@@ -46,7 +47,7 @@ class SeqsDataset(Dataset):
                     if name not in locs:
                         locs[name] = dirs.index(r)
                     else:
-                        RepeatedFileError(name, dirs[locs[name]], r)
+                        raise RepeatedFileError(name, dirs[locs[name]], r)
         if len(ids) == 0:
             warn('No files of the {} type was found in the given data'.format(filetype))
         self.IDs = ids
@@ -91,8 +92,9 @@ class SeqsDataset(Dataset):
                 seq_len = len(seq)
             else:
                 assert len(seq) == seq_len, 'Sequence {}: length {}'.format(self.IDs[i], len(seq))
+            ch = int(c.strip('chr').replace('X', '23').replace('Y', '23'))
             for j, chr_list in enumerate(chr_lists):
-                if int(c.strip('chr').replace('X', '23').replace('Y', '23')) in chr_list:
+                if ch in chr_list:
                     indices[j].append(i)
                     labels[j][label] += 1
         return indices, labels, seq_len

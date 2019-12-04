@@ -59,7 +59,8 @@ for j, (file, ax, name) in enumerate(zip(files, axes, neurons)):
     ax.set_title(format(name), color=colors[j])
 for color, neuron in zip(colors, neurons):
     plt.plot([], c=color, label=neuron)
+fig.suptitle(namespace)
 plt.legend(loc='upper right', bbox_to_anchor=(0.3, -0.05),
            fancybox=True, shadow=True, ncol=len(neurons))
+plt.savefig(os.path.join(output, '{}_outputs.png'.format(namespace)))
 plt.show()
-fig.savefig(os.path.join(output, '{}_outputs.png'.format(namespace)))

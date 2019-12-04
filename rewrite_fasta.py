@@ -14,7 +14,7 @@ def rewrite_fasta(file, outdir=None):
             print('No rewriting was done: given file contains only one sequence.')
             return 1, ['/'+'/'.join(file.split('/')[:-1])]
     if outdir is None:
-        f = file.split('/')
+        f = file.strip('/ ').split('/')
         outdir = os.path.join('/'+'/'.join(f[:-1]), '.'.join(f[-1].split('.')[:-1]))
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
@@ -36,14 +36,17 @@ def rewrite_fasta(file, outdir=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Rewrite sequences to separated files')
     parser.add_argument('file', action='store', metavar='FILE', type=str,
-                        help='Fasta file to rewrite')
-    parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str,
+                        help='Fasta file or directory with files to rewrite')
+    parser.add_argument('-e', '--extension', action='store', metavar='EXT', type=str, default='fa',
+                        help='Extension of the files in the given [PATH] which should be rewritten')
+    parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str, default=None,
                         help='Directory into which the sequences should be rewritten, by default it is directory of the'
                              ' input file in which new folder is created.')
     args = parser.parse_args()
 
     if os.path.isdir(args.file):
-        for f in [el for el in os.listdir(args.file) if os.path.isfile(os.path.join(args.file, el))]:
+        for f in [el for el in os.listdir(args.file) if os.path.isfile(os.path.join(args.file, el)) and
+                  el.endswith(args.extension)]:
             rewrite_fasta(os.path.join(args.file, f), args.output)
     else:
         rewrite_fasta(args.file, args.output)

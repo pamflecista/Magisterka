@@ -112,6 +112,7 @@ for i, (stage, value) in enumerate(zip(stages, values)):
             x = [el[k] for el in value[j]]
             plot_one(a, epochs, x, '.', n)
 
+fig.suptitle(namespace)
 plt.legend()
 plt.show()
 plotname = '-'.join([s[:5].lower() for s in stages]) + ':' + '-'.join([header[el][:4].lower() for el in colnum])
