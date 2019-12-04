@@ -116,7 +116,7 @@ except FileNotFoundError:
     os.mkdir(output)
 # establish data directories
 if args.path is not None:
-    data_dir = [os.path.join(path, d) for d in args.data]
+    data_dir = [os.path.join(path, 'data', d) for d in args.data]
 else:
     data_dir = args.data
     if os.path.isdir(data_dir[0]):
@@ -178,7 +178,7 @@ num_classes = dataset.num_classes
 classes = dataset.classes
 
 # Creating data indices for training, validation and test splits:
-indices, data_labels, seq_len = dataset.get_chrs([train_chr, val_chr, test_chr])
+indices, data_labels = dataset.get_chrs([train_chr, val_chr, test_chr])
 train_indices, val_indices, test_indices = indices
 train_len, val_len = len(train_indices), len(val_indices)
 num_seqs = ' + '.join([str(len(el)) for el in [train_indices, val_indices, test_indices]])
@@ -201,7 +201,7 @@ logger.info('\nTraining, validation and testing datasets built in {:.2f} s'.form
 
 num_batches = math.ceil(train_len / batch_size)
 
-model = network(seq_len)
+model = network(dataset.seq_len)
 optimizer = optim_method(model.parameters(), lr=lr, weight_decay=weight_decay)
 loss_fn = lossfn()
 best_acc = 0.0
@@ -264,7 +264,7 @@ for epoch in range(num_epochs):
         confusion_matrix = np.zeros((num_classes, num_classes))
         val_loss_neurons = [[] for _ in range(num_classes)]
         if epoch == num_epochs - 1:
-            output_values = [[] for _ in range(num_classes)]
+            output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
         for i, (seqs, labels) in enumerate(val_loader):
             if use_cuda:
                 seqs = seqs.cuda()
@@ -281,15 +281,12 @@ for epoch in range(num_epochs):
             for ind, label, outp in zip(indices, labels.cpu(), outputs):
                 confusion_matrix[ind][label] += 1
                 if epoch == num_epochs - 1:
-                    output_values[label].append(outp)
+                    output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(output_values[label])]
 
     # If it is a last epoch write neurons' outputs
     if epoch == num_epochs - 1:
         logger.info('Last epoch - writing neurons outputs for each class!')
-        for i, n in enumerate(classes):
-            m = np.array([[el[j].cpu() for el in output_values[i]] for j in range(num_classes)])
-            np.save(os.path.join(output, '{}_outputs_{}'.format(namespace, n.replace(' ', '-'))), m)
-
+        np.save(os.path.join(output, '{}_outputs'.format(namespace)), np.array(output_values))
     # Calculate metrics
     val_losses, val_sens, val_spec = calculate_metrics(confusion_matrix, val_loss_neurons)
 

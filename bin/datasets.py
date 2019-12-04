@@ -6,11 +6,12 @@ import os
 from .exceptions import *
 from warnings import warn
 from rewrite_fasta import rewrite_fasta
+import math
 
 
 class SeqsDataset(Dataset):
 
-    def __init__(self, data, filetype='fasta'):
+    def __init__(self, data, filetype='fasta', seq_len=2000):
 
         # Establishing files' IDs and their directories
         if isinstance(data, str):
@@ -57,6 +58,7 @@ class SeqsDataset(Dataset):
         self.classes = ['promoter active', 'nonpromoter active', 'promoter inactive', 'nonpromoter inactive']
         self.num_classes = len(self.classes)
         self.num_seqs = len(self.IDs)
+        self.seq_len = seq_len
         self.encoder = OHEncoder()
 
     def __len__(self):
@@ -72,6 +74,10 @@ class SeqsDataset(Dataset):
                     label = self.classes.index('{} {}'.format(t1, t2))
                 elif line:
                     seq = line.strip().upper()
+                    if len(seq) > self.seq_len:
+                        seq = seq[len(seq) // 2 - math.ceil(self.seq_len / 2): len(seq) // 2 + math.floor(self.seq_len / 2)]
+                    else:
+                        assert len(seq) == self.seq_len, 'Sequence {}: length {}'.format(self.IDs[i], len(seq))
                     break
             if file.readline().strip():
                 warn('In file {} is more than one sequence!'.format(filename))
@@ -85,19 +91,14 @@ class SeqsDataset(Dataset):
     def get_chrs(self, chr_lists):
         indices = [[] for _ in range(len(chr_lists))]
         labels = [[0 for _ in range(self.num_classes)] for _ in range(len(chr_lists))]
-        seq_len = None
         for i in range(self.__len__()):
             c, _, _, label, seq = self.__getitem__(i, info=True)
-            if seq_len is None:
-                seq_len = len(seq)
-            else:
-                assert len(seq) == seq_len, 'Sequence {}: length {}'.format(self.IDs[i], len(seq))
             ch = int(c.strip('chr').replace('X', '23').replace('Y', '23'))
             for j, chr_list in enumerate(chr_lists):
                 if ch in chr_list:
                     indices[j].append(i)
                     labels[j][label] += 1
-        return indices, labels, seq_len
+        return indices, labels
 
 
 class OHEncoder:
