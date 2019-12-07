@@ -71,7 +71,7 @@ def adjust_learning_rate(epoch, optimizer):
 parser = argparse.ArgumentParser(description='Train network based on given data')
 parser.add_argument('data', action='store', metavar='DIR', type=str, nargs='+',
                     help='Folder with the data for training and validation, if PATH is given, data is supposed to be ' +
-                         'in PATH directory: [PATH]/[DATA]')
+                         'in PATH directory: [PATH]/data/[DATA]')
 parser.add_argument('-n', '--network', action='store', metavar='NAME', type=str, default='Basset',
                     help='Type of the network to train, default: Basset Network')
 parser = basic_params(parser)

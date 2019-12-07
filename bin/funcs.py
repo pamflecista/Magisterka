@@ -110,12 +110,14 @@ def parse_arguments(args, file, namesp=None):
             path = ''.join([el for el, le in zip(p, path) if el == le])
     else:
         path = '/' + '/'.join(file.strip('/').split('/')[:-1])
+    if path.endswith('data'):
+        path = path[:-4]
     if args.namespace is not None:
         namespace = args.namespace
     elif namesp is not None:
         namespace = namesp
     elif file is not None:
-        namespace = file.strip('/').split('/')[-1].split('_')[0]
+        namespace = file[0].strip('/').split('/')[-1].split('_')[0]
     else:
         namespace = path.strip('/').split('/')[-1]
     if args.output is not None:
