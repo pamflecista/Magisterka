@@ -3,7 +3,6 @@ import argparse
 import os
 import numpy as np
 from bin.funcs import basic_params, parse_arguments
-import torch
 
 COLORS = ['C{}'.format(i) for i in range(10)]
 
@@ -37,7 +36,7 @@ def set_box_color(box, color):
     plt.setp(box['medians'], color=color)
 
 
-fig, axes = plt.subplots(nrows=len(neurons), ncols=1, figsize=(10, 15), squeeze=True, sharex=True, sharey=True)
+fig, axes = plt.subplots(nrows=len(neurons), ncols=1, figsize=(10, 15), squeeze=True)
 colors = COLORS[:len(neurons)]
 values = np.load(file, allow_pickle=True)
 for j, (row, ax, name) in enumerate(zip(values, axes, neurons)):
@@ -47,22 +46,22 @@ for j, (row, ax, name) in enumerate(zip(values, axes, neurons)):
             set_box_color(box, colors[i])
     else:
         ax.plot([])
-    ax.set_ylabel(name, color=colors[j])
+    ax.set_ylabel(name.replace('-', '\n'), color=colors[j], rotation=0, horizontalalignment='right', fontsize=8)
+    ax.yaxis.set_label_coords(-0.01, 0.3)
     ax.set_xticks([])
+    ax.tick_params(size=3)
     ax.set_ylim(-0.05, 1.05)
-#for color, neuron in zip(colors, neurons):
- #   plt.plot([], c=color, label=neuron)
-fig.suptitle(namespace, fontsize=16)
-#plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
-#           fancybox=True, shadow=True, ncol=len(neurons))
-ax = fig.add_subplot(111, frameon=False)
-ax.tick_params(labelcolor='none', top='off', bottom='off', left='off', right='off')
-ax.grid(False)
-ax.set_ylabel("Real labels", fontsize=13)
-ax.set_title('Neurons', fontsize=13)
-ax.yaxis.set_label_coords(-0.1, 0.5)
-plt.xticks([(i+1)*0.2 for i in range(len(neurons))], neurons)
+    plt.setp(ax.get_yticklabels(), fontsize=8)
+
+fig.suptitle(namespace, fontsize=12)
+plt.xticks([i+1 for i in range(len(neurons))], neurons, fontsize=8)
 for ticklabel, tickcolor in zip(plt.gca().get_xticklabels(), colors):
     ticklabel.set_color(tickcolor)
+ax = fig.add_subplot(111, frameon=False)
+ax.tick_params(labelcolor='none', top='off', bottom='off', left='off', right='off', axis=u'both', which=u'both', length=0)
+ax.grid(False)
+ax.set_ylabel("Real labels", fontsize=12)
+ax.set_title('Neurons', fontsize=12)
+ax.yaxis.set_label_coords(-0.12, 0.5)
 plt.savefig(os.path.join(output, '{}_outputs.png'.format(namespace)))
 plt.show()
