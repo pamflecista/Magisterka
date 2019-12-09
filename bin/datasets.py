@@ -77,7 +77,7 @@ class SeqsDataset(Dataset):
                     if len(seq) > self.seq_len:
                         seq = seq[len(seq) // 2 - math.ceil(self.seq_len / 2): len(seq) // 2 + math.floor(self.seq_len / 2)]
                     else:
-                        assert len(seq) == self.seq_len, 'Sequence {}: length {}'.format(self.IDs[i], len(seq))
+                        assert len(seq) == self.seq_len, 'Sequence {}: length {}'.format(self.IDs[index], len(seq))
                     break
             if file.readline().strip():
                 warn('In file {} is more than one sequence!'.format(filename))

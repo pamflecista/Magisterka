@@ -47,10 +47,11 @@ for j, (row, ax, name) in enumerate(zip(values, axes, neurons)):
     else:
         ax.plot([])
     ax.set_ylabel(name.replace('-', '\n'), color=colors[j], rotation=0, horizontalalignment='right', fontsize=8)
-    ax.yaxis.set_label_coords(-0.01, 0.3)
+    ax.yaxis.set_label_coords(-0.06, 0.45)
     ax.set_xticks([])
     ax.tick_params(size=3)
     ax.set_ylim(-0.05, 1.05)
+    ax.set_xlim(0.0, len(neurons)+1.0)
     plt.setp(ax.get_yticklabels(), fontsize=8)
 
 fig.suptitle(namespace, fontsize=12)
