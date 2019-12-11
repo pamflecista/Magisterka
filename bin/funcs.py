@@ -131,14 +131,16 @@ def parse_arguments(args, file, namesp=None):
 
 def write_results(logger, columns, variables, epoch):
     for stage in ['train', 'val']:
-        result_string = '{}\t{}'.format(epoch, stage)
+        result_string = '{}\t{}'.format(epoch+1, stage)
         for col, formatting in columns:
             if formatting == 'float-list':
                 result_string += '\t' + ', '.join(['{:.2f}'.format(el) for el in variables['{}_{}'.format(stage, col)]])
+            elif formatting == 'float':
+                result_string += '\t{:.2f}'.format(variables['{}_{}'.format(stage, col)])
     logger.info(result_string)
 
 
-def print_results(logger, columns, variables, epoch):
+'''def print_results(logger, columns, variables, epoch):
     logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}"
                 .format(epoch + 1, (time() - t0) / 60, train_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY'))
     logger.info("--{:>18s} :{:>5} seqs{:>15}".format('TRAINING', train_len, "--"))
@@ -151,4 +153,4 @@ def print_results(logger, columns, variables, epoch):
         "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec])), "--"))
     logger.info(
         "--{:>18s} : {:1.3f}, {:1.3f}{:>12}\n\n".format('VALIDATION MEANS', *list(map(mean, [val_sens, val_spec])),
-                                                        "--"))
+                                                        "--"))'''

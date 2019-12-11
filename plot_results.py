@@ -14,7 +14,8 @@ STAGES = {
 SHORTCUTS = {
     'loss': 'Loss',
     'sens': 'Sensitivity',
-    'spec': 'Specificity'
+    'spec': 'Specificity',
+    'auc': 'AUC'
 }
 
 parser = argparse.ArgumentParser(description='Plot results based on given table')
@@ -107,10 +108,10 @@ for i, (stage, value) in enumerate(zip(stages, values)):
         a.set_ylabel(header[c])
         a.set_xticks([el for el in np.arange(1, len(epochs), math.ceil(len(epochs)/num_xticks))] + [len(epochs)])
         for k, n in enumerate(neurons):
-            x = [el[k] for el in value[j]]
-            plot_one(a, epochs, x, '.', n)
-        x = [mean(el) for el in value[j]]
-        plot_one(a, epochs, x, 'x', 'mean')
+            y = [el[k] for el in value[j]]
+            plot_one(a, epochs, y, '.', n)
+        y = [mean(el) for el in value[j]]
+        plot_one(a, epochs, y, 'x', 'mean')
 
 fig.suptitle(namespace)
 plt.legend()

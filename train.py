@@ -57,7 +57,7 @@ RESULTS_COLS = OrderedDict({
     'Loss': ['losses', 'float-list'],
     'Sensitivity': ['sens', 'float-list'],
     'Specificity': ['spec', 'float-list'],
-    'AUC': ['auc', 'float-list']
+    'AUC': ['auc', 'float']
 })
 
 
@@ -164,7 +164,7 @@ for logg, handlers in zip([logger, results_table], [[cmd_handler, log_handler], 
 
 logger.info('\nAnalysis {} begins {}\nInput data: {}\nOutput directory: {}\n'.format(
     namespace, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), '; '.join(data_dir), output))
-results_table.info('\t'.join(RESULTS_COLS.keys()))
+results_table.info('Epoch\tStage\t{}'.format('\t'.join(RESULTS_COLS.keys())))
 
 t0 = time()
 train_chr = read_chrstr(args.train)
@@ -266,7 +266,10 @@ for epoch in range(num_epochs):
     train_losses, train_sens, train_spec = calculate_metrics(confusion_matrix, train_loss_neurons)
     train_loss_reduced = train_loss_reduced / num_batches
     assert math.floor(mean([el for el in train_losses if el])*10/10) == math.floor(float(train_loss_reduced)*10/10)
-    train_auc = roc_auc_score(y_true, y_score, multi_class='ovr')
+    y_score = [[round(v, 3) for v in el] for el in y_score]
+    y_scaled = [[round(v / sum(el), 3) for v in el[:-1]] for el in y_score]
+    y_scaled = [el + [round(1.0 - sum(el), 3)] for el in y_scaled]
+    train_auc = roc_auc_score(y_true, y_scaled, multi_class='ovr')
 
     # Write results to the table
     '''results_table.info('{}\t{}\t{}\t{}\t{}\t{}'.format(
@@ -313,7 +316,10 @@ for epoch in range(num_epochs):
         np.save(os.path.join(output, '{}_outputs'.format(namespace)), np.array(output_values))
     # Calculate metrics
     val_losses, val_sens, val_spec = calculate_metrics(confusion_matrix, val_loss_neurons)
-    val_auc = roc_auc_score(y_true, y_score, multi_class='ovr')
+    y_score = [[round(v, 3) for v in el] for el in y_score]
+    y_scaled = [[round(v / sum(el), 3) for v in el[:-1]] for el in y_score]
+    y_scaled = [el + [round(1.0 - sum(el), 3)] for el in y_scaled]
+    val_auc = roc_auc_score(y_true, y_scaled, multi_class='ovr')
 
     '''# Write results to the table
     results_table.info('{}\t{}\t{}\t{}\t{}\t{}'.format(
@@ -333,20 +339,21 @@ for epoch in range(num_epochs):
     # Write the results
     write_results(results_table, RESULTS_COLS.values(), globals(), epoch)
     # Print the metrics
-    logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
-                .format(epoch+1, (time() - t0)/60, train_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
+    logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n Train AUC: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
+                .format(epoch+1, (time() - t0)/60, train_loss_reduced, train_auc, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
     logger.info("--{:>18s} :{:>5} seqs{:>15}".format('TRAINING', train_len, "--"))
-    for cl, seqs, sens, spec, auc in zip(dataset.classes, data_labels[0], train_sens, train_spec, train_auc):
-        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec, auc))
+    for cl, seqs, sens, spec, in zip(dataset.classes, data_labels[0], train_sens, train_spec):
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
     logger.info("--{:>18s} :{:>5} seqs{:>15}".format('VALIDATION', val_len, "--"))
-    for cl, seqs, sens, spec, auc in zip(dataset.classes, data_labels[1], val_sens, val_spec, val_auc):
-        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec, auc))
+    logger.info("Validation AUC: {:1.3f}".format(val_auc))
+    for cl, seqs, sens, spec in zip(dataset.classes, data_labels[1], val_sens, val_spec):
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
     logger.info(
-        "--{:>11s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}".
-        format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec, train_auc])), "--"))
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".
+        format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec])), "--"))
     logger.info(
-        "--{:>11s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}\n\n".
-        format('VALIDATION MEANS', *list(map(mean, [val_sens, val_spec, val_auc])), "--"))
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}\n\n".
+        format('VALIDATION MEANS', *list(map(mean, [val_sens, val_spec])), "--"))
 
     if mean(val_sens) >= acc_threshold:
         logger.info('Validation accuracy threshold reached!')
