@@ -15,7 +15,6 @@ from time import time
 from datetime import datetime
 import numpy as np
 import shutil
-from sklearn.metrics import roc_auc_score
 from collections import OrderedDict
 
 
@@ -57,7 +56,7 @@ RESULTS_COLS = OrderedDict({
     'Loss': ['losses', 'float-list'],
     'Sensitivity': ['sens', 'float-list'],
     'Specificity': ['spec', 'float-list'],
-    'AUC': ['auc', 'float']
+    'AUC-neuron': ['aucINT', 'float-list']
 })
 
 
@@ -164,7 +163,6 @@ for logg, handlers in zip([logger, results_table], [[cmd_handler, log_handler], 
 
 logger.info('\nAnalysis {} begins {}\nInput data: {}\nOutput directory: {}\n'.format(
     namespace, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), '; '.join(data_dir), output))
-results_table.info('Epoch\tStage\t{}'.format('\t'.join(RESULTS_COLS.keys())))
 
 t0 = time()
 train_chr = read_chrstr(args.train)
@@ -188,6 +186,13 @@ else:
 dataset = SeqsDataset(data_dir)
 num_classes = dataset.num_classes
 classes = dataset.classes
+
+if 'AUC-neuron' in RESULTS_COLS.keys():
+    name, formatting = RESULTS_COLS['AUC-neuron']
+    del RESULTS_COLS['AUC-neuron']
+    for i, classname in enumerate(classes):
+        RESULTS_COLS['AUC - {}'.format(classname)] = [name.replace('INT', str(i)), formatting]
+results_table.info('Epoch\tStage\t{}'.format('\t'.join(RESULTS_COLS.keys())))
 
 # Creating data indices for training, validation and test splits:
 indices, data_labels = dataset.get_chrs([train_chr, val_chr, test_chr])
@@ -222,13 +227,12 @@ write_params(PARAMS, globals(), os.path.join(output, '{}_params.txt'.format(name
 logger.info('\n--- TRAINING ---')
 t = time()
 for epoch in range(num_epochs):
-    stage = 'train'
     t0 = time()
     model.train()
     confusion_matrix = np.zeros((num_classes, num_classes))
     train_loss_neurons = [[] for _ in range(num_classes)]
     train_loss_reduced = 0.0
-    y_true, y_score = [], []
+    true, scores = [], []
     for i, (seqs, labels) in enumerate(train_loader):
         if use_cuda:
             seqs = seqs.cuda()
@@ -252,8 +256,8 @@ for epoch in range(num_epochs):
         for ind, label in zip(indices, labels.cpu()):
             confusion_matrix[ind][label] += 1
 
-        y_true += labels.tolist()
-        y_score += outputs.tolist()
+        true += labels.tolist()
+        scores += outputs.tolist()
 
         if i % 10 == 0:
             logger.info('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
@@ -266,29 +270,15 @@ for epoch in range(num_epochs):
     train_losses, train_sens, train_spec = calculate_metrics(confusion_matrix, train_loss_neurons)
     train_loss_reduced = train_loss_reduced / num_batches
     assert math.floor(mean([el for el in train_losses if el])*10/10) == math.floor(float(train_loss_reduced)*10/10)
-    y_score = [[round(v, 3) for v in el] for el in y_score]
-    y_scaled = [[round(v / sum(el), 3) for v in el[:-1]] for el in y_score]
-    y_scaled = [el + [round(1.0 - sum(el), 3)] for el in y_scaled]
-    train_auc = roc_auc_score(y_true, y_scaled, multi_class='ovr')
+    train_auc = calculate_auc(true, scores, num_classes)
 
-    # Write results to the table
-    '''results_table.info('{}\t{}\t{}\t{}\t{}\t{}'.format(
-        epoch + 1,
-        'train',
-        ', '.join(['{:.2f}'.format(el) if el else '-' for el in train_losses]),
-        ', '.join(['{:.2f}'.format(el) for el in train_sens]),
-        ', '.join(['{:.2f}'.format(el) for el in train_spec]),
-        ', '.join(['{:.2f}'.format(el) for el in train_auc])
-    ))'''
-
-    stage = 'val'
     with torch.set_grad_enabled(False):
         model.eval()
         confusion_matrix = np.zeros((num_classes, num_classes))
         val_loss_neurons = [[] for _ in range(num_classes)]
         if epoch == num_epochs - 1:
             output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
-        y_true, y_score = [], []
+        true, scores = [], []
         for i, (seqs, labels) in enumerate(val_loader):
             if use_cuda:
                 seqs = seqs.cuda()
@@ -307,8 +297,8 @@ for epoch in range(num_epochs):
                 if epoch == num_epochs - 1:
                     output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(output_values[label])]
 
-            y_true += labels.tolist()
-            y_score += outputs.tolist()
+            true += labels.tolist()
+            scores += outputs.tolist()
 
     # If it is a last epoch write neurons' outputs
     if epoch == num_epochs - 1:
@@ -316,20 +306,7 @@ for epoch in range(num_epochs):
         np.save(os.path.join(output, '{}_outputs'.format(namespace)), np.array(output_values))
     # Calculate metrics
     val_losses, val_sens, val_spec = calculate_metrics(confusion_matrix, val_loss_neurons)
-    y_score = [[round(v, 3) for v in el] for el in y_score]
-    y_scaled = [[round(v / sum(el), 3) for v in el[:-1]] for el in y_score]
-    y_scaled = [el + [round(1.0 - sum(el), 3)] for el in y_scaled]
-    val_auc = roc_auc_score(y_true, y_scaled, multi_class='ovr')
-
-    '''# Write results to the table
-    results_table.info('{}\t{}\t{}\t{}\t{}\t{}'.format(
-        epoch + 1,
-        'valid',
-        ', '.join(['{:.2f}'.format(el) if el else '-' for el in val_losses]),
-        ', '.join(['{:.2f}'.format(el) for el in val_sens]),
-        ', '.join(['{:.2f}'.format(el) for el in val_spec]),
-        ', '.join(['{:.2f}'.format(el) for el in val_auc])
-    ))'''
+    val_auc = calculate_auc(true, scores, num_classes)
 
     # Save the model if the test acc is greater than our current best
     if mean(val_sens) > best_acc:
@@ -339,15 +316,14 @@ for epoch in range(num_epochs):
     # Write the results
     write_results(results_table, RESULTS_COLS.values(), globals(), epoch)
     # Print the metrics
-    logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n Train AUC: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
-                .format(epoch+1, (time() - t0)/60, train_loss_reduced, train_auc, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
+    logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
+                .format(epoch+1, (time() - t0)/60, train_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
     logger.info("--{:>18s} :{:>5} seqs{:>15}".format('TRAINING', train_len, "--"))
-    for cl, seqs, sens, spec, in zip(dataset.classes, data_labels[0], train_sens, train_spec):
-        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
+    for cl, seqs, sens, spec, auc in zip(dataset.classes, data_labels[0], train_sens, train_spec, train_auc):
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec, auc[0]))
     logger.info("--{:>18s} :{:>5} seqs{:>15}".format('VALIDATION', val_len, "--"))
-    logger.info("Validation AUC: {:1.3f}".format(val_auc))
-    for cl, seqs, sens, spec in zip(dataset.classes, data_labels[1], val_sens, val_spec):
-        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec))
+    for cl, seqs, sens, spec, auc in zip(dataset.classes, data_labels[1], val_sens, val_spec, val_auc):
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec, auc[0]))
     logger.info(
         "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".
         format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec])), "--"))

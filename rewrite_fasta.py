@@ -38,7 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('file', action='store', metavar='FILE', type=str,
                         help='Fasta file or directory with files to rewrite')
     parser.add_argument('-e', '--extension', action='store', metavar='EXT', type=str, default='fa',
-                        help='Extension of the files in the given [PATH] which should be rewritten')
+                        help="Extension of the files in the given [PATH] which should be rewritten, default 'fa'")
     parser.add_argument('-o', '--output', action='store', metavar='DIR', type=str, default=None,
                         help='Directory into which the sequences should be rewritten, by default it is directory of the'
                              ' input file in which new folder is created.')
