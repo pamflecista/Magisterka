@@ -137,7 +137,7 @@ def write_results(logger, columns, variables, epoch):
                 result_string += '\t' + ', '.join(['{:.2f}'.format(el) for el in variables['{}_{}'.format(stage, col)]])
             elif formatting == 'float':
                 result_string += '\t{:.2f}'.format(variables['{}_{}'.format(stage, col)])
-    logger.info(result_string)
+        logger.info(result_string)
 
 
 '''def print_results(logger, columns, variables, epoch):

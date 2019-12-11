@@ -8,7 +8,7 @@ from bin.funcs import basic_params, parse_arguments
 
 STAGES = {
     'train': 'Training',
-    'valid': 'Validation'
+    'val': 'Validation'
 }
 
 SHORTCUTS = {
@@ -53,11 +53,11 @@ else:
 columns = args.column
 
 train = False
-valid = True
+val = True
 if args.train:
     train = True
 if args.not_valid:
-    valid = False
+    val = False
 
 stages = [el for el in STAGES.keys() if globals()[el]]
 values = [[[] for _ in columns] for el in stages]
@@ -88,6 +88,7 @@ with open(table, 'r') as f:
 def plot_one(ax, x, y, line, label):
     ax.plot(x, y, line, label=label)
     ax.set_xlabel('Epoch')
+    ax.set_ylim(0, 1)
 
 
 with open(param, 'r') as f:
@@ -107,11 +108,16 @@ for i, (stage, value) in enumerate(zip(stages, values)):
         a = axes[j][i]
         a.set_ylabel(header[c])
         a.set_xticks([el for el in np.arange(1, len(epochs), math.ceil(len(epochs)/num_xticks))] + [len(epochs)])
-        for k, n in enumerate(neurons):
-            y = [el[k] for el in value[j]]
-            plot_one(a, epochs, y, '.', n)
-        y = [mean(el) for el in value[j]]
-        plot_one(a, epochs, y, 'x', 'mean')
+        if len(value) == len(neurons):
+            for k, n in enumerate(neurons):
+                y = [el[k] for el in value[j]]
+                plot_one(a, epochs, y, '.', n)
+            y = [mean(el) for el in value[j]]
+            plot_one(a, epochs, y, 'x', 'mean')
+        elif len(value) == 1:
+            plot_one(a, epochs, value[j], '.', 'general')
+        else:
+            raise ValueError
 
 fig.suptitle(namespace)
 plt.legend()
