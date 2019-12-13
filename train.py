@@ -79,37 +79,37 @@ def adjust_learning_rate(epoch, optimizer):
 
 
 parser = argparse.ArgumentParser(description='Train network based on given data')
-parser.add_argument('data', action='store', metavar='DIR', type=str, nargs='+',
+parser.add_argument('data', action='store', metavar='DATASET', type=str, nargs='+',
                     help='Folder with the data for training and validation, if PATH is given, data is supposed to be ' +
                          'in PATH directory: [PATH]/data/[DATA]')
 parser.add_argument('-n', '--network', action='store', metavar='NAME', type=str, default='Basset',
-                    help='Type of the network to train, default: Basset Network')
+                    help='type of the network to train, default: Basset Network')
 parser = basic_params(parser)
 parser.add_argument('--run', action='store', metavar='NUMBER', type=str, default='0',
-                    help='Number of the analysis, by default NAMESPACE is set to [NETWORK][RUN]')
+                    help='number of the analysis, by default NAMESPACE is set to [NETWORK][RUN]')
 parser.add_argument('--train', action='store', metavar='CHR', type=str, default='1-16',
-                    help='Chromosome(s) for training, if negative it means the number of chromosomes ' +
+                    help='chromosome(s) for training, if negative it means the number of chromosomes ' +
                          'which should be randomly chosen. Default: 1-16')
 parser.add_argument('--val', action='store', metavar='CHR', type=str, default='17-20',
-                    help='Chromosome(s) for validation, if negative it means the number of chromosomes ' +
+                    help='chromosome(s) for validation, if negative it means the number of chromosomes ' +
                          'which should be randomly chosen. Default: 17-20')
 parser.add_argument('--test', action='store', metavar='CHR', type=str, default='21-23',
-                    help='Chromosome(s) for testing, if negative it means the number of chromosomes ' +
+                    help='chromosome(s) for testing, if negative it means the number of chromosomes ' +
                          'which should be randomly chosen. Default: 21-23')
 parser.add_argument('--optimizer', action='store', metavar='NAME', type=str, default='RMSprop',
-                    help='Optimization algorithm to use for training the network, default = RMSprop')
+                    help='optimization algorithm to use for training the network, default = RMSprop')
 parser.add_argument('--loss_fn', action='store', metavar='NAME', type=str, default='CrossEntropyLoss',
-                    help='Loss function for training the network, default = CrossEntropyLoss')
+                    help='loss function for training the network, default = CrossEntropyLoss')
 parser.add_argument('--batch_size', action='store', metavar='INT', type=int, default=64,
-                    help='Size of the batch, default: 64')
+                    help='size of the batch, default: 64')
 parser.add_argument('--num_workers', action='store', metavar='INT', type=int, default=4,
-                    help='How many subprocesses to use for data loading, default: 4')
+                    help='how many subprocesses to use for data loading, default: 4')
 parser.add_argument('--num_epochs', action='store', metavar='INT', type=int, default=300,
-                    help='Maximum number of epochs to run, default: 300')
+                    help='maximum number of epochs to run, default: 300')
 parser.add_argument('--acc_threshold', action='store', metavar='FLOAT', type=float, default=0.9,
-                    help='Threshold of the validation accuracy - if gained training process stops, default: 0.9')
+                    help='threshold of the validation accuracy - if gained training process stops, default: 0.9')
 parser.add_argument('--no_adjust_lr', action='store_true',
-                    help='No reduction of learning rate during training')
+                    help='no reduction of learning rate during training')
 args = parser.parse_args()
 
 batch_size, num_workers, num_epochs, acc_threshold = args.batch_size, args.num_workers, args.num_epochs, \
