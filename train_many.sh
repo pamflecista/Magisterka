@@ -18,7 +18,7 @@ if [ "$1" != '--help' ] | [ "$1" != '-h' ]; then
   shift
 fi
 run=1
-arguments=''
+arguments=()
 
 while [ "$1" != "" ]; do
     case $1 in
@@ -27,7 +27,7 @@ while [ "$1" != "" ]; do
         -h | --help )     echo "$usage"
                           python3 train.py --help
                           exit ;;
-        * )               arguments="$arguments $1"
+        * )               arguments+=( $1 )
     esac
     shift
 done
@@ -36,7 +36,6 @@ j=1
 for i in $(seq "$run" 1 $(("$run"+"$number"-1)))
 do
   printf "\nTRAINING NETWORK %d / %d\n" "$j" "$number"
-  echo "$arguments"
-  python3 train.py "$arguments" --run "$i"
+  python3 train.py "${arguments[@]}" --run "$i"
   j=$(("$j"+1))
 done
