@@ -36,6 +36,7 @@ j=1
 for i in $(seq "$run" 1 $(("$run"+"$number"-1)))
 do
   printf "\nTRAINING NETWORK %d / %d\n" "$j" "$number"
-  python3 train.py "$arguments" --run $i
+  echo "$arguments"
+  python3 train.py "$arguments" --run "$i"
   j=$(("$j"+1))
 done
