@@ -16,6 +16,7 @@ from datetime import datetime
 import numpy as np
 import shutil
 from collections import OrderedDict
+import random
 
 
 NET_TYPES = {
@@ -165,9 +166,27 @@ logger.info('\nAnalysis {} begins {}\nInput data: {}\nOutput directory: {}\n'.fo
     namespace, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), '; '.join(data_dir), output))
 
 t0 = time()
-train_chr = read_chrstr(args.train)
-val_chr = read_chrstr(args.val)
-test_chr = read_chrstr(args.test)
+train_chr, val_chr, test_chr = [], [], []
+if not args.train.startswith('-'):
+    train_chr = read_chrstr(args.train)
+if not args.val.startswith('-'):
+    val_chr = read_chrstr(args.val)
+if not args.test.startswith('-'):
+    test_chr = read_chrstr(args.test)
+
+used_chr = train_chr + val_chr + test_chr
+if not train_chr:
+    train_chr = random.sample([el for el in range(1, 23) if el not in used_chr], int(args.train.lstrip('-')))
+    train_chr.sort()
+    used_chr += train_chr
+if not val_chr:
+    val_chr = random.sample([el for el in range(1, 23) if el not in used_chr], int(args.val.lstrip('-')))
+    val_chr.sort()
+    used_chr += val_chr
+if not test_chr:
+    test_chr = random.sample([el for el in range(1, 23) if el not in used_chr], int(args.test.lstrip('-')))
+    test_chr.sort()
+
 if set(train_chr) & set(val_chr):
     logger.warning('WARNING - Chromosomes for training and validation overlap!')
 elif set(train_chr) & set(test_chr):
@@ -199,7 +218,7 @@ indices, data_labels = dataset.get_chrs([train_chr, val_chr, test_chr])
 train_indices, val_indices, test_indices = indices
 train_len, val_len = len(train_indices), len(val_indices)
 num_seqs = ' + '.join([str(len(el)) for el in [train_indices, val_indices, test_indices]])
-for i, (n, ch, ind) in enumerate(zip(['train', 'valid', 'test'], [args.train, args.val, args.test],
+for i, (n, ch, ind) in enumerate(zip(['train', 'valid', 'test'], map(make_chrstr, [train_chr, val_chr, test_chr]),
                                      [train_indices, val_indices, test_indices])):
     logger.info('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, ch, len(indices[i])))
     for j, cl in enumerate(dataset.classes):

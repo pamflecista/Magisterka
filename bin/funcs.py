@@ -6,6 +6,7 @@ import os
 def make_chrstr(chrlist):
 
     cl = chrlist.copy()
+    cl.sort()
     cl.append(0)
     chrstr = ''
     first = cl[0]
