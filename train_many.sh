@@ -30,7 +30,7 @@ while [ "$1" != "" ]; do
                                 path=$1
                                 ;;
         --run )                 shift
-                                run=$1a
+                                run=$1
                                 ;;
         -h | --help )           echo "$usage"
                                 exit
