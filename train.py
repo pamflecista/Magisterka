@@ -176,15 +176,15 @@ if not args.test.startswith('-'):
 
 used_chr = train_chr + val_chr + test_chr
 if not train_chr:
-    train_chr = random.sample([el for el in range(1, 23) if el not in used_chr], int(args.train.lstrip('-')))
+    train_chr = random.sample([el for el in range(1, 24) if el not in used_chr], int(args.train.lstrip('-')))
     train_chr.sort()
     used_chr += train_chr
 if not val_chr:
-    val_chr = random.sample([el for el in range(1, 23) if el not in used_chr], int(args.val.lstrip('-')))
+    val_chr = random.sample([el for el in range(1, 24) if el not in used_chr], int(args.val.lstrip('-')))
     val_chr.sort()
     used_chr += val_chr
 if not test_chr:
-    test_chr = random.sample([el for el in range(1, 23) if el not in used_chr], int(args.test.lstrip('-')))
+    test_chr = random.sample([el for el in range(1, 24) if el not in used_chr], int(args.test.lstrip('-')))
     test_chr.sort()
 
 if set(train_chr) & set(val_chr):
