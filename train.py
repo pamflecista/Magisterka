@@ -6,7 +6,7 @@ import torch.optim as optim
 from torch.utils.data.sampler import SubsetRandomSampler
 import argparse
 from bin.funcs import *
-from bin.networks import BassetNetwork
+from bin.networks import *
 import math
 import os
 from statistics import mean
@@ -20,7 +20,8 @@ import random
 
 
 NET_TYPES = {
-    'Basset': BassetNetwork
+    'basset': BassetNetwork,
+    'custom': CustomNetwork
 }
 
 OPTIMIZERS = {
@@ -36,6 +37,7 @@ LOSS_FUNCTIONS = {
 PARAMS = OrderedDict({
     'Name of the analysis': 'namespace',
     'Network type': 'network_name',
+    'Network params': 'network_params',
     'Possible classes': 'classes',
     'Number of epochs': 'num_epochs',
     'Number of seqs': 'num_seqs',
@@ -83,7 +85,7 @@ parser = argparse.ArgumentParser(description='Train network based on given data'
 parser.add_argument('data', action='store', metavar='DATASET', type=str, nargs='+',
                     help='Folder with the data for training and validation, if PATH is given, data is supposed to be ' +
                          'in PATH directory: [PATH]/data/[DATA]')
-parser.add_argument('-n', '--network', action='store', metavar='NAME', type=str, default='Basset',
+parser.add_argument('-n', '--network', action='store', metavar='NAME', type=str, default='basset',
                     help='type of the network to train, default: Basset Network')
 parser = basic_params(parser)
 parser.add_argument('--run', action='store', metavar='NUMBER', type=str, default='0',
@@ -111,10 +113,12 @@ parser.add_argument('--acc_threshold', action='store', metavar='FLOAT', type=flo
                     help='threshold of the validation accuracy - if gained training process stops, default: 0.9')
 parser.add_argument('--no_adjust_lr', action='store_true',
                     help='no reduction of learning rate during training')
+parser.add_argument('--seq_len', action='store', metavar='INT', type=int, default=2000,
+                    help='Length of the input sequences to the network, default: 2000')
 args = parser.parse_args()
 
-batch_size, num_workers, num_epochs, acc_threshold = args.batch_size, args.num_workers, args.num_epochs, \
-                                                     args.acc_threshold
+batch_size, num_workers, num_epochs, acc_threshold, seq_len = args.batch_size, args.num_workers, args.num_epochs, \
+                                                              args.acc_threshold, args.seq_len
 
 path, output, namespace, seed = parse_arguments(args, args.data, namesp=args.network + args.run)
 # create folder for the output files
@@ -139,7 +143,7 @@ np.random.seed(seed)
 network_name = args.network
 optimizer_name = args.optimizer
 lossfn_name = args.loss_fn
-network = NET_TYPES[network_name]
+network = NET_TYPES[network_name.lower()]
 optim_method = OPTIMIZERS[optimizer_name]
 lossfn = LOSS_FUNCTIONS[lossfn_name]
 lr = 0.01
@@ -202,7 +206,7 @@ if use_cuda:
 else:
     logger.info('--- CUDA not available ---')
 
-dataset = SeqsDataset(data_dir)
+dataset = SeqsDataset(data_dir, seq_len=seq_len)
 num_classes = dataset.num_classes
 classes = dataset.classes
 
@@ -238,6 +242,7 @@ logger.info('\nTraining, validation and testing datasets built in {:.2f} s'.form
 num_batches = math.ceil(train_len / batch_size)
 
 model = network(dataset.seq_len)
+network_params = model.params
 optimizer = optim_method(model.parameters(), lr=lr, weight_decay=weight_decay)
 loss_fn = lossfn()
 best_acc = 0.0
@@ -294,9 +299,9 @@ for epoch in range(num_epochs):
     with torch.set_grad_enabled(False):
         model.eval()
         confusion_matrix = np.zeros((num_classes, num_classes))
-        val_loss_neurons = [[] for _ in range(num_classes)]
         if epoch == num_epochs - 1:
             output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
+        val_loss_neurons = [[] for _ in range(num_classes)]
         true, scores = [], []
         for i, (seqs, labels) in enumerate(val_loader):
             if use_cuda:
@@ -319,18 +324,20 @@ for epoch in range(num_epochs):
             true += labels.tolist()
             scores += outputs.tolist()
 
-    # If it is a last epoch write neurons' outputs
-    if epoch == num_epochs - 1:
-        logger.info('Last epoch - writing neurons outputs for each class!')
-        np.save(os.path.join(output, '{}_outputs'.format(namespace)), np.array(output_values))
     # Calculate metrics
     val_losses, val_sens, val_spec = calculate_metrics(confusion_matrix, val_loss_neurons)
     val_auc = calculate_auc(true, scores, num_classes)
 
     # Save the model if the test acc is greater than our current best
-    if mean(val_sens) > best_acc:
-        torch.save(model.state_dict(), os.path.join(output, "{}_{}.model".format(namespace, epoch+1)))
+    if mean(val_sens) > best_acc and epoch < num_epochs - 1:
+        torch.save(model.state_dict(), os.path.join(output, "{}_{}.model".format(namespace, epoch + 1)))
         best_acc = mean(val_sens)
+
+    # If it is a last epoch write neurons' outputs
+    if epoch == num_epochs - 1:
+        logger.info('Last epoch - writing neurons outputs for each class!')
+        np.save(os.path.join(output, '{}_outputs'.format(namespace)), np.array(output_values))
+        torch.save(model.state_dict(), os.path.join(output, '{}_last.model'.format(namespace)))
 
     # Write the results
     write_results(results_table, RESULTS_COLS.values(), globals(), epoch)

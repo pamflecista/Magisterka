@@ -89,7 +89,7 @@ with open(table, 'r') as f:
             i = stages.index(line[1])
             for j, c in enumerate(colnum):
                 values[i][j].append([float(el) if el != '-' else np.nan for el in line[c].split(', ')])
-ylims = [min(np.min(values), 0.0) - 0.05, max(np.max(values), 1.0) + 0.05]
+ylims = [np.min(values) - 0.05, np.max(values) + 0.05]
 
 
 def plot_one(ax, x, y, line, label):
@@ -133,7 +133,7 @@ for i, (stage, value) in enumerate(zip(stages, values)):  # for each stage
             plot_one(a, epochs, y, 'x', 'mean')
 
 fig.suptitle(namespace)
-plt.legend()
+axes[-1][0].legend(bbox_to_anchor=(0, -0.08*(i+j)), loc="upper left", ncol=4)
 plt.show()
-plotname = '-'.join([s[:5].lower() for s in stages]) + ':' + '-'.join([header[el][:4].lower() for el in colnum])
+plotname = '-'.join([s[:5].lower() for s in stages]) + ':' + '-'.join([el.lower() for el in columns])
 fig.savefig(os.path.join(output, namespace + '_{}.png'.format(plotname)))

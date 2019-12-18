@@ -84,7 +84,14 @@ def write_params(params, glob, file):
                 if 'chr' in value:
                     f.write('{}: {}\n'.format(name, make_chrstr(v)))
                 else:
-                    f.write('{}: {}\n'.format(name, '; '.join(list(map(str, v)))))
+                    f.write('{}: {}\n'.format(name, ''.join(['\n\t{}'.format(el) for el in list(map(str, v))])))
+            elif isinstance(v, dict):
+                towrite = '{}:'.format(name)
+                for key, val in v.items():
+                    if isinstance(val, list):
+                        val = ', '.join(map(str, val))
+                    towrite += '\n\t{} - {}'.format(key, val)
+                f.write('{}\n'.format(towrite))
             else:
                 f.write('{}: {}\n'.format(name, v))
 

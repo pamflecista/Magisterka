@@ -30,10 +30,8 @@ with open(os.path.join(path, '{}_params.txt'.format(namespace)), 'r') as f:
 
 
 def set_box_color(box, color):
-    plt.setp(box['boxes'], color=color)
-    plt.setp(box['whiskers'], color=color)
-    plt.setp(box['caps'], color=color)
-    plt.setp(box['medians'], color=color)
+    for el in box.keys():
+        plt.setp(box[el], color=color)
 
 
 fig, axes = plt.subplots(nrows=len(neurons), ncols=1, figsize=(10, 15), squeeze=True)
@@ -42,7 +40,7 @@ values = np.load(file, allow_pickle=True)
 for j, (row, ax, name) in enumerate(zip(values, axes, neurons)):
     if row.any():
         for i, m in enumerate(row):
-            box = ax.boxplot(m, positions=[i+1], widths=[0.6])
+            box = ax.boxplot(m, positions=[i+1], widths=[0.4], sym='.')
             set_box_color(box, colors[i])
     else:
         ax.plot([])
