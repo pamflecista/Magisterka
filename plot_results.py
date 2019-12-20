@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from statistics import mean
 import math
-from bin.funcs import basic_params, parse_arguments
+from bin.common import basic_params, parse_arguments
 
 COLORS = ['C{}'.format(i) for i in range(10)]
 

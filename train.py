@@ -5,12 +5,11 @@ from torch.utils import data
 import torch.optim as optim
 from torch.utils.data.sampler import SubsetRandomSampler
 import argparse
-from bin.funcs import *
+from bin.common import *
 from bin.networks import *
 import math
 import os
 from statistics import mean
-import logging
 from time import time
 from datetime import datetime
 import numpy as np
@@ -18,11 +17,7 @@ import shutil
 from collections import OrderedDict
 import random
 
-
-NET_TYPES = {
-    'basset': BassetNetwork,
-    'custom': CustomNetwork
-}
+from bin.common import NET_TYPES
 
 OPTIMIZERS = {
     'RMSprop': optim.RMSprop,
@@ -53,13 +48,6 @@ PARAMS = OrderedDict({
     'Learning rate': 'lr',
     'Adjusting lr': 'adjust_lr',
     'Weight decay': 'weight_decay'
-})
-
-RESULTS_COLS = OrderedDict({
-    'Loss': ['losses', 'float-list'],
-    'Sensitivity': ['sens', 'float-list'],
-    'Specificity': ['spec', 'float-list'],
-    'AUC-neuron': ['aucINT', 'float-list']
 })
 
 
@@ -154,17 +142,7 @@ else:
     adjust_lr = True
 
 # Define files for logs and for results
-formatter = logging.Formatter('%(message)s')
-logger = logging.getLogger('verbose')
-results_table = logging.getLogger('results')
-cmd_handler = logging.StreamHandler()
-log_handler = logging.FileHandler(os.path.join(output, '{}.log'.format(namespace)))
-results_handler = logging.FileHandler(os.path.join(output, '{}_results.tsv'.format(namespace)))
-for logg, handlers in zip([logger, results_table], [[cmd_handler, log_handler], [results_handler]]):
-    for handler in handlers:
-        handler.setFormatter(formatter)
-        logg.addHandler(handler)
-    logg.setLevel(logging.INFO)
+logger, results_table = build_loggers('train', output=output, namespace=namespace)
 
 logger.info('\nAnalysis {} begins {}\nInput data: {}\nOutput directory: {}\n'.format(
     namespace, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), '; '.join(data_dir), output))
@@ -199,34 +177,26 @@ elif set(val_chr) & set(test_chr):
     logger.warning('WARNING - Chromosomes for validation and testing overlap!')
 
 # CUDA for PyTorch
-use_cuda = torch.cuda.is_available()
-device = torch.device("cuda:0" if use_cuda else "cpu")
-if use_cuda:
-    logger.info('--- CUDA available ---')
-else:
-    logger.info('--- CUDA not available ---')
+use_cuda = check_cuda(logger)
 
 dataset = SeqsDataset(data_dir, seq_len=seq_len)
 num_classes = dataset.num_classes
 classes = dataset.classes
 
-if 'AUC-neuron' in RESULTS_COLS.keys():
-    name, formatting = RESULTS_COLS['AUC-neuron']
-    del RESULTS_COLS['AUC-neuron']
-    for i, classname in enumerate(classes):
-        RESULTS_COLS['AUC - {}'.format(classname)] = [name.replace('INT', str(i)), formatting]
-results_table.info('Epoch\tStage\t{}'.format('\t'.join(RESULTS_COLS.keys())))
+# write header of results table
+results_table = train_results_header(results_table, classes)
 
 # Creating data indices for training, validation and test splits:
-indices, data_labels = dataset.get_chrs([train_chr, val_chr, test_chr])
+indices = dataset.get_chrs([train_chr, val_chr, test_chr])
+class_stage = [dataset.get_classes(i) for i in indices]
 train_indices, val_indices, test_indices = indices
 train_len, val_len = len(train_indices), len(val_indices)
 num_seqs = ' + '.join([str(len(el)) for el in [train_indices, val_indices, test_indices]])
 for i, (n, ch, ind) in enumerate(zip(['train', 'valid', 'test'], map(make_chrstr, [train_chr, val_chr, test_chr]),
                                      [train_indices, val_indices, test_indices])):
     logger.info('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, ch, len(indices[i])))
-    for j, cl in enumerate(dataset.classes):
-        logger.info('{} - {}'.format(data_labels[i][j], cl))
+    for classname, el in class_stage[i]:
+        logger.info('{} - {}'.format(classname, el))
     # Writing IDs for each split into file
     with open(os.path.join(output, '{}_{}.txt'.format(namespace, n)), 'w') as f:
         f.write('\n'.join([dataset.IDs[j] for j in ind]))
@@ -340,16 +310,16 @@ for epoch in range(num_epochs):
         torch.save(model.state_dict(), os.path.join(output, '{}_last.model'.format(namespace)))
 
     # Write the results
-    write_results(results_table, RESULTS_COLS.values(), globals(), epoch)
+    write_train_results(results_table, globals(), epoch)
     # Print the metrics
     logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
                 .format(epoch+1, (time() - t0)/60, train_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
     logger.info("--{:>18s} :{:>5} seqs{:>15}".format('TRAINING', train_len, "--"))
-    for cl, seqs, sens, spec, auc in zip(dataset.classes, data_labels[0], train_sens, train_spec, train_auc):
-        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec, auc[0]))
+    for cl, seqs, sens, spec, auc in zip(dataset.classes, class_stage[0], train_sens, train_spec, train_auc):
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(seqs[cl]), sens, spec, auc[0]))
     logger.info("--{:>18s} :{:>5} seqs{:>15}".format('VALIDATION', val_len, "--"))
-    for cl, seqs, sens, spec, auc in zip(dataset.classes, data_labels[1], val_sens, val_spec, val_auc):
-        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, seqs, sens, spec, auc[0]))
+    for cl, seqs, sens, spec, auc in zip(dataset.classes, class_stage[1], val_sens, val_spec, val_auc):
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(seqs[cl]), sens, spec, auc[0]))
     logger.info(
         "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".
         format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec])), "--"))

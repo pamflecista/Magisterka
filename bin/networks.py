@@ -16,8 +16,8 @@ class BassetNetwork(torch.nn.Module):
         paddings = [int((w-1)/2) for w in kernel_widths]
         num_units = [1000, 4]
         self.params = {
-            'input sequence length': seq_len,
-            'dropout': dropout
+            'Input sequence length': seq_len,
+            'Dropout': dropout
         }
 
         self.layer1 = nn.Sequential(

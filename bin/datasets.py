@@ -90,15 +90,22 @@ class SeqsDataset(Dataset):
 
     def get_chrs(self, chr_lists):
         indices = [[] for _ in range(len(chr_lists))]
-        labels = [[0 for _ in range(self.num_classes)] for _ in range(len(chr_lists))]
         for i in range(self.__len__()):
             c, _, _, label, seq = self.__getitem__(i, info=True)
             ch = int(c.strip('chr').replace('X', '23').replace('Y', '23'))
             for j, chr_list in enumerate(chr_lists):
                 if ch in chr_list:
                     indices[j].append(i)
-                    labels[j][label] += 1
-        return indices, labels
+        return indices
+
+    def get_classes(self, indices=None):
+        if indices is None:
+            indices = [i for i in range(self.__len__())]
+        result = {el: [] for el in self.classes}
+        for i in indices:
+            _, y = self.__getitem__(i)
+            result[self.classes[y]].append(i)
+        return result
 
 
 class OHEncoder:

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import argparse
 import os
 import numpy as np
-from bin.funcs import basic_params, parse_arguments
+from bin.common import basic_params, parse_arguments
 
 COLORS = ['C{}'.format(i) for i in range(10)]
 

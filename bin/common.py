@@ -1,6 +1,18 @@
-from statistics import mean
-from itertools import product
 import os
+from bin.networks import *
+from collections import OrderedDict
+
+NET_TYPES = {
+    'basset': BassetNetwork,
+    'custom': CustomNetwork
+}
+
+RESULTS_COLS = OrderedDict({
+    'Loss': ['losses', 'float-list'],
+    'Sensitivity': ['sens', 'float-list'],
+    'Specificity': ['spec', 'float-list'],
+    'AUC-neuron': ['aucINT', 'float-list']
+})
 
 
 def make_chrstr(chrlist):
@@ -47,6 +59,8 @@ def read_chrstr(chrstr):
 
 
 def calculate_metrics(confusion_matrix, losses):
+    from statistics import mean
+    from itertools import product
     num_classes = confusion_matrix.shape[0]
     sens, spec = [], []
     for cl in range(num_classes):
@@ -90,7 +104,7 @@ def write_params(params, glob, file):
                 for key, val in v.items():
                     if isinstance(val, list):
                         val = ', '.join(map(str, val))
-                    towrite += '\n\t{} - {}'.format(key, val)
+                    towrite += '\n\t{}: {}'.format(key, val)
                 f.write('{}\n'.format(towrite))
             else:
                 f.write('{}: {}\n'.format(name, v))
@@ -152,10 +166,24 @@ def parse_arguments(args, file, namesp=None):
     return path, output, namespace, args.seed
 
 
-def write_results(logger, columns, variables, epoch):
+def results_header(stage, logger, classes=[]):
+    if 'AUC-neuron' in RESULTS_COLS.keys():
+        name, formatting = RESULTS_COLS['AUC-neuron']
+        del RESULTS_COLS['AUC-neuron']
+        for i, classname in enumerate(classes):
+            RESULTS_COLS['AUC - {}'.format(classname)] = [name.replace('INT', str(i)), formatting]
+    towrite = '\t'.join(RESULTS_COLS.keys())
+    if stage == 'train':
+        logger.info('Epoch\tStage\t{}'.format(towrite))
+    elif stage == 'test':
+        logger.info('Dataset\tSubset\t{}'.format(towrite))
+    return logger
+
+
+def write_train_results(logger, variables, epoch):
     for stage in ['train', 'val']:
         result_string = '{}\t{}'.format(epoch+1, stage)
-        for col, formatting in columns:
+        for col, formatting in RESULTS_COLS.values():
             if col[-1].isdigit():
                 variable = variables['{}_{}'.format(stage, col[:-1])][int(col[-1])]
             else:
@@ -165,6 +193,47 @@ def write_results(logger, columns, variables, epoch):
             elif formatting == 'float':
                 result_string += '\t{:.2f}'.format(variables['{}_{}'.format(stage, col)])
         logger.info(result_string)
+
+
+def write_test_results(logger, variables):
+    pass
+
+
+def check_cuda(logger):
+    import torch
+    use_cuda = torch.cuda.is_available()
+    # device = torch.device("cuda:0" if use_cuda else "cpu")
+    if use_cuda:
+        logger.info('--- CUDA available ---')
+    else:
+        logger.info('--- CUDA not available ---')
+    return use_cuda
+
+
+def build_loggers(stage, output='./', namespace='test', verbose_mode=True, logfile=True, resultfile=True):
+    import logging
+    formatter = logging.Formatter('%(message)s')
+    loggers = []
+    if logfile or verbose_mode:
+        logger = logging.getLogger('verbose')
+        logger.setLevel(logging.INFO)
+        loggers.append(logger)
+    if verbose_mode:
+        cmd_handler = logging.StreamHandler()
+        cmd_handler.setFormatter(formatter)
+        logger.addHandler(cmd_handler)
+    if logfile:
+        log_handler = logging.FileHandler(os.path.join(output, '{}_{}.log'.format(namespace, stage)))
+        log_handler.setFormatter(formatter)
+        logger.addHandler(log_handler)
+    if resultfile:
+        results_table = logging.getLogger('results')
+        results_handler = logging.FileHandler(os.path.join(output, '{}_{}_results.tsv'.format(namespace, stage)))
+        results_handler.setFormatter(formatter)
+        results_table.addHandler(results_handler)
+        results_table.setLevel(logging.INFO)
+        loggers.append(results_table)
+    return loggers
 
 
 '''def print_results(logger, columns, variables, epoch):
@@ -180,4 +249,18 @@ def write_results(logger, columns, variables, epoch):
         "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec])), "--"))
     logger.info(
         "--{:>18s} : {:1.3f}, {:1.3f}{:>12}\n\n".format('VALIDATION MEANS', *list(map(mean, [val_sens, val_spec])),
-                                                        "--"))'''
+                                                        "--"))
+    formatter = logging.Formatter('%(message)s')
+logger = logging.getLogger('verbose')
+results_table = logging.getLogger('results')
+cmd_handler = logging.StreamHandler()
+log_handler = logging.FileHandler(os.path.join(output, '{}.log'.format(namespace)))
+results_handler = logging.FileHandler(os.path.join(output, '{}_results.tsv'.format(namespace)))
+for logg, handlers in zip([logger, results_table], [[cmd_handler, log_handler], [results_handler]]):
+    for handler in handlers:
+        handler.setFormatter(formatter)
+        logg.addHandler(handler)
+    logg.setLevel(logging.INFO)                                         
+                                                        
+                                                        
+                                                        '''
