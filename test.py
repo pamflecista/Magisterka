@@ -53,7 +53,7 @@ with open(os.path.join(output, '{}_params.txt'.format(namespace)), 'r') as f:
         if line.startswith('Network type'):
             network = NET_TYPES[line.split(':')[-1].strip().lower()]
         elif line.startswith('Data directory') and not data_dir:
-            data_dir = [line.split(':')[-1].strip()]
+            data_dir = [el for el in line.split(':')[-1].strip() if el]
             if not data_dir:
                 l = f.readline()
                 while l.startswith('\t'):
@@ -149,6 +149,6 @@ logger.info("--{:>18s} :{:>5} seqs{:>22}".format('TESTING', len(dataset), "--"))
 for cl, sens, spec, auc in zip(dataset.classes, test_sens, test_spec, test_auc):
     logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[cl]), sens, spec, auc[0]))
 logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}{:>19}".
-        format('TESTING MEANS', *list(map(mean, [test_sens, test_spec])), "--"))
+        "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}".
+        format('TESTING MEANS', *list(map(mean, [test_sens, test_spec, [el[0] for el in test_auc]])), "--"))
 logger.info('Testing of {} finished in {:.2f} min'.format(namespace, (time() - t0)/60))

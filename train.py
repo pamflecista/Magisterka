@@ -332,11 +332,11 @@ for epoch in range(num_epochs):
     for cl, sens, spec, auc in zip(dataset.classes, val_sens, val_spec, val_auc):
         logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[1][cl]), sens, spec, auc[0]))
     logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}{:>19}".
-        format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec])), "--"))
+        "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}".
+        format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec, [el[0] for el in train_auc]])), "--"))
     logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}{:>19}\n\n".
-        format('VALIDATION MEANS', *list(map(mean, [val_sens, val_spec])), "--"))
+        "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}\n\n".
+        format('VALIDATION MEANS', *list(map(mean, [val_sens, val_spec, [el[0] for el in val_auc]])), "--"))
 
     if mean(val_sens) >= acc_threshold:
         logger.info('Validation accuracy threshold reached!')
