@@ -104,35 +104,36 @@ model = network(seq_len)
 model.load_state_dict(torch.load(modelfile, map_location=torch.device(device)))
 logger.info('\nModel from {} loaded in {:.2f} s'.format(modelfile, time() - t0))
 
-model.eval()
 test_loss_neurons = [[] for _ in range(num_classes)]
 true, scores = [], []
 confusion_matrix = np.zeros((num_classes, num_classes))
 output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
 logger.info('\n--- TESTING ---')
 t0 = time()
-for i, (seqs, labels) in enumerate(loader):
-    if use_cuda:
-        seqs = seqs.cuda()
-        labels = labels.cuda()
-    seqs = seqs.float()
-    labels = labels.long()
+with torch.no_grad():
+    model.eval()
+    for i, (seqs, labels) in enumerate(loader):
+        if use_cuda:
+            seqs = seqs.cuda()
+            labels = labels.cuda()
+        seqs = seqs.float()
+        labels = labels.long()
 
-    outputs = model(seqs)
+        outputs = model(seqs)
 
-    for o, l in zip(outputs, labels):
-        test_loss_neurons[l].append(-math.log((math.exp(o[l])) / (sum([math.exp(el) for el in o]))))
+        for o, l in zip(outputs, labels):
+            test_loss_neurons[l].append(-math.log((math.exp(o[l])) / (sum([math.exp(el) for el in o]))))
 
-    _, indices = torch.max(outputs, axis=1)
-    for ind, label, outp in zip(indices, labels.cpu(), outputs):
-        confusion_matrix[ind][label] += 1
-        output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(output_values[label])]
+        _, indices = torch.max(outputs, axis=1)
+        for ind, label, outp in zip(indices, labels.cpu(), outputs):
+            confusion_matrix[ind][label] += 1
+            output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(output_values[label])]
 
-    true += labels.tolist()
-    scores += outputs.tolist()
+        true += labels.tolist()
+        scores += outputs.tolist()
 
-    if i % 10 == 0:
-        logger.info('Batch {}/{}'.format(i, num_batches))
+        if i % 10 == 0:
+            logger.info('Batch {}/{}'.format(i, num_batches))
 
 # Calculate metrics
 test_losses, test_sens, test_spec = calculate_metrics(confusion_matrix, test_loss_neurons)

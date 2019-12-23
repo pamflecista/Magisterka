@@ -277,7 +277,7 @@ for epoch in range(num_epochs):
     assert math.floor(mean([el for el in train_losses if el])*10/10) == math.floor(float(train_loss_reduced)*10/10)
     train_auc = calculate_auc(true, scores, num_classes)
 
-    with torch.set_grad_enabled(False):
+    with torch.no_grad():
         model.eval()
         confusion_matrix = np.zeros((num_classes, num_classes))
         if epoch == num_epochs - 1:
