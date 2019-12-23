@@ -231,12 +231,12 @@ def write_test_results(logger, columns, variables, data_dir, subset):
 def check_cuda(logger):
     import torch
     use_cuda = torch.cuda.is_available()
-    # device = torch.device("cuda:0" if use_cuda else "cpu")
+    device = torch.device("cuda:0" if use_cuda else "cpu")
     if use_cuda:
         logger.info('--- CUDA available ---')
     else:
         logger.info('--- CUDA not available ---')
-    return use_cuda
+    return use_cuda, device
 
 
 def build_loggers(stage, output='./', namespace='test', verbose_mode=True, logfile=True, resultfile=True):

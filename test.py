@@ -53,7 +53,7 @@ with open(os.path.join(output, '{}_params.txt'.format(namespace)), 'r') as f:
         if line.startswith('Network type'):
             network = NET_TYPES[line.split(':')[-1].strip().lower()]
         elif line.startswith('Data directory') and not data_dir:
-            data_dir = line.split(':')[-1].strip()
+            data_dir = [line.split(':')[-1].strip()]
             if not data_dir:
                 l = f.readline()
                 while l.startswith('\t'):
@@ -71,7 +71,7 @@ logger.info('\nTesting the network {} begins {}\nInput data: {} from {}\nOutput 
     modelfile, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), subset, '; '.join(data_dir), output))
 
 # CUDA for PyTorch
-use_cuda = check_cuda(logger)
+use_cuda, device = check_cuda(logger)
 
 # Build dataset for testing
 t0 = time()
@@ -101,7 +101,7 @@ t0 = time()
 # Build network - this type which was used during training the model
 model = network(seq_len)
 # Load weights from the file
-model.load_state_dict(torch.load(modelfile))
+model.load_state_dict(torch.load(modelfile), map_location=torch.device(device))
 logger.info('\nModel from {} loaded in {:.2f} s'.format(modelfile, time() - t0))
 
 model.eval()

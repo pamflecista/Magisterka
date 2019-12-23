@@ -185,7 +185,7 @@ elif set(val_chr) & set(test_chr):
     logger.warning('WARNING - Chromosomes for validation and testing overlap!')
 
 # CUDA for PyTorch
-use_cuda = check_cuda(logger)
+use_cuda, _ = check_cuda(logger)
 
 dataset = SeqsDataset(data_dir, seq_len=seq_len)
 num_classes = dataset.num_classes
