@@ -101,7 +101,7 @@ t0 = time()
 # Build network - this type which was used during training the model
 model = network(seq_len)
 # Load weights from the file
-model.load_state_dict(torch.load(modelfile), map_location=torch.device(device))
+model.load_state_dict(torch.load(modelfile, map_location=torch.device(device)))
 logger.info('\nModel from {} loaded in {:.2f} s'.format(modelfile, time() - t0))
 
 model.eval()
