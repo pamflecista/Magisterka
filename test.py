@@ -38,7 +38,7 @@ batch_size = args.batch_size
 
 if args.model is None:
     modelfile = os.path.join(path, '{}_last.model'.format(namespace))
-elif not args.model.startswith(path):
+elif args.model.startswith('/'):
     modelfile = args.model
 else:
     modelfile = os.path.join(path, args.model)
