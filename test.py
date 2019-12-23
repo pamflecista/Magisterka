@@ -53,11 +53,12 @@ with open(os.path.join(output, '{}_params.txt'.format(namespace)), 'r') as f:
         if line.startswith('Network type'):
             network = NET_TYPES[line.split(':')[-1].strip().lower()]
         elif line.startswith('Data directory') and not data_dir:
-            data_dir = []
-            l = f.readline()
-            while l.startswith('\t'):
-                data_dir.append(l.strip())
+            data_dir = line.split(':')[-1].strip()
+            if not data_dir:
                 l = f.readline()
+                while l.startswith('\t'):
+                    data_dir.append(l.strip())
+                    l = f.readline()
         elif line.strip().startswith('Input sequence length'):
             seq_len = int(line.split(':')[-1].strip())
         elif line.startswith('{} chr'.format(subset)):
