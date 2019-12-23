@@ -146,7 +146,8 @@ def parse_arguments(args, file, namesp=None):
     elif namesp is not None:
         namespace = namesp
     elif file is not None:
-        namespace = file[0].strip('/').split('/')[-1].split('_')[0]
+        f = file if not isinstance(file, list) else file[0]
+        namespace = f.strip('/').split('/')[-1].split('_')[0]
     else:
         namespace = path.strip('/').split('/')[-1]
     if args.output is not None:
