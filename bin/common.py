@@ -7,13 +7,6 @@ NET_TYPES = {
     'custom': CustomNetwork
 }
 
-RESULTS_COLS = OrderedDict({
-    'Loss': ['losses', 'float-list'],
-    'Sensitivity': ['sens', 'float-list'],
-    'Specificity': ['spec', 'float-list'],
-    'AUC-neuron': ['aucINT', 'float-list']
-})
-
 
 def make_chrstr(chrlist):
 
@@ -166,24 +159,49 @@ def parse_arguments(args, file, namesp=None):
     return path, output, namespace, args.seed
 
 
-def results_header(stage, logger, classes=[]):
-    if 'AUC-neuron' in RESULTS_COLS.keys():
-        name, formatting = RESULTS_COLS['AUC-neuron']
-        del RESULTS_COLS['AUC-neuron']
+def results_header(stage, logger, columns, classes=()):
+    if 'AUC-neuron' in columns.keys():
+        name, formatting = columns['AUC-neuron']
+        del columns['AUC-neuron']
         for i, classname in enumerate(classes):
-            RESULTS_COLS['AUC - {}'.format(classname)] = [name.replace('INT', str(i)), formatting]
-    towrite = '\t'.join(RESULTS_COLS.keys())
+            columns['AUC - {}'.format(classname)] = [name.replace('INT', str(i)), formatting]
+    towrite = '\t'.join(columns.keys())
     if stage == 'train':
         logger.info('Epoch\tStage\t{}'.format(towrite))
     elif stage == 'test':
         logger.info('Dataset\tSubset\t{}'.format(towrite))
-    return logger
+    return logger, columns
 
 
-def write_train_results(logger, variables, epoch):
-    for stage in ['train', 'val']:
-        result_string = '{}\t{}'.format(epoch+1, stage)
-        for col, formatting in RESULTS_COLS.values():
+def read_results_columns(results_table, columns):
+    file = results_table.handlers[0].baseFilename
+    with open(file, 'r') as f:
+        header = f.readline().strip().split('\t')
+        i = 0
+        for h in header:
+            if h not in columns:
+                if 'AUC' in h:
+                    name, formatting = columns['AUC-neuron']
+                    columns[h] = [name.replace('INT', str(i)), formatting]
+                    i += 1
+                elif h not in ['Epoch', 'Stage', 'Dataset', 'Subset']:
+                    raise ValueError
+    if i > 0:
+        del columns['AUC-neuron']
+    return columns
+
+
+def write_results(logger, columns, stages, variables, *beginning):
+    for stage in stages:
+        result_string = ''
+        for begin in beginning:
+            if isinstance(begin, list):
+                result_string += '{}\t'.format('; '.join(begin))
+            else:
+                result_string += '{}\t'.format(begin)
+        if stage in ['train', 'val']:
+            result_string += '{}\t'.format(stage)
+        for col, formatting in columns.values():
             if col[-1].isdigit():
                 variable = variables['{}_{}'.format(stage, col[:-1])][int(col[-1])]
             else:
@@ -195,8 +213,18 @@ def write_train_results(logger, variables, epoch):
         logger.info(result_string)
 
 
-def write_test_results(logger, variables):
-    pass
+def write_test_results(logger, columns, variables, data_dir, subset):
+    result_string = '{}\t{}'.format(data_dir, subset)
+    for col, formatting in columns.values():
+        if col[-1].isdigit():
+            variable = variables[col[:-1]][int(col[-1])]
+        else:
+            variable = variables['test_{}'.format(col)]
+        if formatting == 'float-list':
+            result_string += '\t' + ', '.join(['{:.2f}'.format(el) for el in variable])
+        elif formatting == 'float':
+            result_string += '\t{:.2f}'.format('test_{}'.format(variable))
+    logger.info(result_string)
 
 
 def check_cuda(logger):
@@ -228,11 +256,17 @@ def build_loggers(stage, output='./', namespace='test', verbose_mode=True, logfi
         logger.addHandler(log_handler)
     if resultfile:
         results_table = logging.getLogger('results')
-        results_handler = logging.FileHandler(os.path.join(output, '{}_{}_results.tsv'.format(namespace, stage)))
+        results_file = os.path.join(output, '{}_{}_results.tsv'.format(namespace, stage))
+        if os.path.isfile(results_file):
+            old_results = True
+        else:
+            old_results = False
+        results_handler = logging.FileHandler(results_file)
         results_handler.setFormatter(formatter)
         results_table.addHandler(results_handler)
         results_table.setLevel(logging.INFO)
         loggers.append(results_table)
+        return loggers, old_results
     return loggers
 
 

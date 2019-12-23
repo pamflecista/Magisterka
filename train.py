@@ -51,6 +51,14 @@ PARAMS = OrderedDict({
 })
 
 
+RESULTS_COLS = OrderedDict({
+    'Loss': ['losses', 'float-list'],
+    'Sensitivity': ['sens', 'float-list'],
+    'Specificity': ['spec', 'float-list'],
+    'AUC-neuron': ['aucINT', 'float-list']
+})
+
+
 def adjust_learning_rate(epoch, optimizer):
     lr = 0.001
 
@@ -142,7 +150,7 @@ else:
     adjust_lr = True
 
 # Define files for logs and for results
-logger, results_table = build_loggers('train', output=output, namespace=namespace)
+(logger, results_table), old_results = build_loggers('train', output=output, namespace=namespace)
 
 logger.info('\nAnalysis {} begins {}\nInput data: {}\nOutput directory: {}\n'.format(
     namespace, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), '; '.join(data_dir), output))
@@ -184,7 +192,10 @@ num_classes = dataset.num_classes
 classes = dataset.classes
 
 # write header of results table
-results_table = train_results_header(results_table, classes)
+if not old_results:
+    results_table, columns = results_header('train', results_table, RESULTS_COLS, classes)
+else:
+    columns = read_results_columns(results_table, RESULTS_COLS)
 
 # Creating data indices for training, validation and test splits:
 indices = dataset.get_chrs([train_chr, val_chr, test_chr])
@@ -195,8 +206,8 @@ num_seqs = ' + '.join([str(len(el)) for el in [train_indices, val_indices, test_
 for i, (n, ch, ind) in enumerate(zip(['train', 'valid', 'test'], map(make_chrstr, [train_chr, val_chr, test_chr]),
                                      [train_indices, val_indices, test_indices])):
     logger.info('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, ch, len(indices[i])))
-    for classname, el in class_stage[i]:
-        logger.info('{} - {}'.format(classname, el))
+    for classname, el in class_stage[i].items():
+        logger.info('{} - {}'.format(classname, len(el)))
     # Writing IDs for each split into file
     with open(os.path.join(output, '{}_{}.txt'.format(namespace, n)), 'w') as f:
         f.write('\n'.join([dataset.IDs[j] for j in ind]))
@@ -207,7 +218,7 @@ valid_sampler = SubsetRandomSampler(val_indices)
 train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
 val_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=valid_sampler)
 
-logger.info('\nTraining, validation and testing datasets built in {:.2f} s'.format(time() - t0))
+logger.info('\nTraining and validation datasets built in {:.2f} s'.format(time() - t0))
 
 num_batches = math.ceil(train_len / batch_size)
 
@@ -310,21 +321,21 @@ for epoch in range(num_epochs):
         torch.save(model.state_dict(), os.path.join(output, '{}_last.model'.format(namespace)))
 
     # Write the results
-    write_train_results(results_table, globals(), epoch)
+    write_results(results_table, columns, ['train', 'val'], globals(), epoch+1)
     # Print the metrics
     logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
                 .format(epoch+1, (time() - t0)/60, train_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
-    logger.info("--{:>18s} :{:>5} seqs{:>15}".format('TRAINING', train_len, "--"))
-    for cl, seqs, sens, spec, auc in zip(dataset.classes, class_stage[0], train_sens, train_spec, train_auc):
-        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(seqs[cl]), sens, spec, auc[0]))
-    logger.info("--{:>18s} :{:>5} seqs{:>15}".format('VALIDATION', val_len, "--"))
-    for cl, seqs, sens, spec, auc in zip(dataset.classes, class_stage[1], val_sens, val_spec, val_auc):
-        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(seqs[cl]), sens, spec, auc[0]))
+    logger.info("--{:>18s} :{:>5} seqs{:>22}".format('TRAINING', train_len, "--"))
+    for cl, sens, spec, auc in zip(dataset.classes, train_sens, train_spec, train_auc):
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[0][cl]), sens, spec, auc[0]))
+    logger.info("--{:>18s} :{:>5} seqs{:>22}".format('VALIDATION', val_len, "--"))
+    for cl, sens, spec, auc in zip(dataset.classes, val_sens, val_spec, val_auc):
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[1][cl]), sens, spec, auc[0]))
     logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}".
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>19}".
         format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec])), "--"))
     logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}{:>12}\n\n".
+        "--{:>18s} : {:1.3f}, {:1.3f}{:>19}\n\n".
         format('VALIDATION MEANS', *list(map(mean, [val_sens, val_spec])), "--"))
 
     if mean(val_sens) >= acc_threshold:

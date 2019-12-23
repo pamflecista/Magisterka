@@ -11,7 +11,7 @@ import math
 
 class SeqsDataset(Dataset):
 
-    def __init__(self, data, filetype='fasta', seq_len=2000):
+    def __init__(self, data, subset=(), filetype='fasta', seq_len=2000):
 
         # Establishing files' IDs and their directories
         if isinstance(data, str):
@@ -30,13 +30,14 @@ class SeqsDataset(Dataset):
         for dd in data:
             if os.path.isfile(dd) and dd.endswith(filetype):
                 name = dd.strip('.{}'.format(filetype))
-                ids.append(name)
-                d = '/'.join(dd.split('/')[:-1])
-                dirs.append(d)
-                if name not in locs:
-                    locs[name] = dirs.index(d)
-                else:
-                    RepeatedFileError(name, dirs[locs[name]], d)
+                if not subset or name in subset:
+                    ids.append(name)
+                    d = '/'.join(dd.split('/')[:-1])
+                    dirs.append(d)
+                    if name not in locs:
+                        locs[name] = dirs.index(d)
+                    else:
+                        RepeatedFileError(name, dirs[locs[name]], d)
             for r, _, f in os.walk(dd):
                 fs = [el for el in f if el.endswith(filetype)]
                 if len(fs) > 0:
@@ -44,6 +45,8 @@ class SeqsDataset(Dataset):
                         dirs.append(r)
                 for file in fs:
                     name = file.strip('.{}'.format(filetype))
+                    if subset and name not in subset:
+                        continue
                     ids.append(name)
                     if name not in locs:
                         locs[name] = dirs.index(r)
