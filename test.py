@@ -53,7 +53,7 @@ with open(os.path.join(output, '{}_params.txt'.format(namespace)), 'r') as f:
         if line.startswith('Network type'):
             network = NET_TYPES[line.split(':')[-1].strip().lower()]
         elif line.startswith('Data directory') and not data_dir:
-            data_dir = [el for el in line.split(':')[-1].strip() if el]
+            data_dir = [el for el in line.split(':')[-1].strip().split('; ') if el]
             if not data_dir:
                 l = f.readline()
                 while l.startswith('\t'):
