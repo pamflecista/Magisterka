@@ -197,11 +197,11 @@ def write_results(logger, columns, stages, variables, *beginning):
         result_string = ''
         for begin in beginning:
             if isinstance(begin, list):
-                result_string += '{}\t'.format('; '.join(begin))
+                result_string += '\t{}'.format('; '.join(begin))
             else:
-                result_string += '{}\t'.format(begin)
+                result_string += '\t{}'.format(begin)
         if stage in ['train', 'val']:
-            result_string += '{}\t'.format(stage)
+            result_string += '\t{}'.format(stage)
         for col, formatting in columns.values():
             if col[-1].isdigit():
                 variable = variables['{}_{}'.format(stage, col[:-1])][int(col[-1])]
@@ -211,7 +211,7 @@ def write_results(logger, columns, stages, variables, *beginning):
                 result_string += '\t' + ', '.join(['{:.2f}'.format(el) for el in variable])
             elif formatting == 'float':
                 result_string += '\t{:.2f}'.format(variables['{}_{}'.format(stage, col)])
-        logger.info(result_string)
+        logger.info(result_string.strip())
 
 
 def write_test_results(logger, columns, variables, data_dir, subset):
