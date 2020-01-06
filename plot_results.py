@@ -94,7 +94,7 @@ with open(table, 'r') as f:
         stages = [el for el in STAGES.keys() if globals()[el]]
     values = [[[] for _ in colnum] for el in stages]  # for each stage and for each column
     for e, line in enumerate(f):
-        line = line.split('\t')
+        line = line.strip().split('\t')
         if train or val:
             if int(line[0]) > epoch:
                 epoch = int(line[0])

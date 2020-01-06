@@ -233,12 +233,12 @@ logger.info('\n--- TRAINING ---')
 t = time()
 for epoch in range(num_epochs):
     t0 = time()
-    model.train()
     confusion_matrix = np.zeros((num_classes, num_classes))
     train_loss_neurons = [[] for _ in range(num_classes)]
     train_loss_reduced = 0.0
     true, scores = [], []
     for i, (seqs, labels) in enumerate(train_loader):
+        model.train()
         if use_cuda:
             seqs = seqs.cuda()
             labels = labels.cuda()
@@ -253,16 +253,22 @@ for epoch in range(num_epochs):
 
         optimizer.step()
 
-        for o, l in zip(outputs, labels):
-            train_loss_neurons[l].append(-math.log((math.exp(o[l]))/(sum([math.exp(el) for el in o]))))
-        train_loss_reduced += loss.cpu().data
+        with torch.no_grad():
+            model.eval()
+            outputs = model(seqs)
+            losses = []
+            for o, l in zip(outputs, labels):
+                loss = -math.log((math.exp(o[l]))/(sum([math.exp(el) for el in o])))
+                train_loss_neurons[l].append(loss)
+                losses.append(loss)
+            train_loss_reduced += mean(l)
 
-        _, indices = torch.max(outputs, axis=1)
-        for ind, label in zip(indices, labels.cpu()):
-            confusion_matrix[ind][label] += 1
+            _, indices = torch.max(outputs, axis=1)
+            for ind, label in zip(indices, labels.cpu()):
+                confusion_matrix[ind][label] += 1
 
-        true += labels.tolist()
-        scores += outputs.tolist()
+            true += labels.tolist()
+            scores += outputs.tolist()
 
         if i % 10 == 0:
             logger.info('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
