@@ -25,7 +25,7 @@ parser.add_argument('--model', action='store', metavar='NAME', type=str, default
 group1 = parser.add_mutually_exclusive_group(required=False)
 group1.add_argument('--train', action='store_true',
                     help='Test model on the train data of the given model')
-group1.add_argument('--val', action='store_true',
+group1.add_argument('--valid', action='store_true',
                     help='Test model on the validation data of the given model')
 group1.add_argument('--dataset', action='store', metavar='DATA', type=str, nargs='+', default=[],
                     help='Directory with the data for testing')
@@ -46,7 +46,7 @@ else:
 data_dir = args.dataset
 allseqs = True if data_dir else False
 
-subset = 'train' if args.train else 'val' if args.val else 'test' if not allseqs else 'all'
+subset = 'train' if args.train else 'valid' if args.valid else 'test' if not allseqs else 'all'
 seq_len = 2000
 with open(os.path.join(output, '{}_params.txt'.format(namespace)), 'r') as f:
     for line in f:
