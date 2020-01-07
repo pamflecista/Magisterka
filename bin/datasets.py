@@ -38,7 +38,7 @@ class SeqsDataset(Dataset):
                         locs[name] = dirs.index(d)
                     else:
                         RepeatedFileError(name, dirs[locs[name]], d)
-            for r, _, f in os.walk(dd):
+            for r, _, f in os.walk(dd, followlinks=True):
                 fs = [el for el in f if el.endswith(filetype)]
                 if len(fs) > 0:
                     if r not in dirs:
