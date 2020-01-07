@@ -261,7 +261,7 @@ for epoch in range(num_epochs):
                 loss = -math.log((math.exp(o[l]))/(sum([math.exp(el) for el in o])))
                 train_loss_neurons[l].append(loss)
                 losses.append(loss)
-            train_loss_reduced += mean(l)
+            train_loss_reduced += mean(losses)
 
             _, indices = torch.max(outputs, axis=1)
             for ind, label in zip(indices, labels.cpu()):
