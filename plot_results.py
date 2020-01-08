@@ -46,6 +46,7 @@ path, output, namespace, seed = parse_arguments(args, args.table)
 train = False
 val = True
 test = False
+all = False
 if args.train:
     train = True
 elif args.test:
@@ -63,6 +64,8 @@ elif test:
     table = os.path.join(path, namespace + '_test_results.tsv')
 else:
     table = os.path.join(path, namespace + '_train_results.tsv')
+    if not os.path.isfile(table):
+        table = os.path.join(path, namespace + '_results.tsv')
 
 if args.param is not None:
     if args.path is not None:
@@ -111,7 +114,11 @@ with open(table, 'r') as f:
             for j, c in enumerate(colnum):
                 values[0][j].append([float(el) if el != '-' else np.nan for el in line[c].split(', ')])
 
-ylims = [np.min(values) - 0.05, np.max(values) + 0.05]
+try:
+    ylims = [np.min(values) - 0.05, np.max(values) + 0.05]
+except ValueError:
+    print('No values were read from the results file!')
+    raise ValueError
 
 
 def plot_one(ax, x, y, line, label):
@@ -163,7 +170,7 @@ for i, (stage, value) in enumerate(zip(stages, values)):  # for each stage
             plot_one(a, epochs, y, 'x', 'mean')
 
 fig.suptitle(namespace)
-axes[-1][0].legend(bbox_to_anchor=(0, -0.1*(i+j+1)), loc="upper left", ncol=4)
+axes[-1][0].legend(bbox_to_anchor=(0, -0.07*(i+j+1)), loc="upper left", ncol=4)
 plt.show()
 plotname = '-'.join([s[:5].lower() for s in stages]) + ':' + '-'.join([el.lower() for el in columns])
 fig.savefig(os.path.join(output, namespace + '_{}.png'.format(plotname)))
