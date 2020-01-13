@@ -237,6 +237,9 @@ for epoch in range(num_epochs):
     train_loss_neurons = [[] for _ in range(num_classes)]
     train_loss_reduced = 0.0
     true, scores = [], []
+    if epoch == num_epochs - 1:
+        train_output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
+        val_output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
     for i, (seqs, labels) in enumerate(train_loader):
         model.train()
         if use_cuda:
@@ -266,6 +269,8 @@ for epoch in range(num_epochs):
             _, indices = torch.max(outputs, axis=1)
             for ind, label in zip(indices, labels.cpu()):
                 confusion_matrix[ind][label] += 1
+                if epoch == num_epochs - 1:
+                    train_output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(train_output_values[label])]
 
             true += labels.tolist()
             scores += outputs.tolist()
@@ -286,8 +291,6 @@ for epoch in range(num_epochs):
     with torch.no_grad():
         model.eval()
         confusion_matrix = np.zeros((num_classes, num_classes))
-        if epoch == num_epochs - 1:
-            output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
         val_loss_neurons = [[] for _ in range(num_classes)]
         true, scores = [], []
         for i, (seqs, labels) in enumerate(val_loader):
@@ -306,7 +309,7 @@ for epoch in range(num_epochs):
             for ind, label, outp in zip(indices, labels.cpu(), outputs):
                 confusion_matrix[ind][label] += 1
                 if epoch == num_epochs - 1:
-                    output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(output_values[label])]
+                    val_output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(val_output_values[label])]
 
             true += labels.tolist()
             scores += outputs.tolist()
@@ -320,10 +323,11 @@ for epoch in range(num_epochs):
         torch.save(model.state_dict(), os.path.join(output, "{}_{}.model".format(namespace, epoch + 1)))
         best_acc = mean(val_sens)
 
-    # If it is a last epoch write neurons' outputs
+    # If it is a last epoch write neurons' outputs, labels and model
     if epoch == num_epochs - 1:
         logger.info('Last epoch - writing neurons outputs for each class!')
-        np.save(os.path.join(output, '{}_outputs'.format(namespace)), np.array(output_values))
+        np.save(os.path.join(output, '{}_train_outputs'.format(namespace)), np.array(train_output_values))
+        np.save(os.path.join(output, '{}_valid_outputs'.format(namespace)), np.array(val_output_values))
         torch.save(model.state_dict(), os.path.join(output, '{}_last.model'.format(namespace)))
 
     # Write the results

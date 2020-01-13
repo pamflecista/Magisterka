@@ -34,19 +34,18 @@ parser.add_argument('--batch_size', action='store', metavar='INT', type=int, def
 parser = basic_params(parser)
 args = parser.parse_args()
 path, output, namespace, seed = parse_arguments(args, args.model)
-batch_size = args.batch_size
 
+batch_size = args.batch_size
 if args.model is None:
     modelfile = os.path.join(path, '{}_last.model'.format(namespace))
 elif args.model.startswith('/'):
     modelfile = args.model
 else:
     modelfile = os.path.join(path, args.model)
-
 data_dir = args.dataset
 allseqs = True if data_dir else False
-
 subset = 'train' if args.train else 'valid' if args.valid else 'test' if not allseqs else 'all'
+
 seq_len = 2000
 with open(os.path.join(output, '{}_params.txt'.format(namespace)), 'r') as f:
     for line in f:
@@ -77,6 +76,7 @@ use_cuda, device = check_cuda(logger)
 t0 = time()
 if subset == 'all':
     names = []
+    subset += ':{}'.format(os.path.splitext(data_dir)[-1].split('_')[0])
 else:
     names = open(os.path.join(output, '{}_{}.txt'.format(namespace, subset)), 'r').read().strip().split('\n')
 dataset = SeqsDataset(data_dir, subset=names, seq_len=seq_len)
@@ -142,6 +142,7 @@ test_auc = calculate_auc(true, scores, num_classes)
 
 # Write the results
 write_results(results_table, columns, ['test'], globals(), data_dir, subset)
+np.save(os.path.join(output, '{}_{}_outputs'.format(namespace, subset)), np.array(output_values))
 
 logger.info("Testing finished in {:.2f} min\nTest loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
             .format((time() - t0) / 60, test_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
