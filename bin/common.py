@@ -271,6 +271,19 @@ def build_loggers(stage, output='./', namespace='test', verbose_mode=True, logfi
     return loggers
 
 
+def get_classes_names(param):
+    with open(param, 'r') as f:
+        for line in f:
+            if line.startswith('Possible classes'):
+                neurons = [el for el in line.split(':')[-1].strip().split('; ') if el]
+                l = f.readline()
+                while l.startswith('\t'):
+                    neurons.append(l.strip())
+                    l = f.readline()
+                break
+    return neurons
+
+
 '''def print_results(logger, columns, variables, epoch):
     logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}"
                 .format(epoch + 1, (time() - t0) / 60, train_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY'))

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from statistics import mean
 import math
 from bin.common import basic_params, parse_arguments
+from bin.common import *
 
 COLORS = ['C{}'.format(i) for i in range(10)]
 
@@ -127,15 +128,7 @@ def plot_one(ax, x, y, line, label):
     ax.set_ylim(*ylims)
 
 
-with open(param, 'r') as f:
-    for line in f:
-        if line.startswith('Possible classes'):
-            neurons = [el for el in line.split(':')[-1].strip().split('; ') if el]
-            l = f.readline()
-            while l.startswith('\t'):
-                neurons.append(l.strip())
-                l = f.readline()
-            break
+neurons = get_classes_names(param)
 
 fig, axes = plt.subplots(nrows=len(colnum), ncols=len(stages), figsize=(12, 8), squeeze=False)
 if axes.shape[1] > 1:
