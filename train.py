@@ -270,7 +270,7 @@ for epoch in range(num_epochs):
             for ind, label in zip(indices, labels.cpu()):
                 confusion_matrix[ind][label] += 1
                 if epoch == num_epochs - 1:
-                    train_output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(train_output_values[label])]
+                    train_output_values[label] = [el + [outp[j].cpu().item()] for j, el in enumerate(train_output_values[label])]
 
             true += labels.tolist()
             scores += outputs.tolist()
@@ -287,6 +287,8 @@ for epoch in range(num_epochs):
     train_loss_reduced = train_loss_reduced / num_batches
     assert math.floor(mean([el for el in train_losses if el])*10/10) == math.floor(float(train_loss_reduced)*10/10)
     train_auc = calculate_auc(true, scores, num_classes)
+    if epoch == num_epochs - 1:
+        train_labels = true
 
     with torch.no_grad():
         model.eval()
@@ -309,7 +311,7 @@ for epoch in range(num_epochs):
             for ind, label, outp in zip(indices, labels.cpu(), outputs):
                 confusion_matrix[ind][label] += 1
                 if epoch == num_epochs - 1:
-                    val_output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(val_output_values[label])]
+                    val_output_values[label] = [el + [outp[j].cpu().item()] for j, el in enumerate(val_output_values[label])]
 
             true += labels.tolist()
             scores += outputs.tolist()
@@ -325,9 +327,12 @@ for epoch in range(num_epochs):
 
     # If it is a last epoch write neurons' outputs, labels and model
     if epoch == num_epochs - 1:
+        val_labels = true
         logger.info('Last epoch - writing neurons outputs for each class!')
-        np.save(os.path.join(output, '{}_train_outputs'.format(namespace)), np.array(train_output_values))
-        np.save(os.path.join(output, '{}_valid_outputs'.format(namespace)), np.array(val_output_values))
+        np.save(os.path.join(output, '{}_train_outputs'.format(namespace)), np.array([np.array(el) for el in train_output_values]))
+        np.save(os.path.join(output, '{}_train_labels'.format(namespace)), np.array(train_labels))
+        np.save(os.path.join(output, '{}_valid_outputs'.format(namespace)), np.array([np.array(el) for el in val_output_values]))
+        np.save(os.path.join(output, '{}_valid_labels'.format(namespace)), np.array(val_labels))
         torch.save(model.state_dict(), os.path.join(output, '{}_last.model'.format(namespace)))
 
     # Write the results

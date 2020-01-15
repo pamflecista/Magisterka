@@ -143,6 +143,7 @@ test_auc = calculate_auc(true, scores, num_classes)
 # Write the results
 write_results(results_table, columns, ['test'], globals(), data_dir, subset)
 np.save(os.path.join(output, '{}_{}_outputs'.format(namespace, subset)), np.array(output_values))
+np.save(os.path.join(output, '{}_{}_labels'.format(namespace, subset)), np.array(true))
 
 logger.info("Testing finished in {:.2f} min\nTest loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
             .format((time() - t0) / 60, test_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
