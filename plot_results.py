@@ -122,8 +122,8 @@ except ValueError:
     raise ValueError
 
 
-def plot_one(ax, x, y, line, label):
-    ax.plot(x, y, line, label=label, alpha=0.7)
+def plot_one(ax, x, y, line, label, color):
+    ax.plot(x, y, line, label=label, alpha=0.7, color=color)
     ax.set_xlabel('Epoch')
     ax.set_ylim(*ylims)
 
@@ -153,14 +153,14 @@ for i, (stage, value) in enumerate(zip(stages, values)):  # for each stage
         if len(value[j][0]) == len(neurons):  # check number of values for 1st epoch
             for k, n in enumerate(neurons):  # for each neuron
                 y = [el[k] for el in value[j]]
-                plot_one(a, epochs, y, '.', n)
+                plot_one(a, epochs, y, '.', n, COLORS[k])
         elif len(value[j][0]) == 1:  # or for single values
-            plot_one(a, epochs, value[j], '.', 'general')
+            plot_one(a, epochs, value[j], '.', 'general', COLORS[-1])
         else:
             raise ValueError
         if args.print_mean and len(value[j]) == len(neurons):
             y = [mean(el) for el in value[j]]
-            plot_one(a, epochs, y, 'x', 'mean')
+            plot_one(a, epochs, y, 'x', 'mean', COLORS[-2])
 
 fig.suptitle(namespace)
 axes[-1][0].legend(bbox_to_anchor=(0, -0.07*(i+j+1)), loc="upper left", ncol=4)

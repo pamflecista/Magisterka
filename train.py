@@ -163,6 +163,7 @@ elif set(train_chr) & set(test_chr):
     logger.warning('WARNING - Chromosomes for training and testing overlap!')
 elif set(val_chr) & set(test_chr):
     logger.warning('WARNING - Chromosomes for validation and testing overlap!')
+
 # CUDA for PyTorch
 use_cuda, _ = check_cuda(logger)
 
@@ -249,7 +250,7 @@ for epoch in range(num_epochs):
             for ind, label in zip(indices, labels.cpu()):
                 confusion_matrix[ind][label] += 1
                 if epoch == num_epochs - 1:
-                    train_output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(train_output_values[label])]
+                    train_output_values[label] = [el + [outp[j].cpu().item()] for j, el in enumerate(train_output_values[label])]
 
             true += labels.tolist()
             scores += outputs.tolist()
@@ -288,7 +289,7 @@ for epoch in range(num_epochs):
             for ind, label, outp in zip(indices, labels.cpu(), outputs):
                 confusion_matrix[ind][label] += 1
                 if epoch == num_epochs - 1:
-                    val_output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(val_output_values[label])]
+                    val_output_values[label] = [el + [outp[j].cpu().item()] for j, el in enumerate(val_output_values[label])]
 
             true += labels.tolist()
             scores += outputs.tolist()
