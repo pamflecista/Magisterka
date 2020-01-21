@@ -138,7 +138,7 @@ with torch.no_grad():
 # Calculate metrics
 test_losses, test_sens, test_spec = calculate_metrics(confusion_matrix, test_loss_neurons)
 test_loss_reduced = math.floor(mean([el for el in test_losses if el])*10/10)
-test_auc = calculate_auc(true, scores, num_classes)
+test_auc = calculate_auc(true, scores)
 
 # Write the results
 write_results(results_table, columns, ['test'], globals(), data_dir, subset)

@@ -156,34 +156,13 @@ logger.info('\nAnalysis {} begins {}\nInput data: {}\nOutput directory: {}\n'.fo
     namespace, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), '; '.join(data_dir), output))
 
 t0 = time()
-train_chr, val_chr, test_chr = [], [], []
-if not args.train.startswith('-'):
-    train_chr = read_chrstr(args.train)
-if not args.val.startswith('-'):
-    val_chr = read_chrstr(args.val)
-if not args.test.startswith('-'):
-    test_chr = read_chrstr(args.test)
-
-used_chr = train_chr + val_chr + test_chr
-if not train_chr:
-    train_chr = random.sample([el for el in range(1, 24) if el not in used_chr], int(args.train.lstrip('-')))
-    train_chr.sort()
-    used_chr += train_chr
-if not val_chr:
-    val_chr = random.sample([el for el in range(1, 24) if el not in used_chr], int(args.val.lstrip('-')))
-    val_chr.sort()
-    used_chr += val_chr
-if not test_chr:
-    test_chr = random.sample([el for el in range(1, 24) if el not in used_chr], int(args.test.lstrip('-')))
-    test_chr.sort()
-
+train_chr, val_chr, test_chr = divide_chr(args.train, args.val, args.test)
 if set(train_chr) & set(val_chr):
     logger.warning('WARNING - Chromosomes for training and validation overlap!')
 elif set(train_chr) & set(test_chr):
     logger.warning('WARNING - Chromosomes for training and testing overlap!')
 elif set(val_chr) & set(test_chr):
     logger.warning('WARNING - Chromosomes for validation and testing overlap!')
-
 # CUDA for PyTorch
 use_cuda, _ = check_cuda(logger)
 
@@ -286,7 +265,7 @@ for epoch in range(num_epochs):
     train_losses, train_sens, train_spec = calculate_metrics(confusion_matrix, train_loss_neurons)
     train_loss_reduced = train_loss_reduced / num_batches
     assert math.floor(mean([el for el in train_losses if el])*10/10) == math.floor(float(train_loss_reduced)*10/10)
-    train_auc = calculate_auc(true, scores, num_classes)
+    train_auc = calculate_auc(true, scores)
 
     with torch.no_grad():
         model.eval()
@@ -316,7 +295,7 @@ for epoch in range(num_epochs):
 
     # Calculate metrics
     val_losses, val_sens, val_spec = calculate_metrics(confusion_matrix, val_loss_neurons)
-    val_auc = calculate_auc(true, scores, num_classes)
+    val_auc = calculate_auc(true, scores)
 
     # Save the model if the test acc is greater than our current best
     if mean(val_sens) > best_acc and epoch < num_epochs - 1:

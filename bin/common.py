@@ -68,8 +68,9 @@ def calculate_metrics(confusion_matrix, losses):
     return loss, sens, spec
 
 
-def calculate_auc(true, scores, num_classes):
+def calculate_auc(true, scores):
     from sklearn.metrics import roc_auc_score
+    num_classes = scores.shape[1]
     auc = [[] for _ in range(num_classes)]
     for neuron in range(num_classes):
         y_true = [1 if el == neuron else 0 for el in true]
@@ -282,6 +283,30 @@ def get_classes_names(param):
                     l = f.readline()
                 break
     return neurons
+
+
+def divide_chr(train, val, test):
+    import random
+    train_chr, val_chr, test_chr = [], [], []
+    if not train.startswith('-'):
+        train_chr = read_chrstr(train)
+    if not val.startswith('-'):
+        val_chr = read_chrstr(val)
+    if not test.startswith('-'):
+        test_chr = read_chrstr(test)
+    used_chr = train_chr + val_chr + test_chr
+    if not train_chr:
+        train_chr = random.sample([el for el in range(1, 24) if el not in used_chr], int(train.lstrip('-')))
+        train_chr.sort()
+        used_chr += train_chr
+    if not val_chr:
+        val_chr = random.sample([el for el in range(1, 24) if el not in used_chr], int(val.lstrip('-')))
+        val_chr.sort()
+        used_chr += val_chr
+    if not test_chr:
+        test_chr = random.sample([el for el in range(1, 24) if el not in used_chr], int(test.lstrip('-')))
+        test_chr.sort()
+    return train_chr. val_chr, test_chr
 
 
 '''def print_results(logger, columns, variables, epoch):
