@@ -70,7 +70,7 @@ def calculate_metrics(confusion_matrix, losses):
 
 def calculate_auc(true, scores):
     from sklearn.metrics import roc_auc_score
-    num_classes = scores.shape[1]
+    num_classes = len(scores[0])
     auc = [[0 for _ in range(num_classes)] for _ in range(num_classes)]
     for neuron in range(num_classes):
         y_true = [1 if el == neuron else 0 for el in true]
