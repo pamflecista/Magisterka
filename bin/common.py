@@ -333,7 +333,7 @@ def divide_chr(train, val, test):
     if not test_chr:
         test_chr = random.sample([el for el in range(1, 24) if el not in used_chr], int(test.lstrip('-')))
         test_chr.sort()
-    return train_chr. val_chr, test_chr
+    return train_chr, val_chr, test_chr
 
 
 '''def print_results(logger, columns, variables, epoch):
