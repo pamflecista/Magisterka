@@ -71,17 +71,44 @@ def calculate_metrics(confusion_matrix, losses):
 def calculate_auc(true, scores):
     from sklearn.metrics import roc_auc_score
     num_classes = scores.shape[1]
-    auc = [[] for _ in range(num_classes)]
+    auc = [[0 for _ in range(num_classes)] for _ in range(num_classes)]
     for neuron in range(num_classes):
         y_true = [1 if el == neuron else 0 for el in true]
         y_score = [el[neuron] for el in scores]
-        auc[neuron].append(roc_auc_score(y_true, y_score))
+        auc[neuron][neuron] = roc_auc_score(y_true, y_score)
         for neg in [i for i in range(num_classes) if i != neuron]:
             y_help = [1 if el == neuron else 0 if el == neg else -1 for el in true]
             y_score = [el[neuron] for use, el in zip(y_help, scores) if use != -1]
             y_true = [el for el in y_help if el != -1]
-            auc[neuron].append(roc_auc_score(y_true, y_score))
+            auc[neuron][neg] = roc_auc_score(y_true, y_score)
     return auc
+
+
+def correct_old_auc_results(file):
+    f = open(file, 'r')
+    w = open(file.replace('.tsv', '_corrected.tsv'), 'w')
+    header = f.readline()
+    w.write(header)
+    print(header)
+    print(header.strip().split('\t'))
+    cols = [i for i, el in enumerate(header.strip().split('\t')) if 'AUC' in el]
+    print(cols)
+    for line in f:
+        l = line.strip().split('\t')
+        towrite = []
+        for i, el in enumerate(l):
+            if i in cols:
+                el = el.split(', ')
+                new = [0 for _ in range(len(cols))]
+                new[cols.index(i)] = el[0]
+                for v, vv in zip(el[1:], [e for e, ee in enumerate(new) if ee == 0]):
+                    new[vv] = v
+                towrite.append(', '.join(new))
+            else:
+                towrite.append(el)
+        w.write('\t'.join(towrite) + '\n')
+    f.close()
+    w.close()
 
 
 def write_params(params, glob, file):
