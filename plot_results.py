@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from statistics import mean
 import math
-from bin.common import basic_params, parse_arguments
 from bin.common import *
 
 COLORS = ['C{}'.format(i) for i in range(10)]
@@ -13,7 +12,8 @@ STAGES = {
     'train': 'Training',
     'val': 'Validation',
     'test': 'Testing',
-    'all': 'All'
+    'all': 'All',
+    'cv': 'CV'
 }
 
 SHORTCUTS = {
@@ -35,10 +35,17 @@ group1.add_argument('--train', action='store_true',
                     help='Use values from training, default values from validation are used')
 group1.add_argument('--test', action='store_true',
                     help='Use testing results.')
+group1.add_argument('--cv', action='store_true',
+                    help='Use CV results.')
 parser.add_argument('--not_valid', action='store_true',
                     help='Do not print values from validation')
 parser.add_argument('--print_mean', action='store_true',
                     help='Print also mean of the given data')
+group2 = parser.add_mutually_exclusive_group(required=False)
+group2.add_argument('--scatter', action='store_true',
+                    help='Scatter plot')
+group2.add_argument('--boxplot', action='store_true',
+                    help='Boxplot plot of values')
 args = parser.parse_args()
 
 
@@ -48,13 +55,24 @@ train = False
 val = True
 test = False
 all = False
+cv = False
 if args.train:
     train = True
 elif args.test:
     test = True
     val = False
+elif args.cv:
+    cv = True
+    val = False
 if args.not_valid:
     val = False
+
+if args.boxplot:
+    boxplot = True
+    scatter = False
+else:
+    scatter = True
+    boxplot = False
 
 if args.table is not None:
     if args.path is not None:
@@ -63,10 +81,14 @@ if args.table is not None:
         table = args.table
 elif test:
     table = os.path.join(path, namespace + '_test_results.tsv')
-else:
+elif train or val:
     table = os.path.join(path, namespace + '_train_results.tsv')
-    if not os.path.isfile(table):
-        table = os.path.join(path, namespace + '_results.tsv')
+elif cv:
+    table = os.path.join(path, namespace + '_cv_results.tsv')
+else:
+    table = ''
+if not os.path.isfile(table):
+    table = os.path.join(path, namespace + '_results.tsv')
 
 if args.param is not None:
     if args.path is not None:
@@ -94,6 +116,8 @@ with open(table, 'r') as f:
                 colnum += [i for i, el in enumerate(header) if SHORTCUTS[c] in el]
     if test:
         stages = ['all']
+    elif cv:
+        stages = ['cv']
     else:
         stages = [el for el in STAGES.keys() if globals()[el]]
     values = [[[] for _ in colnum] for el in stages]  # for each stage and for each column
@@ -109,7 +133,7 @@ with open(table, 'r') as f:
                 i = stages.index(line[1])
                 for j, c in enumerate(colnum):
                     values[i][j].append([float(el) if el != '-' else np.nan for el in line[c].split(', ')])
-        elif test:
+        elif test or cv:
             epochs.append(e+1)
             xticks.append('{}-{}'.format(os.path.split(line[0])[1], line[1]))
             for j, c in enumerate(colnum):
@@ -130,6 +154,8 @@ def plot_one(ax, x, y, line, label, color):
 
 neurons = get_classes_names(param)
 
+if cv:
+    colnum = colnum[:1]
 fig, axes = plt.subplots(nrows=len(colnum), ncols=len(stages), figsize=(12, 8), squeeze=False)
 if axes.shape[1] > 1:
     num_xticks = 10
@@ -139,28 +165,38 @@ for i, (stage, value) in enumerate(zip(stages, values)):  # for each stage
     axes[0, i].set_title(STAGES[stage])
     for j, c in enumerate(colnum):  # for each column
         a = axes[j][i]
-        if i == 0:
-            color = 'black'
-            for n in neurons:
-                if n in header[c]:
-                    color = COLORS[neurons.index(n)]
-            a.set_ylabel(header[c].replace('-', '-\n'), color=color)
-        if xticks:
-            a.set_xticks(epochs)
-            a.set_xticklabels(xticks)
-        else:
-            a.set_xticks([el for el in np.arange(1, len(epochs), math.ceil(len(epochs)/num_xticks))] + [len(epochs)])
-        if len(value[j][0]) == len(neurons):  # check number of values for 1st epoch
-            for k, n in enumerate(neurons):  # for each neuron
-                y = [el[k] for el in value[j]]
-                plot_one(a, epochs, y, '.', n, COLORS[k])
-        elif len(value[j][0]) == 1:  # or for single values
-            plot_one(a, epochs, value[j], '.', 'general', COLORS[-1])
-        else:
-            raise ValueError
-        if args.print_mean and len(value[j]) == len(neurons):
-            y = [mean(el) for el in value[j]]
-            plot_one(a, epochs, y, 'x', 'mean', COLORS[-2])
+        if boxplot:
+            if cv:
+                y = [el[0] for el in value]
+                a.set_ylabel(header[c].split('-')[0])
+            else:
+                y = [[el[k] for el in value[j]] for k in range(len(neurons))]
+                a.set_ylabel(header[c].replace('-', '-\n'))
+            a.boxplot(y, showmeans=True)
+            a.set_xticklabels(neurons)
+        elif scatter:
+            if i == 0:
+                color = 'black'
+                for n in neurons:
+                    if n in header[c]:
+                        color = COLORS[neurons.index(n)]
+                a.set_ylabel(header[c].replace('-', '-\n'), color=color)
+            if xticks:
+                a.set_xticks(epochs)
+                a.set_xticklabels(xticks)
+            else:
+                a.set_xticks([el for el in np.arange(1, len(epochs), math.ceil(len(epochs)/num_xticks))] + [len(epochs)])
+            if len(value[j][0]) == len(neurons):  # check number of values for 1st epoch
+                for k, n in enumerate(neurons):  # for each neuron
+                    y = [el[k] for el in value[j]]
+                    plot_one(a, epochs, y, '.', n, COLORS[k])
+            elif len(value[j][0]) == 1:  # or for single values
+                plot_one(a, epochs, value[j], '.', 'general', COLORS[-1])
+            else:
+                raise ValueError
+            if args.print_mean and len(value[j]) == len(neurons):
+                y = [mean(el) for el in value[j]]
+                plot_one(a, epochs, y, 'x', 'mean', COLORS[-2])
 
 fig.suptitle(namespace)
 axes[-1][0].legend(bbox_to_anchor=(0, -0.07*(i+j+1)), loc="upper left", ncol=4)

@@ -57,11 +57,13 @@ parser.add_argument('data', action='store', metavar='DATASET', type=str, nargs='
                     help='Folder with the data for training and validation, if PATH is given, data is supposed to be ' +
                          'in PATH directory: [PATH]/data/[DATA]')
 parser = basic_params(parser)
+parser.add_argument('--run', action='store', metavar='NUMBER', type=str, default='0',
+                    help='number of the analysis, by default NAMESPACE is set to [NETWORK][RUN]')
 parser.add_argument('--cv', action='store', metavar='NUMBER', type=int, default=10,
                     help='Number of folds for cross-validation')
 args = parser.parse_args()
 
-path, output, namespace, seed = parse_arguments(args, args.data, namesp='random_forest')
+path, output, namespace, seed = parse_arguments(args, args.data, namesp='forest{}'.format(args.run))
 cv = args.cv
 # create folder for the output files
 if os.path.isdir(output):
