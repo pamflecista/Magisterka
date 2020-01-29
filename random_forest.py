@@ -18,12 +18,7 @@ CLASSES = [
     'nonpromoter inactive'
 ]
 
-CODING = {
-    'A': 0,
-    'C': 1,
-    'T': 2,
-    'G': 3
-}
+ENCODER = OHEncoder()
 
 
 def auc_first(model, X, y):
@@ -104,11 +99,11 @@ def read_seq(file, X, y):
             seq = line.strip().upper()
     if f.readline().strip():
         warn('In file {} is more than one sequence!'.format(file))
-    x = [CODING[el] for el in seq]
+    x = ENCODER(seq).flatten()
     if X.shape[0] == 0:
-        X = np.append(X, x)
+        X = np.array([x])
     else:
-        X = np.vstack([X, x])
+        X = np.vstack((X, x))
     y = np.append(y, label)
     return X, y
 

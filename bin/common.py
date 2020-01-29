@@ -1,11 +1,24 @@
 import os
 from bin.networks import *
 from collections import OrderedDict
+from sklearn.preprocessing import OneHotEncoder as Encoder
+import numpy as np
 
 NET_TYPES = {
     'basset': BassetNetwork,
     'custom': CustomNetwork
 }
+
+
+class OHEncoder:
+
+    def __init__(self, categories=np.array(['A', 'C', 'G', 'T'])):
+        self.encoder = Encoder(sparse=False, categories=[categories])
+        self.encoder.fit(categories.reshape(-1, 1))
+
+    def __call__(self, seq):
+        s = np.array([el for el in seq]).reshape(-1, 1)
+        return self.encoder.transform(s).T
 
 
 def make_chrstr(chrlist):

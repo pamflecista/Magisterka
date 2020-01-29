@@ -1,5 +1,4 @@
-from sklearn.preprocessing import OneHotEncoder as Encoder
-import numpy as np
+from .common import OHEncoder
 from torch.utils.data import Dataset
 import torch
 import os
@@ -109,14 +108,3 @@ class SeqsDataset(Dataset):
             _, y = self.__getitem__(i)
             result[self.classes[y]].append(i)
         return result
-
-
-class OHEncoder:
-
-    def __init__(self, categories=np.array(['A', 'C', 'G', 'T'])):
-        self.encoder = Encoder(sparse=False, categories=[categories])
-        self.encoder.fit(categories.reshape(-1, 1))
-
-    def __call__(self, seq):
-        s = np.array([el for el in seq]).reshape(-1, 1)
-        return self.encoder.transform(s).T
