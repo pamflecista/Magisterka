@@ -64,7 +64,7 @@ class BassetNetwork(torch.nn.Module):
 
 class CustomNetwork(torch.nn.Module):
 
-    def __init__(self, seq_len, num_channels=[300, 200, 200, 100], kernel_widths=[11, 7, 5, 5], pooling_widths=[3, 4, 4, 4], num_units=[4000, 4]):
+    def __init__(self, seq_len, num_channels=[300, 200, 200], kernel_widths=[19, 11, 7], pooling_widths=[3, 4, 4], num_units=[2000, 4]):
         super(CustomNetwork, self).__init__()
         paddings = [int((w-1)/2) for w in kernel_widths]
         self.seq_len = seq_len
