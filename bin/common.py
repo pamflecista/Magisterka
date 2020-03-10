@@ -9,11 +9,33 @@ NET_TYPES = {
     'custom': CustomNetwork
 }
 
+PARAMS = OrderedDict({
+    'Name of the analysis': 'namespace',
+    'Network type': 'network_name',
+    'Network params': 'network_params',
+    'Possible classes': 'classes',
+    'Number of epochs': 'num_epochs',
+    'Number of seqs': 'num_seqs',
+    'Batch size': 'batch_size',
+    'Training chr': 'train_chr',
+    'Validation chr': 'val_chr',
+    'Test chr': 'test_chr',
+    'Data directory': 'data_dir',
+    'Random seed': 'seed',
+    'CUDA available': 'use_cuda',
+    'Optimizer': 'optimizer_name',
+    'Loss function': 'lossfn_name',
+    'Learning rate': 'lr',
+    'Adjusting lr': 'adjust_lr',
+    'Weight decay': 'weight_decay'
+})
+
 
 class OHEncoder:
 
     def __init__(self, categories=np.array(['A', 'C', 'G', 'T'])):
         self.encoder = Encoder(sparse=False, categories=[categories])
+        self.dictionary = categories
         self.encoder.fit(categories.reshape(-1, 1))
 
     def __call__(self, seq):
@@ -124,9 +146,9 @@ def correct_old_auc_results(file):
     w.close()
 
 
-def write_params(params, glob, file):
+def write_params(glob, file):
     with open(file, 'w') as f:
-        for name, value in params.items():
+        for name, value in PARAMS.items():
             v = glob[value]
             if isinstance(v, list):
                 if 'chr' in value:
@@ -274,9 +296,15 @@ def check_cuda(logger):
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda:0" if use_cuda else "cpu")
     if use_cuda:
-        logger.info('--- CUDA available ---')
+        if logger is not None:
+            logger.info('--- CUDA available ---')
+        else:
+            print('--- CUDA available ---')
     else:
-        logger.info('--- CUDA not available ---')
+        if logger is not None:
+            logger.info('--- CUDA not available ---')
+        else:
+            print('--- CUDA not available ---')
     return use_cuda, device
 
 
@@ -347,6 +375,37 @@ def divide_chr(train, val, test):
         test_chr = random.sample([el for el in range(1, 24) if el not in used_chr], int(test.lstrip('-')))
         test_chr.sort()
     return train_chr, val_chr, test_chr
+
+
+def params_from_file(param_file):
+    seq_len = 2000
+    ch = {}
+    with open(param_file, 'r') as f:
+        for line in f:
+            if line.startswith('Possible classes'):
+                line = f.readline()
+                classes = []
+                while line.startswith('\t'):
+                    classes.append(line.strip('\t\n'))
+                    line = f.readline()
+            if line.startswith('Network type'):
+                network = NET_TYPES[line.split(':')[-1].strip().lower()]
+            elif line.startswith('Data directory') and not data_dir:
+                data_dir = [el for el in line.split(':')[-1].strip().split('; ') if el]
+                if not data_dir:
+                    l = f.readline()
+                    while l.startswith('\t'):
+                        data_dir.append(l.strip())
+                        l = f.readline()
+            elif line.strip().startswith('Input sequence length'):
+                seq_len = int(line.split(':')[-1].strip())
+            elif line.startswith('Training chr'):
+                ch['train'] = read_chrstr(line.split(':')[-1].strip())
+            elif line.startswith('Validation chr'):
+                ch['valid'] = read_chrstr(line.split(':')[-1].strip())
+            elif line.startswith('Test chr'):
+                ch['test'] = read_chrstr(line.split(':')[-1].strip())
+    return network, data_dir, seq_len, ch, classes
 
 
 '''def print_results(logger, columns, variables, epoch):

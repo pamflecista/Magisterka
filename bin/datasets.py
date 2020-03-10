@@ -28,7 +28,7 @@ class SeqsDataset(Dataset):
         locs = {}  # seq-name : index of element in dirs from which it was obtained
         for dd in data:
             if os.path.isfile(dd) and dd.endswith(filetype):
-                name = dd.strip('.{}'.format(filetype))
+                name, _ = os.path.splitext(dd)
                 if not subset or name in subset:
                     ids.append(name)
                     d = '/'.join(dd.split('/')[:-1])
@@ -43,7 +43,7 @@ class SeqsDataset(Dataset):
                     if r not in dirs:
                         dirs.append(r)
                 for file in fs:
-                    name = file.strip('.{}'.format(filetype))
+                    name, _ = os.path.splitext(file)
                     if subset and name not in subset:
                         continue
                     ids.append(name)
@@ -52,7 +52,7 @@ class SeqsDataset(Dataset):
                     else:
                         raise RepeatedFileError(name, dirs[locs[name]], r)
         if len(ids) == 0:
-            warn('No files of the {} type was found in the given data'.format(filetype))
+            warn('No files of {} type was found in the given data'.format(filetype))
         self.IDs = ids
         self.locs = locs
         self.dirs = dirs

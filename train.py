@@ -29,27 +29,6 @@ LOSS_FUNCTIONS = {
     'MSELoss': nn.MSELoss
 }
 
-PARAMS = OrderedDict({
-    'Name of the analysis': 'namespace',
-    'Network type': 'network_name',
-    'Network params': 'network_params',
-    'Possible classes': 'classes',
-    'Number of epochs': 'num_epochs',
-    'Number of seqs': 'num_seqs',
-    'Batch size': 'batch_size',
-    'Training chr': 'train_chr',
-    'Validation chr': 'val_chr',
-    'Test chr': 'test_chr',
-    'Data directory': 'data_dir',
-    'Random seed': 'seed',
-    'CUDA available': 'use_cuda',
-    'Optimizer': 'optimizer_name',
-    'Loss function': 'lossfn_name',
-    'Learning rate': 'lr',
-    'Adjusting lr': 'adjust_lr',
-    'Weight decay': 'weight_decay'
-})
-
 
 RESULTS_COLS = OrderedDict({
     'Loss': ['losses', 'float-list'],
@@ -208,7 +187,7 @@ optimizer = optim_method(model.parameters(), lr=lr, weight_decay=weight_decay)
 loss_fn = lossfn()
 best_acc = 0.0
 # write parameters values into file
-write_params(PARAMS, globals(), os.path.join(output, '{}_params.txt'.format(namespace)))
+write_params(globals(), os.path.join(output, '{}_params.txt'.format(namespace)))
 logger.info('\n--- TRAINING ---')
 t = time()
 for epoch in range(num_epochs):
