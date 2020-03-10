@@ -6,7 +6,8 @@ import numpy as np
 
 NET_TYPES = {
     'basset': BassetNetwork,
-    'custom': CustomNetwork
+    'custom': CustomNetwork,
+    'test': TestNetwork
 }
 
 PARAMS = OrderedDict({
@@ -377,7 +378,7 @@ def divide_chr(train, val, test):
     return train_chr, val_chr, test_chr
 
 
-def params_from_file(param_file):
+def params_from_file(param_file, data_dir=()):
     seq_len = 2000
     ch = {}
     with open(param_file, 'r') as f:
@@ -390,6 +391,8 @@ def params_from_file(param_file):
                     line = f.readline()
             if line.startswith('Network type'):
                 network = NET_TYPES[line.split(':')[-1].strip().lower()]
+            elif line.startswith('Name of the analysis'):
+                name = line.split(':')[-1].strip()
             elif line.startswith('Data directory') and not data_dir:
                 data_dir = [el for el in line.split(':')[-1].strip().split('; ') if el]
                 if not data_dir:
@@ -405,7 +408,7 @@ def params_from_file(param_file):
                 ch['valid'] = read_chrstr(line.split(':')[-1].strip())
             elif line.startswith('Test chr'):
                 ch['test'] = read_chrstr(line.split(':')[-1].strip())
-    return network, data_dir, seq_len, ch, classes
+    return network, data_dir, seq_len, ch, classes, name
 
 
 '''def print_results(logger, columns, variables, epoch):

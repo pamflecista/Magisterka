@@ -3,10 +3,10 @@ import torch
 import random
 
 
-def integrated_gradients(model, inputs, neuron, baseline='random', num_trials=10,
-                         steps=50, use_cuda=False):
+def integrated_gradients(model, inputs, neuron, baseline='random', num_trials=10, steps=50, use_cuda=False):
     all_intgrads = []
     for i in range(num_trials):
+        print('Trial {}'.format(i))
         if baseline is None:
             base = 0 * inputs
         elif baseline == 'random':

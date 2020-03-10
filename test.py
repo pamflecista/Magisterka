@@ -46,22 +46,8 @@ data_dir = args.dataset
 allseqs = True if data_dir else False
 subset = 'train' if args.train else 'valid' if args.valid else 'test' if not allseqs else 'all'
 
-seq_len = 2000
-with open(os.path.join(output, '{}_params.txt'.format(namespace)), 'r') as f:
-    for line in f:
-        if line.startswith('Network type'):
-            network = NET_TYPES[line.split(':')[-1].strip().lower()]
-        elif line.startswith('Data directory') and not data_dir:
-            data_dir = [el for el in line.split(':')[-1].strip().split('; ') if el]
-            if not data_dir:
-                l = f.readline()
-                while l.startswith('\t'):
-                    data_dir.append(l.strip())
-                    l = f.readline()
-        elif line.strip().startswith('Input sequence length'):
-            seq_len = int(line.split(':')[-1].strip())
-        elif line.startswith('{} chr'.format(subset)):
-            ch = read_chrstr(line.split(':')[-1].strip())
+network, data_dir, seq_len, ch, classes, _ = \
+    params_from_file(os.path.join(output, '{}_params.txt'.format(namespace)), data_dir=data_dir)
 
 # Define loggers for logfile and for results
 (logger, results_table), old_results = build_loggers('test', output=output, namespace=namespace)
