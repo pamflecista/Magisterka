@@ -10,9 +10,10 @@ COLORS = ['C{}'.format(i) for i in range(10)]
 
 parser = argparse.ArgumentParser(description='Calculate and plot integrated gradients based on given sequences and '
                                              'network')
-parser.add_argument('--model', action='store', metavar='NAME', type=str, default=None,
-                    help='File with the model to check, if PATH is given, model is supposed to be in PATH directory, '
-                         'if NAMESPACE is given model is supposed to be in [PATH]/results/[NAMESPACE]/ directory')
+parser.add_argument('--name', action='store', metavar='NAME', type=str, default=None,
+                    help='Name of files with integrads, if PATH is given, model is supposed to be '
+                         'in PATH directory, if NAMESPACE is given model is supposed to be in '
+                         '[PATH]/results/[NAMESPACE]/ directory')
 parser.add_argument('--seq', action='store', metavar='DATA', type=str, required=True,
                     help='File or folder with sequences to check, if PATH is given, file is supposed to be in '
                          '[PATH]/data/integrads/ directory.')
