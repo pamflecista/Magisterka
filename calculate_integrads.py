@@ -60,7 +60,7 @@ leap = 100
 t0 = time()
 for i, name in enumerate(classes):
     print('Calculating integrated gradients for {}'.format(name))
-    r = np.squeeze(integrated_gradients(model, X, i, num_trials=5, steps=10), axis=1)
+    r = np.squeeze(integrated_gradients(model, X, i), axis=1)
     np.save(os.path.join(output, 'integrads_{}_{}_{}'.format(analysis_name, seq_name, name)), r)
     results[name] = r
 print('Gradients calculated in {:.2f} min and saved into {} directory'.format((time() - t0) / 60, output))
