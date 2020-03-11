@@ -1,29 +1,39 @@
 import matplotlib.pyplot as plt
 import argparse
 from bin.common import *
-from bin.datasets import SeqsDataset
-import torch
-from time import time
-from bin.integrated_gradients import integrated_gradients
 
 COLORS = ['C{}'.format(i) for i in range(10)]
 
-parser = argparse.ArgumentParser(description='Calculate and plot integrated gradients based on given sequences and '
-                                             'network')
-parser.add_argument('--name', action='store', metavar='NAME', type=str, default=None,
-                    help='Name of files with integrads, if PATH is given, model is supposed to be '
-                         'in PATH directory, if NAMESPACE is given model is supposed to be in '
-                         '[PATH]/results/[NAMESPACE]/ directory')
-parser.add_argument('--seq', action='store', metavar='DATA', type=str, required=True,
-                    help='File or folder with sequences to check, if PATH is given, file is supposed to be in '
-                         '[PATH]/data/integrads/ directory.')
-parser = basic_params(parser, plotting=True)
+parser = argparse.ArgumentParser(description='Plot integrated gradients for given namespace '
+                                             '(before it run calculate_integrads in order to create required files '
+                                             'with gradients).')
+parser = basic_params(parser)
 args = parser.parse_args()
 
+path, output, namespace, seed = parse_arguments(args, args.model)
 
+param_file = os.path.join(path, 'integrads_{}_params.txt'.format(namespace))
+with open(param_file) as f:
+    for line in f:
+        if line.startswith('Model file'):
+            _, analysis_name = os.path.split(line.split(':')[1].strip())
+            analysis_name = analysis_name.split('_')[0]
+        elif line.startswith('Seq file'):
+            seq_file = line.split(':')[1].strip()
+        elif line.startswith('Seq IDs'):
+            seq_ids = line.split(':')[1].strip().split(', ')
+        elif line.startswith('Seq length'):
+            seq_len = int(line.split(':')[1].strip())
+        elif line.startswith('Classes'):
+            classes = line.split(':')[1].strip().split(', ')
+results = {}
+for name in classes:
+    results[name] = np.load(os.path.join(path, 'integrads_{}_{}.npy'.format(namespace, name)))
 
-fig, axes = plt.subplots(nrows=len(seq_ids), ncols=len(classes), figsize=(12, 8), squeeze=False, sharex='col',
+num_seq = results[classes[0]].shape[0]
+fig, axes = plt.subplots(nrows=, ncols=len(classes), figsize=(12, 8), squeeze=False, sharex='col',
                          sharey='row', gridspec_kw={'hspace': 0.05, 'wspace': 0.05})
+leap = 10
 for i, name in enumerate(classes):
     for j, seq in enumerate(seq_ids):
         ax = axes[j, i]
@@ -42,4 +52,4 @@ for i, name in enumerate(classes):
 fig.suptitle('Integrated gradients - {}'.format(analysis_name), fontsize=15)
 plt.tight_layout()
 plt.show()
-fig.savefig(os.path.join(output, namespace + 'integrads_{}_{}.png'.format(analysis_name, seq_name)))
+fig.savefig(os.path.join(output, namespace + 'integrads_{}.png'.format(namespace)))

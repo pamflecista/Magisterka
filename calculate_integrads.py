@@ -5,7 +5,7 @@ import torch
 from time import time
 from bin.integrated_gradients import integrated_gradients
 
-parser = argparse.ArgumentParser(description='Calculate and plot integrated gradients based on given sequences and '
+parser = argparse.ArgumentParser(description='Calculate integrated gradients based on given sequences and '
                                              'network')
 parser.add_argument('--model', action='store', metavar='NAME', type=str, default=None,
                     help='File with the model to check, if PATH is given, model is supposed to be in PATH directory, '
@@ -59,12 +59,22 @@ model = network(seq_len)
 model.load_state_dict(torch.load(model_file, map_location=torch.device(device)))
 print('Model from {} loaded in {:.2f} s'.format(model_file, time() - t0))
 
+analysis_info = os.path.join(output, 'integrads_{}_{}_params.txt'.format(analysis_name, '-'.join(seq_name.split('_'))))
+with open(analysis_info, 'w') as f:
+    f.write('Model file: {}\n'.format(model_file))
+    f.write('Seq file: {}\n'.format(seq_file))
+    f.write('Seq IDs: {}\n'.format(', '.join(seq_ids)))
+    f.write('Seq length: {}\n'.format(seq_len))
+    f.write('Classes: {}\n'.format(', '.join(classes)))
+print('Analysis info written into {}'.format(analysis_info))
+
 results = {}
 leap = 100
 t0 = time()
 for i, name in enumerate(classes):
     print('Calculating integrated gradients for {}'.format(name))
     r = np.squeeze(integrated_gradients(model, X, i, use_cuda=use_cuda, num_trials=args.trials, steps=args.steps), axis=1)
-    np.save(os.path.join(output, 'integrads_{}_{}_{}'.format(analysis_name, seq_name, name)), r)
+    np.save(os.path.join(output, 'integrads_{}_{}_{}'.format(analysis_name, '-'.join(seq_name.split('_')),
+                                                             '-'.join(name.split())), r))
     results[name] = r
 print('Gradients calculated in {:.2f} min and saved into {} directory'.format((time() - t0) / 60, output))
