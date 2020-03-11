@@ -13,6 +13,10 @@ parser.add_argument('--model', action='store', metavar='NAME', type=str, default
 parser.add_argument('--seq', action='store', metavar='DATA', type=str, required=True,
                     help='File or folder with sequences to check, if PATH is given, file is supposed to be in '
                          '[PATH]/data/integrads/ directory.')
+parser.add_argument('--trials', action='store', metavar='NUM', type=int, default=10,
+                    help='Number of trials for calculating integrated gradients, default = 10.')
+parser.add_argument('--steps', action='store', metavar='NUM', type=int, default=50,
+                    help='Number of steps for each trial, default = 50.')
 parser = basic_params(parser, plotting=True)
 args = parser.parse_args()
 
@@ -60,7 +64,7 @@ leap = 100
 t0 = time()
 for i, name in enumerate(classes):
     print('Calculating integrated gradients for {}'.format(name))
-    r = np.squeeze(integrated_gradients(model, X, i), axis=1, use_cuda=use_cuda)
+    r = np.squeeze(integrated_gradients(model, X, i, use_cuda=use_cuda, num_trials=args.trials, steps=args.steps), axis=1)
     np.save(os.path.join(output, 'integrads_{}_{}_{}'.format(analysis_name, seq_name, name)), r)
     results[name] = r
 print('Gradients calculated in {:.2f} min and saved into {} directory'.format((time() - t0) / 60, output))
