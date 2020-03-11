@@ -9,7 +9,6 @@ parser = argparse.ArgumentParser(description='Plot integrated gradients for give
                                              'with gradients).')
 parser = basic_params(parser)
 args = parser.parse_args()
-
 path, output, namespace, seed = parse_arguments(args, args.model)
 
 param_file = os.path.join(path, 'integrads_{}_params.txt'.format(namespace))
@@ -28,10 +27,9 @@ with open(param_file) as f:
             classes = line.split(':')[1].strip().split(', ')
 results = {}
 for name in classes:
-    results[name] = np.load(os.path.join(path, 'integrads_{}_{}.npy'.format(namespace, name)))
+    results[name] = np.load(os.path.join(path, 'integrads_{}_{}.npy'.format(namespace, '-'.join(name.split()))))
 
-num_seq = results[classes[0]].shape[0]
-fig, axes = plt.subplots(nrows=, ncols=len(classes), figsize=(12, 8), squeeze=False, sharex='col',
+fig, axes = plt.subplots(nrows=len(seq_ids), ncols=len(classes), figsize=(12, 8), squeeze=False, sharex='col',
                          sharey='row', gridspec_kw={'hspace': 0.05, 'wspace': 0.05})
 leap = 10
 for i, name in enumerate(classes):
@@ -49,7 +47,7 @@ for i, name in enumerate(classes):
         ax.set_xticks(xticks)
         ax.set_xticklabels(labels, rotation=45, ha='right')
         ax.set_ylim(-10, 10)
-fig.suptitle('Integrated gradients - {}'.format(analysis_name), fontsize=15)
+fig.suptitle('Integrated gradients - {}'.format(namespace), fontsize=15)
 plt.tight_layout()
 plt.show()
 fig.savefig(os.path.join(output, namespace + 'integrads_{}.png'.format(namespace)))

@@ -78,6 +78,6 @@ t0 = time()
 for i, name in enumerate(classes):
     print('Calculating integrated gradients for {}'.format(name))
     r = np.squeeze(integrated_gradients(model, X, i, use_cuda=use_cuda, num_trials=args.trials, steps=args.steps), axis=1)
-    np.save(os.path.join(output, '{}_{}'.format(integrads_name, '-'.join(name.split())), r))
+    np.save(os.path.join(output, '{}_{}'.format(integrads_name, '-'.join(name.split()))), r)
     results[name] = r
 print('Gradients calculated in {:.2f} min and saved into {} directory'.format((time() - t0) / 60, output))
