@@ -19,7 +19,6 @@ def integrated_gradients(model, inputs, neuron, baseline='random', num_trials=10
         scaled_inputs = [base + (float(i) / steps) * (inputs - base) for i in range(0, steps + 1)]
         grads = calculate_gradients(model, scaled_inputs, neuron, use_cuda=use_cuda)
         avg_grads = np.average(grads[:-1], axis=0)
-        #avg_grads = np.transpose(avg_grads, (1, 2, 0))
         integrated_grad = (inputs - base) * torch.tensor(avg_grads)
         all_intgrads.append(integrated_grad)
     avg_intgrads = np.average(np.stack(all_intgrads), axis=0)

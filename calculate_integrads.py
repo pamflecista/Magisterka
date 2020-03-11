@@ -42,6 +42,7 @@ use_cuda, device = check_cuda(None)
 network, _, seq_len, _, classes, analysis_name = params_from_file(param_file)
 
 dataset = SeqsDataset(seq_file, seq_len=seq_len)
+assert classes == dataset.classes, 'List of classes is inconsistent'
 seq_ids = dataset.IDs
 X, y = dataset.__getitem__(0)
 labels = [y]
@@ -66,6 +67,7 @@ with open(analysis_info, 'w') as f:
     f.write('Model file: {}\n'.format(model_file))
     f.write('Seq file: {}\n'.format(seq_file))
     f.write('Seq IDs: {}\n'.format(', '.join(seq_ids)))
+    f.write('Seq labels: {}\n'.format(', '.join(list(map(str, labels)))))
     f.write('Seq length: {}\n'.format(seq_len))
     f.write('Classes: {}\n'.format(', '.join(classes)))
     f.write('Number of trials: {}\n'.format(args.trials))
@@ -80,4 +82,5 @@ for i, name in enumerate(classes):
     r = np.squeeze(integrated_gradients(model, X, i, use_cuda=use_cuda, num_trials=args.trials, steps=args.steps), axis=1)
     np.save(os.path.join(output, '{}_{}'.format(integrads_name, '-'.join(name.split()))), r)
     results[name] = r
+    print('---> Total elapsed time: {:.2f} min'.format((time() - t0) / 60))
 print('Gradients calculated in {:.2f} min and saved into {} directory'.format((time() - t0) / 60, output))
