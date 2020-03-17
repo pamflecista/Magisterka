@@ -76,9 +76,9 @@ class SeqsDataset(Dataset):
             for line in file:
                 if line.startswith('>'):
                     header = line.strip('\n> ').split(' ')
-                    ch, midpoint, strand, t1, t2 = header[:4]
+                    ch, midpoint, strand, t1, t2 = header[:5]
                     if len(header) > 5:
-                        desc = header[5]
+                        desc = ' '.join(header[5:])
                     else:
                         desc = None
                     label = self.classes.index('{} {}'.format(t1, t2))
