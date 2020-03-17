@@ -44,6 +44,9 @@ network, _, seq_len, _, classes, analysis_name = params_from_file(param_file)
 dataset = SeqsDataset(seq_file, seq_len=seq_len)
 assert classes == dataset.classes, 'List of classes is inconsistent'
 seq_ids = dataset.IDs
+seq_desc = []
+for i in seq_ids:
+    seq_desc.append(dataset.__getitem__(i, info=True)[5])
 X, y = dataset.__getitem__(0)
 labels = [y]
 X = [X]
@@ -69,6 +72,7 @@ with open(analysis_info, 'w') as f:
     f.write('Seq IDs: {}\n'.format(', '.join(seq_ids)))
     f.write('Seq labels: {}\n'.format(', '.join(list(map(str, labels)))))
     f.write('Seq length: {}\n'.format(seq_len))
+    f.write('Seq descriptions: {}\n'.format(', '.join(seq_desc)))
     f.write('Classes: {}\n'.format(', '.join(classes)))
     f.write('Number of trials: {}\n'.format(args.trials))
     f.write('Number of steps: {}\n'.format(args.steps))

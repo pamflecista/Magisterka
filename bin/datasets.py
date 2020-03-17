@@ -75,7 +75,12 @@ class SeqsDataset(Dataset):
         with open(filename, 'r') as file:
             for line in file:
                 if line.startswith('>'):
-                    ch, midpoint, strand, t1, t2 = line.strip('\n> ').split(' ')
+                    header = line.strip('\n> ').split(' ')
+                    ch, midpoint, strand, t1, t2 = header[:4]
+                    if len(header) > 5:
+                        desc = header[5]
+                    else:
+                        desc = None
                     label = self.classes.index('{} {}'.format(t1, t2))
                 elif line:
                     seq = line.strip().upper()
@@ -87,7 +92,7 @@ class SeqsDataset(Dataset):
             if file.readline().strip():
                 warn('In file {} is more than one sequence!'.format(filename))
         if info:
-            return ch, midpoint, strand, label, seq
+            return ch, midpoint, strand, label, seq, desc
         X = torch.tensor(self.encoder(seq))
         X = X.reshape(1, *X.size())
         y = torch.tensor(label)

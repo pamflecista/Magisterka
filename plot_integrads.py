@@ -27,6 +27,8 @@ with open(param_file) as f:
             seq_len = int(line.split(': ')[1].strip())
         elif line.startswith('Seq labels'):
             seq_labels = list(map(int, line.split(': ')[1].strip().split(', ')))
+        elif line.startswith('Seq descriptions'):
+            seq_desc = line.split(': ')[1].strip().split(', ')
         elif line.startswith('Classes'):
             classes = line.split(': ')[1].strip().split(', ')
         elif line.startswith('Number of trials'):
@@ -36,21 +38,25 @@ with open(param_file) as f:
 results = {}
 for name in classes:
     results[name] = np.load(os.path.join(path, 'integrads_{}_{}.npy'.format(namespace, '-'.join(name.split()))))
+if 'seq_desc' in globals():
+    seq_names = ['{} - {}'.format(el, la) for el, la in zip(seq_ids, seq_desc)]
+else:
+    seq_names = seq_ids
 
 if args.all_classes:
-    fig, axes = plt.subplots(nrows=len(seq_ids), ncols=len(classes), figsize=(12, 8), squeeze=False, sharex='col',
+    fig, axes = plt.subplots(nrows=len(seq_names), ncols=len(classes), figsize=(12, 8), squeeze=False, sharex='col',
                              sharey='row', gridspec_kw={'hspace': 0.05, 'wspace': 0.05})
     arg_classes = classes
 
 else:
-    fig, axes = plt.subplots(nrows=len(seq_ids), ncols=1, figsize=(12, 8), squeeze=False, sharex='col',
+    fig, axes = plt.subplots(nrows=len(seq_names), ncols=1, figsize=(12, 8), squeeze=False, sharex='col',
                              sharey='row', gridspec_kw={'hspace': 0.05, 'wspace': 0.05})
     arg_classes = ['True label']
 
 leap = 50
 min_value, max_value = 0, 0
 for i, name in enumerate(arg_classes):
-    for j, seq in enumerate(seq_ids):
+    for j, seq in enumerate(seq_names):
         ax = axes[j, i]
         if j == 0:
             if args.all_classes:
