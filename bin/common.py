@@ -176,7 +176,7 @@ def read_classes(file):
     return neurons
 
 
-def basic_params(parser, plotting=False):
+def basic_params(parser, param=False):
     parser.add_argument('-p', '--path', action='store', metavar='DIR', type=str, default=None,
                         help='Working directory.')
     parser.add_argument('--namespace', action='store', metavar='NAME', type=str, default=None,
@@ -185,7 +185,7 @@ def basic_params(parser, plotting=False):
                         help='Output directory, default: [PATH]/results/[NAMESPACE]')
     parser.add_argument('--seed', action='store', metavar='NUMBER', type=int, default='0',
                         help='Set random seed, default: 0')
-    if plotting:
+    if param:
         parser.add_argument('--param', action='store', metavar='NAME', type=str, default=None,
                             help='File with parameters of the network, from which results should be plotted, ' +
                                  'if PATH is given, file is supposed to be in PATH directory: [PATH]/[NAME], ' +

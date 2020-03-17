@@ -67,7 +67,10 @@ class SeqsDataset(Dataset):
         return len(self.IDs)
 
     def __getitem__(self, index, info=False):
-        ID = self.IDs[index]
+        try:
+            ID = self.IDs[int(index)]
+        except ValueError:
+            ID = index
         filename = os.path.join(self.dirs[self.locs[ID]], '{}.{}'.format(ID, self.filetype))
         with open(filename, 'r') as file:
             for line in file:

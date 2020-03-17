@@ -27,7 +27,7 @@ parser = argparse.ArgumentParser(description='Plot results based on given table'
 parser.add_argument('-t', '--table', action='store', metavar='NAME', type=str, default=None,
                     help='Results table with data to plot, if PATH is given, file is supposed to be '
                          'in PATH directory: [PATH]/[NAME], default: [PATH]/[NAMESPACE]_results.tsv')
-parser = basic_params(parser, plotting=True)
+parser = basic_params(parser, param=True)
 parser.add_argument('-c', '--column', action='store', metavar='COL', nargs='+', type=str, default=['loss'],
                     help='Number or name of column(s) to plot, default: loss')
 group1 = parser.add_mutually_exclusive_group(required=False)

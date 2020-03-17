@@ -17,7 +17,7 @@ parser.add_argument('--trials', action='store', metavar='NUM', type=int, default
                     help='Number of trials for calculating integrated gradients, default = 10.')
 parser.add_argument('--steps', action='store', metavar='NUM', type=int, default=50,
                     help='Number of steps for each trial, default = 50.')
-parser = basic_params(parser, plotting=True)
+parser = basic_params(parser, param=True)
 args = parser.parse_args()
 
 path, output, namespace, seed = parse_arguments(args, args.model)

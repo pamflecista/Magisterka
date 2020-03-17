@@ -226,7 +226,7 @@ for epoch in range(num_epochs):
             train_loss_reduced += mean(losses)
 
             _, indices = torch.max(outputs, axis=1)
-            for ind, label in zip(indices, labels.cpu()):
+            for ind, label, outp in zip(indices, labels.cpu(), outputs):
                 confusion_matrix[ind][label] += 1
                 if epoch == num_epochs - 1:
                     train_output_values[label] = [el + [outp[j].cpu().item()] for j, el in enumerate(train_output_values[label])]
