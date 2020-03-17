@@ -47,13 +47,10 @@ for i, cl in enumerate(classes):
     class_seq = np.array(seq_order)[class_index]  # get names of the seqs only from cl class in the correct order
     best = class_seq[order[-args.num_seq:]]  # get given number of the best seqs from cl class
     worst = class_seq[order[:args.num_seq]]  # get given number of the worst seqs from cl class
-    for j, s in enumerate(best):
-        ch, midpoint, strand, label, seq, _ = dataset.__getitem__(s, info=True)
-        assert label == i
-        result_fasta.write('> chr{} {} {} {} best{}\n{}'.format(ch, midpoint, strand, cl, j+1, seq))
-    for j, s in enumerate(worst):
-        ch, midpoint, strand, label, seq, _ = dataset.__getitem__(s, info=True)
-        assert label == i
-        result_fasta.write('> {} {} {} {} worst{}\n{}\n'.format(ch, midpoint, strand, cl, j+1, seq))
+    for towrite, desc in zip([best, worst], ['best', 'worst']):
+        for j, s in enumerate(towrite):
+            ch, midpoint, strand, label, seq, _ = dataset.__getitem__(s, info=True)
+            assert label == i
+            result_fasta.write('> {} {} {} {} {}{}\n{}\n'.format(ch, midpoint, strand, cl, desc, j+1, seq))
 print('{} the best and {} the worst sequence(s) were written into {}'.format(args.num_seq, args.num_seq, result_file))
 
