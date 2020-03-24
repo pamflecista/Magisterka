@@ -14,8 +14,9 @@ def rewrite_fasta(file, outdir=None):
             print('No rewriting was done: given file contains only one sequence.')
             return 1, ['/'+'/'.join(file.split('/')[:-1])]
     if outdir is None:
-        f = file.strip('/ ').split('/')
-        outdir = os.path.join('/'+'/'.join(f[:-1]), '.'.join(f[-1].split('.')[:-1]))
+        outdir, name = os.path.split(file)
+        namespace, _ = os.path.splitext(name)
+        outdir = os.path.join(outdir, namespace)
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
     i = 0
