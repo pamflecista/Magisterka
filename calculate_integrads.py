@@ -4,6 +4,7 @@ from bin.datasets import SeqsDataset
 import torch
 from time import time
 from bin.integrated_gradients import integrated_gradients
+import warnings
 
 parser = argparse.ArgumentParser(description='Calculate integrated gradients based on given sequences and '
                                              'network')
@@ -60,8 +61,6 @@ for i in range(1, len(dataset)):
     labels.append(yy)
 X = torch.stack(X, dim=0)
 
-integrads_name = 'integrads_{}_{}_{}-{}'.format(analysis_name, '-'.join(seq_name.split('_')), args.trials, args.steps)
-
 if args.baseline is None:
     from bin.common import OHEncoder
     import random
@@ -70,22 +69,41 @@ if args.baseline is None:
     for j, el in enumerate(X):
         seq = random.choices(encoder.dictionary, k=el.shape[-1])
         base[j] = encoder(seq)
-    baseline_file = os.path.join(output, '{}_baseline.npy'.format(integrads_name))
-    np.save(baseline_file, base)
-    print('Random baseline was written into {}'.format(baseline_file))
-    baseline_mode = baseline_file
+    baseline_file = '{}_baseline.npy'.format(seq_name.replace('_', '-'))
+    baseline_name, _ = os.path.splitext(baseline_file)
 elif args.baseline == 'random':
     base = None
-    baseline_mode = 'random'
+    baseline_mode = baseline_name = 'random'
     print('Baseline set to random - different for each sequence')
 elif args.baseline == 'zeros':
     base = (0 * X).numpy()
-    baseline_mode = 'zeros'
+    baseline_mode = baseline_name = 'zeros'
     print('Baseline set to zero array')
 else:
     base = np.load(args.baseline, allow_pickle=True)
     print('Baseline loaded from {}'.format(args.baseline))
     baseline_mode = args.baseline
+    _, baseline_name = os.path.split(baseline_mode)
+    baseline_name, _ = os.path.splitext(baseline_name)
+
+integrads_name = 'integrads_{}_{}_{}_{}-{}'.format(analysis_name,
+                                                   seq_name.replace('_', '-'),
+                                                   baseline_name.replace('_', '-'),
+                                                   args.trials,
+                                                   args.steps)
+outdir = os.path.join(output, integrads_name)
+if os.path.isdir(outdir):
+    warnings.warn('Analysis in {} already exists, it will be overwritten'.format(outdir))
+    import shutil
+    shutil.rmtree(outdir)
+os.mkdir(outdir)
+
+if args.baseline is None:
+    baseline_file = os.path.join(outdir, baseline_file)
+    np.save(baseline_file, base)
+    print('Random baseline was written into {}'.format(baseline_file))
+    baseline_mode = baseline_file
+
 
 t0 = time()
 # Build network
@@ -94,7 +112,7 @@ model = network(seq_len)
 model.load_state_dict(torch.load(model_file, map_location=torch.device(device)))
 print('Model from {} loaded in {:.2f} s'.format(model_file, time() - t0))
 
-analysis_info = os.path.join(output, '{}_params.txt'.format(integrads_name))
+analysis_info = os.path.join(outdir, 'params.txt')
 with open(analysis_info, 'w') as f:
     f.write('Model file: {}\n'.format(model_file))
     f.write('Seq file: {}\n'.format(seq_file))
@@ -118,13 +136,13 @@ if args.all_classes:
         r = np.squeeze(
             integrated_gradients(model, X, l, use_cuda=use_cuda, num_trials=args.trials, steps=args.steps,
                                  baseline=base), axis=1)
-        np.save(os.path.join(output, '{}_{}'.format(integrads_name, '-'.join(name.split()))), r)
+        np.save(os.path.join(outdir, 'integrads_{}'.format('-'.join(name.split()))), r)
         results[name] = r
         print('---> Total elapsed time: {:.2f} min'.format((time() - t0) / 60))
 else:
     print('Calculating integrated gradients for true class')
     r = np.squeeze(integrated_gradients(model, X, labels, use_cuda=use_cuda, num_trials=args.trials, steps=args.steps,
                                         baseline=base), axis=1)
-    np.save(os.path.join(output, '{}_all'.format(integrads_name)), r)
+    np.save(os.path.join(outdir, 'integrads_all'), r)
     print('---> Total elapsed time: {:.2f} min'.format((time() - t0) / 60))
-print('Gradients calculated in {:.2f} min and saved into {} directory'.format((time() - t0) / 60, output))
+print('Gradients calculated in {:.2f} min and saved into {} directory'.format((time() - t0) / 60, outdir))
