@@ -65,18 +65,22 @@ if args.baseline is None:
     from bin.common import OHEncoder
     import random
     encoder = OHEncoder()
-    base = np.zeros(X.shape)
-    for j, el in enumerate(X):
-        seq = random.choices(encoder.dictionary, k=el.shape[-1])
-        base[j] = encoder(seq)
+    base = []
+    for _ in range(args.trials):
+        b = np.zeros(X.shape)
+        for j, el in enumerate(X):
+            seq = random.choices(encoder.dictionary, k=el.shape[-1])
+            b[j] = encoder(seq)
+        base.append(b)
+    base = np.stack(base)
     baseline_file = '{}_baseline.npy'.format(seq_name.replace('_', '-'))
-    baseline_name, _ = os.path.splitext(baseline_file)
+    baseline_name = 'same-random-baseline'
 elif args.baseline == 'random':
     base = None
     baseline_mode = baseline_name = 'random'
     print('Baseline set to random - different for each sequence')
 elif args.baseline == 'zeros':
-    base = (0 * X).numpy()
+    base = np.stack([(0 * X).numpy() for _ in range(args.trials)])
     baseline_mode = baseline_name = 'zeros'
     print('Baseline set to zero array')
 else:
@@ -93,7 +97,7 @@ integrads_name = 'integrads_{}_{}_{}_{}-{}'.format(analysis_name,
                                                    args.steps)
 outdir = os.path.join(output, integrads_name)
 if os.path.isdir(outdir):
-    warnings.warn('Analysis in {} already exists, it will be overwritten'.format(outdir))
+    warnings.warn('\nAnalysis in {} already exists, it will be overwritten'.format(outdir))
     import shutil
     shutil.rmtree(outdir)
 os.mkdir(outdir)
