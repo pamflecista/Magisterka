@@ -18,7 +18,7 @@ parser.add_argument('--clip', action='store', metavar='NUMBER', type=int, defaul
 args = parser.parse_args()
 path, output, namespace, seed = parse_arguments(args, None)
 
-param_file = os.path.join(path, 'integrads_{}_params.txt'.format(namespace))
+param_file = os.path.join(path, 'params.txt')
 with open(param_file) as f:
     for line in f:
         if line.startswith('Model file'):
@@ -54,9 +54,13 @@ for i, (name, label) in enumerate(zip(seq_desc, seq_labels)):
 seq_names = list(np.array(seq_names)[order])
 seq_labels = list(np.array(seq_labels)[order])
 
-results = {}
-for name in classes:
-    results[name] = np.load(os.path.join(path, 'integrads_{}_{}.npy'.format(namespace, '-'.join(name.split()))))[order]
+try:
+    results = {}
+    for name in classes:
+        results[name] = np.load(os.path.join(path,
+                                             'integrads_{}_{}.npy'.format(namespace, '-'.join(name.split()))))[order]
+except FileNotFoundError:
+    results = np.load(os.path.join(path, 'integrads_all.npy'))[order]
 
 leap = 1
 if args.single:
@@ -84,8 +88,10 @@ if args.single:
                     ax.set_ylabel(letter, fontsize=15, rotation='horizontal', ha='right', va='center')
                 if args.all_classes:
                     result = results[name][n][j]
-                else:
+                elif isinstance(results, dict):
                     result = results[classes[seq_labels[n]]][n][j]
+                else:
+                    result = results[n][j]
                 if args.clip is not None:
                     start_point = int(seq_len/2 - args.clip)
                     result = [median(result[start_point+i : start_point+i+leap]) for i in range(0, 2*args.clip, leap)]
@@ -105,8 +111,8 @@ if args.single:
                 if n == 0:
                     min_value = [tt*np.min(result) if tt*np.min(result) < min_value else min_value][0]
                     max_value = [tt*np.max(result) if tt*np.max(result) > max_value else max_value][0]
-        #for ax in axes.flatten():
-            #ax.set_ylim((min_value, max_value))
+        for ax in axes.flatten():
+            ax.set_ylim((-0.02, 0.04))
 
         if args.clip:
             fig.suptitle('Integrated gradients - seq {}; {}; clipped +- {}'.format(seq.replace('\n', '; '), classes[label], args.clip),
@@ -120,7 +126,7 @@ if args.single:
                 color=COLORS[label], fontsize=15)
             plt.tight_layout()
             plt.show()
-            fig.savefig(os.path.join(output, 'integrads_{}_{}_seq{}_y.png'.format(namespace, leap, n)))
+            fig.savefig(os.path.join(output, 'integrads_{}_{}_seq{}.png'.format(namespace, leap, n)))
 else:
     if args.all_classes:
         fig, axes = plt.subplots(nrows=len(seq_names), ncols=len(classes), figsize=(12, 8), squeeze=False, sharex='col',
@@ -146,8 +152,10 @@ else:
                 ax.set_ylabel(seq, fontsize=8, color=COLORS[seq_labels[j]], rotation='horizontal', ha='right', va='center')
             if args.all_classes:
                 result = results[name][j]
-            else:
+            elif isinstance(results, dict):
                 result = results[classes[seq_labels[j]]][j]
+            else:
+                result = results[j]
             result = [result[:, i:i+leap].flatten() for i in range(0, seq_len, leap)]
             ax.boxplot(result, showfliers=True, whis=15.0)
             labels = [i for i in np.arange(0, seq_len + 0.5,  seq_len//4)]

@@ -14,7 +14,7 @@ parser.add_argument('--model', action='store', metavar='NAME', type=str, default
 parser.add_argument('--seq', action='store', metavar='DATA', type=str, required=True,
                     help='File or folder with sequences to check')
 parser.add_argument('--baseline', action='store', metavar='DATA', type=str, default=None,
-                    help='Baseline for calculating integrated gradients: None, random, zeros or npy file. '
+                    help='Baseline for calculating integrated gradients: None/fixed, random, zeros or npy file. '
                          'By default is None - random baseline, the same for all sequences, is used')
 parser.add_argument('--trials', action='store', metavar='NUM', type=int, default=10,
                     help='Number of trials for calculating integrated gradients, default = 10.')
@@ -61,7 +61,7 @@ for i in range(1, len(dataset)):
     labels.append(yy)
 X = torch.stack(X, dim=0)
 
-if args.baseline is None:
+if args.baseline is None or args.baseline == 'fixed':
     from bin.common import OHEncoder
     import random
     encoder = OHEncoder()
@@ -74,7 +74,7 @@ if args.baseline is None:
         base.append(b)
     base = np.stack(base)
     baseline_file = '{}_baseline.npy'.format(seq_name.replace('_', '-'))
-    baseline_name = 'same-random-baseline'
+    baseline_name = 'fixed'
 elif args.baseline == 'random':
     base = None
     baseline_mode = baseline_name = 'random'
