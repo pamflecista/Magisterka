@@ -43,6 +43,9 @@ class OHEncoder:
         s = np.array([el for el in seq]).reshape(-1, 1)
         return self.encoder.transform(s).T
 
+    def decode(self, array):
+        return ''.join([el[0] for el in self.encoder.inverse_transform(array.T)])
+
 
 def make_chrstr(chrlist):
 

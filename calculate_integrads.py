@@ -45,6 +45,7 @@ seq_name, _ = os.path.splitext(seq_name)
 use_cuda, device = check_cuda(None)
 
 network, _, seq_len, _, classes, analysis_name = params_from_file(param_file)
+trials = args.trials
 
 dataset = SeqsDataset(seq_file, seq_len=seq_len)
 assert classes == dataset.classes, 'List of classes is inconsistent'
@@ -85,7 +86,9 @@ elif args.baseline == 'zeros':
     print('Baseline set to zero array')
 else:
     base = np.load(args.baseline, allow_pickle=True)
-    print('Baseline loaded from {}'.format(args.baseline))
+    trials = base.shape[0]
+    assert base.shape[1] == X.shape[0]
+    print('Baseline loaded from {}, number of trials: {}'.format(args.baseline, trials))
     baseline_mode = args.baseline
     _, baseline_name = os.path.split(baseline_mode)
     baseline_name, _ = os.path.splitext(baseline_name)
@@ -93,7 +96,7 @@ else:
 integrads_name = 'integrads_{}_{}_{}_{}-{}'.format(analysis_name,
                                                    seq_name.replace('_', '-'),
                                                    baseline_name.replace('_', '-'),
-                                                   args.trials,
+                                                   trials,
                                                    args.steps)
 outdir = os.path.join(output, integrads_name)
 if os.path.isdir(outdir):

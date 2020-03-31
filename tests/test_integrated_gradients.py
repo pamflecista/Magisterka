@@ -20,3 +20,15 @@ def test_integrated_gradients(input_dir):
     print(results)
 
 
+@pytest.mark.parametrize("num_seq, n", [(8, 3)])
+def test_produce_balanced_baseline(num_seq, n):
+    outdir = '/home/marni/Dokumenty/magisterka/'
+    f = produce_balanced_baseline(outdir, 'test', num_seq, n=n)
+    array = np.load(f)
+    print(array.shape)
+    encoder = OHEncoder()
+    dif = [set([]) for _ in range(array.shape[1])]
+    for base in array:
+        dif = [dif[i] | {encoder.decode(el[:, :3])} for i, el in enumerate(base)]
+    for el in dif:
+        assert len(el) == 4**n
