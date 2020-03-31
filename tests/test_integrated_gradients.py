@@ -20,7 +20,7 @@ def test_integrated_gradients(input_dir):
     print(results)
 
 
-@pytest.mark.parametrize("num_seq, n", [(8, 3)])
+@pytest.mark.parametrize("num_seq, n", [(16, 2)])
 def test_produce_balanced_baseline(num_seq, n):
     outdir = '/home/marni/Dokumenty/magisterka/'
     f = produce_balanced_baseline(outdir, 'test', num_seq, n=n)
