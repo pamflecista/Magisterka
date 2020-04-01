@@ -112,7 +112,7 @@ if args.single:
                     min_value = [tt*np.min(result) if tt*np.min(result) < min_value else min_value][0]
                     max_value = [tt*np.max(result) if tt*np.max(result) > max_value else max_value][0]
         for ax in axes.flatten():
-            ax.set_ylim((-0.02, 0.04))
+            ax.set_ylim((-0.01, 0.01))
 
         if args.clip:
             fig.suptitle('Integrated gradients - seq {}; {}; clipped +- {}'.format(seq.replace('\n', '; '), classes[label], args.clip),
