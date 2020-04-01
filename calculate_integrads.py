@@ -67,7 +67,7 @@ if args.baseline is None or args.baseline == 'fixed':
     import random
     encoder = OHEncoder()
     base = []
-    for _ in range(args.trials):
+    for _ in range(trials):
         b = np.zeros(X.shape)
         for j, el in enumerate(X):
             seq = random.choices(encoder.dictionary, k=el.shape[-1])
@@ -81,7 +81,7 @@ elif args.baseline == 'random':
     baseline_mode = baseline_name = 'random'
     print('Baseline set to random - different for each sequence')
 elif args.baseline == 'zeros':
-    base = np.stack([(0 * X).numpy() for _ in range(args.trials)])
+    base = np.stack([(0 * X).numpy() for _ in range(trials)])
     baseline_mode = baseline_name = 'zeros'
     print('Baseline set to zero array')
 else:
@@ -128,7 +128,7 @@ with open(analysis_info, 'w') as f:
     f.write('Seq length: {}\n'.format(seq_len))
     f.write('Seq descriptions: {}\n'.format(', '.join(seq_desc)))
     f.write('Classes: {}\n'.format(', '.join(classes)))
-    f.write('Number of trials: {}\n'.format(args.trials))
+    f.write('Number of trials: {}\n'.format(trials))
     f.write('Number of steps: {}\n'.format(args.steps))
     f.write('Baseline: {}\n'.format(baseline_mode))
 print('Analysis info written into {}'.format(analysis_info))
@@ -141,14 +141,14 @@ if args.all_classes:
         l = [i for _ in labels]
         print('Calculating integrated gradients for {}'.format(name))
         r = np.squeeze(
-            integrated_gradients(model, X, l, use_cuda=use_cuda, num_trials=args.trials, steps=args.steps,
+            integrated_gradients(model, X, l, use_cuda=use_cuda, num_trials=trials, steps=args.steps,
                                  baseline=base), axis=1)
         np.save(os.path.join(outdir, 'integrads_{}'.format('-'.join(name.split()))), r)
         results[name] = r
         print('---> Total elapsed time: {:.2f} min'.format((time() - t0) / 60))
 else:
     print('Calculating integrated gradients for true class')
-    r = np.squeeze(integrated_gradients(model, X, labels, use_cuda=use_cuda, num_trials=args.trials, steps=args.steps,
+    r = np.squeeze(integrated_gradients(model, X, labels, use_cuda=use_cuda, num_trials=trials, steps=args.steps,
                                         baseline=base), axis=1)
     np.save(os.path.join(outdir, 'integrads_all'), r)
     print('---> Total elapsed time: {:.2f} min'.format((time() - t0) / 60))
