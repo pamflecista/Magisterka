@@ -29,15 +29,31 @@ path, output, namespace, seed = parse_arguments(args, args.model)
 
 if args.model is None:
     model_file = os.path.join(path, 'results/{}/{}_last.model'.format(namespace, namespace))
-else:
+elif os.path.isfile(args.model):
     model_file = args.model
-
-if args.param is None:
-    param_file = os.path.join(path, 'results/{}/{}_params.txt'.format(namespace, namespace))
 else:
-    param_file = args.param
+    model_file = os.path.join(path, args.model)
+model_path = os.path.dirname(model_file)
 
-seq_file = args.seq
+if args.param is not None:
+    if os.path.isfile(args.param):
+        param_file = args.param
+    elif os.path.isfile(os.path.join(path, args.param)):
+        param_file = os.path.isfile(os.path.join(path, args.param))
+    else:
+        warnings.warn('Param file could not be found!')
+elif args.param is None:
+    if os.path.isfile(os.path.join(model_path, '{}_params.txt'.format(namespace))):
+        param_file = os.path.join(model_path, '{}_params.txt'.format(namespace))
+    else:
+        warnings.warn('Param file could not be found!')
+
+if os.path.isfile(args.seq):
+    seq_file = args.seq
+elif os.path.isfile(os.path.join(model_path, args.seq)):
+    seq_file = os.path.join(model_path, args.seq)
+else:
+    warnings.warn('Sequence file could not be found!')
 _, seq_name = os.path.split(seq_file)
 seq_name, _ = os.path.splitext(seq_name)
 

@@ -13,6 +13,8 @@ parser.add_argument('--global_ylim', action='store_true',
                     help='If ylim should be set global for all classes')
 parser.add_argument('--one', action='store_true',
                     help='If only one nucleotide (from the origin sequence) should be plot')
+parser.add_argument('--clip', action='store', metavar='NUM', type=int, default=100,
+                    help='Subset of nucleotides to plot: +-NUM from the middle of the sequences, default = 100')
 parser = basic_params(parser, param=True)
 args = parser.parse_args()
 path, output, namespace, seed = parse_arguments(args, args.integrads)
@@ -104,7 +106,7 @@ def stitch(arr, seq, outdir, name_prefix="stitched", step=20, aspect=5, ylim=Non
 
 one = False
 global_ylim = None
-clip = 100
+clip = args.clip
 name = 'seqlogo-{}'.format(clip)
 if args.one:
     name += '-one'

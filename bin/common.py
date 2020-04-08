@@ -205,7 +205,9 @@ def parse_arguments(args, file, namesp=None):
             p = '/' + '/'.join(f.strip('/').split('/')[:-1])
             path = ''.join([el for el, le in zip(p, path) if el == le])
     else:
-        path = '/' + '/'.join(file.strip('/').split('/')[:-1])
+        path = os.path.dirname(file)
+        if not os.path.isfile(file):
+            path = os.path.join(os.getcwd().rstrip('bin'), 'data/custom40', path)
     if path.endswith('data'):
         path = path[:-4]
     if args.namespace is not None:
