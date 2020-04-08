@@ -102,14 +102,15 @@ def stitch(arr, seq, outdir, name_prefix="stitched", step=20, aspect=5, ylim=Non
     n.resize((int(n.size[0] / aspect), n.size[1]), Image.ANTIALIAS).save(os.path.join(outdir, name_prefix + ".png"))
 
 
-name = 'seqlogo'
 one = False
 global_ylim = None
+clip = 100
+name = 'seqlogo-{}'.format(clip)
 if args.one:
     name += '-one'
     one = True
 if args.global_ylim:
-    global_ylim = np.max(np.absolute(integrads))
+    global_ylim = np.max(np.absolute(integrads[:, :, 1000-clip:1000+clip]))
     print('Global ylim set to {}'.format(global_ylim))
     name += '-global-ylim'
 working_dir = os.path.join(output, name)
@@ -120,4 +121,4 @@ if not os.path.isdir(os.path.join(working_dir, 'subplots')):
 for seq, grads, label, d in zip(seqs, integrads, labels, desc):
     name = '{}:{}'.format(classes[label].replace(' ', '-'), d)
     print('Plotting {}'.format(name))
-    stitch(grads[:, 900:1100], seq, working_dir, name_prefix=name, ylim=global_ylim, one=one)
+    stitch(grads[:, 1000-clip:1000+clip], seq, working_dir, name_prefix=name, ylim=global_ylim, one=one)

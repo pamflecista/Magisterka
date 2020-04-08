@@ -13,6 +13,8 @@ parser.add_argument('dir1', action='store', metavar='DIR', type=str, default=Non
 parser.add_argument('dir2', action='store', metavar='DIR', type=str, default=None,
                     help='Second directory containing folders with seqlogos (seqlogo, seqlogo-global-ylim, '
                          'seqlogo-one, seqlogo-one-global-ylim)')
+parser.add_argument('--clip', action='store', metavar='VALUE', type=str, default=None,
+                    help='Clip parameter from plotting seqlogos')
 parser = basic_params(parser, param=True)
 args = parser.parse_args()
 path, output, namespace, seed = parse_arguments(args, args.dir1)
@@ -26,6 +28,11 @@ if not args.dir2.startswith('/'):
 else:
     dir2 = args.dir2
 
+if args.clip is not None:
+    clip = '-{}'.format(args.clip)
+else:
+    clip = ''
+
 name1 = dir1.split('/')[-1].split('_')[-2:]
 name1 = '{}:{}'.format(name1[0].replace('1', ''), name1[1])
 name2 = dir2.split('/')[-1].split('_')[-2:]
@@ -38,7 +45,8 @@ if os.path.isdir(outdir):
     shutil.rmtree(outdir)
 os.mkdir(outdir)
 
-for type_ in ['seqlogo', 'seqlogo-global-ylim', 'seqlogo-one', 'seqlogo-one-global-ylim']:
+for type_ in ['seqlogo{}'.format(clip), 'seqlogo{}-global-ylim'.format(clip), 'seqlogo{}-one'.format(clip),
+              'seqlogo{}-one-global-ylim'.format(clip)]:
     for class_ in ['promoter-active', 'promoter-inactive', 'nonpromoter-active', 'nonpromoter-inactive']:
         for extreme_ in ['best1', 'worst1']:
             namespace = '{} : {} - {} - {}'.format(name1, type_, class_, extreme_)
