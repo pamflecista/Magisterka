@@ -114,6 +114,7 @@ if args.global_ylim:
     print('Global ylim set to {}'.format(global_ylim))
     name += '-global-ylim'
 working_dir = os.path.join(output, name)
+print('Analysis {}'.format(working_dir))
 if not os.path.isdir(working_dir):
     os.mkdir(working_dir)
 if not os.path.isdir(os.path.join(working_dir, 'subplots')):
