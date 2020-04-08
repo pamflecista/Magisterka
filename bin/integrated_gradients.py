@@ -30,6 +30,7 @@ def calculate_gradients(model, inputs, labels, use_cuda=False):
     torch_device = [torch.device('cuda:0') if use_cuda else torch.device('cpu')][0]
     gradients = []
     for inp, label in zip(inputs, labels):
+        model.eval()
         inp = inp.float()
         inp.to(torch_device)
         inp.requires_grad = True
@@ -64,7 +65,7 @@ def produce_balanced_baseline(outdir, name, num_seq, n=3):
             b[j] = encoder(seq)
         base.append(b)
     base = np.stack(base)
-    baseline_file = os.path.join(outdir, '{}_balanced_baseline_{}-{}.npy'.format(name, num_seq, n))
+    baseline_file = os.path.join(outdir, '{}-balanced-{}-{}_baseline.npy'.format(name, num_seq, n))
     np.save(baseline_file, base)
     print('Balanced baseline size {} was written into {}'.format(base.shape, baseline_file))
     return baseline_file
