@@ -2,12 +2,12 @@
 
 <br></br>
 
-This repository is a part of my master's project called "Identification of 
-chromatin regions active in human brain using neural networks".
+**This repository is a part of my master's project called "Identification of 
+chromatin regions active in human brain using neural networks".**
 
 <br></br>
 
-#### Versions
+### Versions
 
 - Python 3.6
 - pandas 1.0.1
@@ -16,7 +16,7 @@ chromatin regions active in human brain using neural networks".
 
 <br></br>
 
-#### Example dataset
+### Example dataset
 
 Example of trained network is in */data/custom40* directory.
 
@@ -42,8 +42,8 @@ sequence
 (each 3 nucleotides in the given position occur exactly once across all 64. baseline sequences)
 
 As the output new directory called *integrads_NETWORK_SEQUENCES_BASELINE_TRIALS-STEPS* is created
-(if the default data was used: 
-*integrads_custom40_extreme-custom40-train-1_CHOSEN-BASELINE_10-50*). Inside there are result files:
+(*integrads_custom40_extreme-custom40-train-1_CHOSEN-BASELINE_10-50* if the default data was used). 
+Inside there are result files:
 - integrads_all.npy - numpy array with calculated gradients
 - params.txt - file with parameters of the analysis
 
@@ -52,7 +52,7 @@ As the output new directory called *integrads_NETWORK_SEQUENCES_BASELINE_TRIALS-
 To plot seqlogos based on the calculated integrads run:
 ```
 python3 plot_seqlogo.py \
-/integrads_custom40_extreme-custom40-train-1_CHOSEN-BASELINE_10-50/integrads_all.npy \
+integrads_custom40_extreme-custom40-train-1_CHOSEN-BASELINE_10-50/integrads_all.npy \
 --global_ylim \
 --one \
 --clip NUM
