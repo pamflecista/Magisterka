@@ -124,4 +124,4 @@ if not os.path.isdir(os.path.join(working_dir, 'subplots')):
 for seq, grads, label, d in zip(seqs, integrads, labels, desc):
     name = '{}:{}'.format(classes[label].replace(' ', '-'), d)
     print('Plotting {}'.format(name))
-    stitch(grads[:, 1000-clip:1000+clip], seq, working_dir, name_prefix=name, ylim=global_ylim, one=one)
+    stitch(grads[:, 1000-clip:1000+clip], seq[1000-clip:1000+clip], working_dir, name_prefix=name, ylim=global_ylim, one=one)

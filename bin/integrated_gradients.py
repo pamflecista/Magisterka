@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import random
 import os
+from bin.common import OHEncoder
 
 
 def integrated_gradients(model, inputs, labels, baseline=None, num_trials=10, steps=50, use_cuda=False):
@@ -9,7 +10,6 @@ def integrated_gradients(model, inputs, labels, baseline=None, num_trials=10, st
     for i in range(num_trials):
         print('Trial {}'.format(i))
         if baseline is None:
-            from .common import OHEncoder
             encoder = OHEncoder()
             base = torch.zeros(inputs.shape)
             for j, el in enumerate(inputs):
@@ -46,10 +46,9 @@ def calculate_gradients(model, inputs, labels, use_cuda=False):
 
 
 def produce_balanced_baseline(outdir, name, num_seq, n=3):
-    from bin.common import OHEncoder
     from itertools import product
     from math import ceil
-    print('Establishing random baseline named {}, num_seq = {}, n = {}'.format(name, num_seq, n))
+    print('Establishing balanced baseline named {}, num_seq = {}, n = {}'.format(name, num_seq, n))
     trials = 4**n
     encoder = OHEncoder()
     d = encoder.dictionary
@@ -66,6 +65,49 @@ def produce_balanced_baseline(outdir, name, num_seq, n=3):
         base.append(b)
     base = np.stack(base)
     baseline_file = os.path.join(outdir, '{}-balanced-{}-{}_baseline.npy'.format(name, num_seq, n))
+    np.save(baseline_file, base)
+    print('Balanced baseline size {} was written into {}'.format(base.shape, baseline_file))
+    return baseline_file
+
+
+def produce_morebalanced_baseline(outdir, name, num_seq, n=3, same_for_each_seq=True):
+    def kmers(k, sigma="ACGT"):
+        if k == 1:
+            for s in sigma:
+                yield [s]
+        else:
+            kms = kmers(k - 1, sigma)
+            for k in kms:
+                for l in sigma:
+                    yield k + [l]
+
+    def generate_seqs(l=1, k=1, sigma="ACGT"):
+        result = list(kmers(k, sigma))
+        sigma = list(sigma)
+        for i in range(max(0, l - k)):
+            # extend the lists by one
+            random.shuffle(sigma)
+            result.sort()
+            for i, r in enumerate(result):
+                r.insert(0, sigma[i % len(sigma)])
+        return ["".join(r) for r in result]
+
+    trials = 4 ** n
+    encoder = OHEncoder()
+    d = encoder.dictionary
+    if same_for_each_seq:
+        ss = generate_seqs(l=2000, k=n, sigma=d)
+        ss.sort()
+        b = np.stack([np.array(encoder(seq)) for seq in ss], axis=0)
+        base = np.stack([b for _ in range(num_seq)], axis=1)
+    else:
+        base = np.zeros((trials, num_seq, 4, 2000))
+        for num in range(num_seq):
+            ss = generate_seqs(l=2000, k=n, sigma=d)
+            ss.sort()
+            b = np.stack([np.array(encoder(seq)) for seq in ss], axis=0)
+            base[:, num, :, :] = b
+    baseline_file = os.path.join(outdir, '{}-morebalanced-{}-{}_baseline.npy'.format(name, num_seq, n))
     np.save(baseline_file, base)
     print('Balanced baseline size {} was written into {}'.format(base.shape, baseline_file))
     return baseline_file

@@ -15,6 +15,8 @@ parser.add_argument('dir2', action='store', metavar='DIR', type=str, default=Non
                          'seqlogo-one, seqlogo-one-global-ylim)')
 parser.add_argument('--clip', action='store', metavar='VALUE', type=str, default=None,
                     help='Clip parameter from plotting seqlogos')
+parser.add_argument('--name', action='store', metavar='NAME', type=str, default=None,
+                    help='Name of the output directory')
 parser = basic_params(parser, param=True)
 args = parser.parse_args()
 path, output, namespace, seed = parse_arguments(args, args.dir1)
@@ -33,12 +35,16 @@ if args.clip is not None:
 else:
     clip = ''
 
-name1 = dir1.split('/')[-1].split('_')[-2:]
-name1 = '{}:{}'.format(name1[0].replace('1', ''), name1[1])
-name2 = dir2.split('/')[-1].split('_')[-2:]
-name2 = '{}:{}'.format(name2[0].replace('2', ''), name2[1])
-assert name1 == name2
-outdir = os.path.join(output, name1)
+if args.name is None:
+    name1 = dir1.split('/')[-1].split('_')[-2:]
+    name1 = '{}:{}'.format(name1[0].replace('1', ''), name1[1])
+    name2 = dir2.split('/')[-1].split('_')[-2:]
+    name2 = '{}:{}'.format(name2[0].replace('2', ''), name2[1])
+    assert name1 == name2
+    name = name1
+else:
+    name = args.name
+outdir = os.path.join(output, name)
 if os.path.isdir(outdir):
     warnings.warn('\nAnalysis in {} already exists, it will be overwritten'.format(outdir))
     import shutil
@@ -49,7 +55,7 @@ for type_ in ['seqlogo{}'.format(clip), 'seqlogo{}-global-ylim'.format(clip), 's
               'seqlogo{}-one-global-ylim'.format(clip)]:
     for class_ in ['promoter-active', 'promoter-inactive', 'nonpromoter-active', 'nonpromoter-inactive']:
         for extreme_ in ['best1', 'worst1']:
-            namespace = '{} : {} - {} - {}'.format(name1, type_, class_, extreme_)
+            namespace = '{} : {} - {} - {}'.format(name, type_, class_, extreme_)
             try:
                 img1 = Image.open(os.path.join(dir1, type_, '{}:{}.png'.format(class_, extreme_)))
                 img2 = Image.open(os.path.join(dir2, type_, '{}:{}.png'.format(class_, extreme_)))
