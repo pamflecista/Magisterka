@@ -33,7 +33,7 @@ parser.add_argument('--batch_size', action='store', metavar='INT', type=int, def
                     help='size of the batch, default: 64')
 parser = basic_params(parser)
 args = parser.parse_args()
-path, output, namespace, seed = parse_arguments(args, args.model)
+path, output, namespace, seed = parse_arguments(args, args.model, model_path=True)
 
 batch_size = args.batch_size
 if args.model is None:
@@ -42,9 +42,16 @@ elif args.model.startswith('/'):
     modelfile = args.model
 else:
     modelfile = os.path.join(path, args.model)
-data_dir = args.dataset
-allseqs = True if data_dir else False
-subset = 'train' if args.train else 'valid' if args.valid else 'test' if not allseqs else 'all'
+if args.data_dir is not None:
+    data_name = args.dataset.split('/')[-1].split('.')[0]
+    if os.path.isfile(args.dataset):
+        data_dir = args.dataset
+    elif os.path.isfile(os.path.join(path, args.dataset)):
+        data_dir = os.path.join(path, args.data_dir)
+    subset = 'all:{}'.format(data_name)
+else:
+    data_dir = []
+    subset = 'train' if args.train else 'valid' if args.valid else 'test'
 
 network, data_dir, seq_len, ch, classes, _ = \
     params_from_file(os.path.join(output, '{}_params.txt'.format(namespace)), data_dir=data_dir)
@@ -60,9 +67,8 @@ use_cuda, device = check_cuda(logger)
 
 # Build dataset for testing
 t0 = time()
-if subset == 'all':
+if subset.startswith('all'):
     names = []
-    subset += ':{}'.format(os.path.splitext(data_dir)[-1].split('_')[0])
 else:
     names = open(os.path.join(output, '{}_{}.txt'.format(namespace, subset)), 'r').read().strip().split('\n')
 dataset = SeqsDataset(data_dir, subset=names, seq_len=seq_len)
