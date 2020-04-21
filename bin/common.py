@@ -258,6 +258,7 @@ def read_results_columns(results_table, columns):
                     columns[h] = [name.replace('INT', str(i)), formatting]
                     i += 1
                 elif h not in ['Epoch', 'Stage', 'Dataset', 'Subset']:
+                    print(h)
                     raise ValueError
     if i > 0:
         del columns['AUC-neuron']

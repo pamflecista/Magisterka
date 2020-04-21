@@ -48,6 +48,9 @@ if args.dataset is not None:
         data_dir = args.dataset
     elif os.path.isfile(os.path.join(path, args.dataset)):
         data_dir = os.path.join(path, args.dataset)
+    else:
+        print('Dataset {} not found'.format(args.dataset))
+        raise ValueError
     subset = 'all:{}'.format(data_name)
 else:
     data_dir = []
@@ -60,7 +63,7 @@ network, data_dir, seq_len, ch, classes, _ = \
 (logger, results_table), old_results = build_loggers('test', output=output, namespace=namespace)
 
 logger.info('\nTesting the network {} begins {}\nInput data: {} from {}\nOutput directory: {}\n'.format(
-    modelfile, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), subset, '; '.join(data_dir), output))
+    modelfile, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), subset, data_dir, output))
 
 # CUDA for PyTorch
 use_cuda, device = check_cuda(logger)
