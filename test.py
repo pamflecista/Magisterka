@@ -27,8 +27,8 @@ group1.add_argument('--train', action='store_true',
                     help='Test model on the train data of the given model')
 group1.add_argument('--valid', action='store_true',
                     help='Test model on the validation data of the given model')
-group1.add_argument('--dataset', action='store', metavar='DATA', type=str, nargs='+', default=[],
-                    help='Directory with the data for testing')
+group1.add_argument('--dataset', action='store', metavar='DATA', type=str, default=None,
+                    help='Directory or file with the data for testing')
 parser.add_argument('--batch_size', action='store', metavar='INT', type=int, default=64,
                     help='size of the batch, default: 64')
 parser = basic_params(parser)
