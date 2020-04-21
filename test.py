@@ -42,12 +42,12 @@ elif args.model.startswith('/'):
     modelfile = args.model
 else:
     modelfile = os.path.join(path, args.model)
-if args.data_dir is not None:
+if args.dataset is not None:
     data_name = args.dataset.split('/')[-1].split('.')[0]
     if os.path.isfile(args.dataset):
         data_dir = args.dataset
     elif os.path.isfile(os.path.join(path, args.dataset)):
-        data_dir = os.path.join(path, args.data_dir)
+        data_dir = os.path.join(path, args.dataset)
     subset = 'all:{}'.format(data_name)
 else:
     data_dir = []
