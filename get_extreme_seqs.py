@@ -6,6 +6,8 @@ parser = argparse.ArgumentParser(description='Get given number of the best and t
                                              'for given model')
 parser.add_argument('--num_seq', action='store', metavar='NUMBER', type=int, default=1,
                     help='Number of the best and the worst sequences to get, default value is 1')
+parser.add_argument('--classes', nargs='+', metavar='NAME', type=str, default=[],
+                    help='Name of the class from which the sequences should be selected, by default all classes are considered')
 group1 = parser.add_mutually_exclusive_group(required=False)
 group1.add_argument('--test', action='store_true',
                     help='Get extreme sequences from the test data of the given model, by default training sequences are used')
@@ -13,30 +15,36 @@ group1.add_argument('--valid', action='store_true',
                     help='Get extreme sequences from the valid data of the given model, by default training sequences are used')
 parser = basic_params(parser, param=True)
 args = parser.parse_args()
-path, output, namespace, seed = parse_arguments(args, None)
+path, output, namespace, seed = parse_arguments(args, None, model_path=True)
 
 if args.param is None:
-    param_file = os.path.join(path, 'results', namespace, '{}_params.txt'.format(namespace))
+    param_file = os.path.join(path, '{}_params.txt'.format(namespace))
 else:
     param_file = args.param
 
 network, data_dir, seq_len, ch, classes, name = params_from_file(param_file)
 dataset = SeqsDataset(data_dir, seq_len=seq_len)
 
-if args.test:
-    seq_order = open(os.path.join(path, 'results', namespace, '{}_test.txt'.format(namespace)), 'r').read().strip().split('\n')
-    outputs = np.load(os.path.join(path, 'results', namespace, '{}_test_outputs.npy'.format(namespace)), allow_pickle=True)
-elif args.valid:
-    seq_order = open(os.path.join(path, 'results', namespace, '{}_valid.txt'.format(namespace)), 'r').read().strip().split('\n')
-    outputs = np.load(os.path.join(path, 'results', namespace, '{}_valid_outputs.npy'.format(namespace)), allow_pickle=True)
+if args.classes:
+    classes = [el for la in args.classes for el in classes if el.startswith(la.replace('-', ' '))]
+    classes_str = '-'.join(args.classes)
 else:
-    seq_order = open(os.path.join(path, 'results', namespace, '{}_train.txt'.format(namespace)), 'r').read().strip().split('\n')
-    outputs = np.load(os.path.join(path, 'results', namespace, '{}_train_outputs.npy'.format(namespace)), allow_pickle=True)
+    classes_str = 'all'
+
+if args.test:
+    seq_order = open(os.path.join(path, '{}_test.txt'.format(namespace)), 'r').read().strip().split('\n')
+    outputs = np.load(os.path.join(path, '{}_test_outputs.npy'.format(namespace)), allow_pickle=True)
+elif args.valid:
+    seq_order = open(os.path.join(path, '{}_valid.txt'.format(namespace)), 'r').read().strip().split('\n')
+    outputs = np.load(os.path.join(path, '{}_valid_outputs.npy'.format(namespace)), allow_pickle=True)
+else:
+    seq_order = open(os.path.join(path, '{}_train.txt'.format(namespace)), 'r').read().strip().split('\n')
+    outputs = np.load(os.path.join(path, '{}_train_outputs.npy'.format(namespace)), allow_pickle=True)
 
 labels = [dataset.__getitem__(el, info=True)[3] for el in seq_order]
 
 subset = 'test' if args.test else 'valid' if args.valid else 'train'
-result_file = os.path.join(output, 'extreme_{}_{}_{}.fasta'.format(namespace, subset, args.num_seq))
+result_file = os.path.join(output, 'extreme_{}_{}_{}_{}.fasta'.format(namespace, subset, classes_str, args.num_seq))
 result_fasta = open(result_file, 'w')
 for i, cl in enumerate(classes):
     print('class {}'.format(cl))

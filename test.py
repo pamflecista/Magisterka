@@ -43,7 +43,7 @@ elif args.model.startswith('/'):
 else:
     modelfile = os.path.join(path, args.model)
 if args.dataset is not None:
-    data_name = args.dataset.split('/')[-1].split('.')[0]
+    data_name = args.dataset.split('/')[-1].split('.')[0].replace('_', '-')
     if os.path.isfile(args.dataset):
         data_dir = args.dataset
     elif os.path.isfile(os.path.join(path, args.dataset)):
@@ -139,6 +139,8 @@ test_auc = calculate_auc(true, scores)
 write_results(results_table, columns, ['test'], globals(), data_dir, subset)
 np.save(os.path.join(output, '{}_{}_outputs'.format(namespace, subset)), np.array(output_values))
 np.save(os.path.join(output, '{}_{}_labels'.format(namespace, subset)), np.array(true))
+with open(os.path.join(output, '{}_{}.txt'.format(namespace, subset)), 'w') as f:
+    f.write('\n'.join(dataset.IDs))
 
 logger.info("Testing finished in {:.2f} min\nTest loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
             .format((time() - t0) / 60, test_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
