@@ -34,7 +34,7 @@ def test_produce_balanced_baseline(num_seq, n):
         assert len(el) == 4**n
 
 
-@pytest.mark.parametrize("num_seq, n", [(8, 3)])
+@pytest.mark.parametrize("num_seq, n", [(20, 3)])
 def test_produce_morebalanced_baseline(num_seq, n):
     outdir = '/home/marni/Dokumenty/magisterka/'
     f = produce_morebalanced_baseline(outdir, 'test', num_seq, n=n)

@@ -103,7 +103,7 @@ elif args.baseline == 'zeros':
 else:
     base = np.load(args.baseline, allow_pickle=True)
     trials = base.shape[0]
-    assert base.shape[1] == X.shape[0]
+    assert base.shape[1] == X.shape[0], 'Baseline shape: {}, Seqs shape: {}'.format(base.shape, X.shape)
     print('Baseline loaded from {}, number of trials: {}'.format(args.baseline, trials))
     baseline_mode = args.baseline
     _, baseline_name = os.path.split(baseline_mode)
