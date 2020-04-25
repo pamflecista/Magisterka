@@ -10,11 +10,11 @@ import math
 
 class SeqsDataset(Dataset):
 
-    def __init__(self, data, subset=(), filetype='fasta', seq_len=2000):
+    def __init__(self, data, subset=(), filetype='fasta', seq_len=2000, packedtype='fa'):
 
         # Establishing files' IDs and their directories
         if isinstance(data, str):
-            if data.endswith(filetype):
+            if data.endswith((filetype, packedtype)):
                 i, path = rewrite_fasta(data)
                 if i == 1:
                     warn('Only one sequence found in the given data!')
@@ -23,6 +23,25 @@ class SeqsDataset(Dataset):
                 data = [data]
             else:
                 raise GivenDataError(data, filetype)
+        else:
+            fs = [la for la in [os.path.join(dd, el) for dd in data for el in os.listdir(dd)] if la.endswith(packedtype)]
+            if fs:
+                new_data = []
+                old_data = set()
+                for file in fs:
+                    old, _ = os.path.split(file)
+                    old_data.add(old)
+                    dd, _ = os.path.splitext(file)
+                    if not os.path.isdir(dd):
+                        i, path = rewrite_fasta(file)
+                        if i == 1:
+                            warn('Only one sequence found in the given data!')
+                        new_data.append(path)
+                    else:
+                        new_data.append(dd)
+                data.extend(new_data)
+                for el in old_data:
+                    data.remove(el)
         ids = []
         dirs = []
         locs = {}  # seq-name : index of element in dirs from which it was obtained
@@ -52,7 +71,7 @@ class SeqsDataset(Dataset):
                     else:
                         raise RepeatedFileError(name, dirs[locs[name]], r)
         if len(ids) == 0:
-            warn('No files of {} type was found in the given data'.format(filetype))
+            warn('No files of {} type was found in the given data'.format(filetype), UserWarning)
         self.IDs = ids
         self.locs = locs
         self.dirs = dirs
