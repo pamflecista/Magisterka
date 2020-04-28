@@ -150,7 +150,12 @@ logger.info("Testing finished in {:.2f} min\nTest loss: {:1.3f}\n{:>35s}{:.5s}, 
 logger.info("--{:>18s} :{:>5} seqs{:>22}".format('TESTING', len(dataset), "--"))
 for cl, sens, spec, auc in zip(dataset.classes, test_sens, test_spec, test_auc):
     logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:4s}'.format(cl, len(class_stage[cl]), sens, spec, auc[0]))
-logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}, {:4s}{:>12}".
-        format('TESTING MEANS', *list(map(mean, [test_sens, test_spec, [el[0] for el in test_auc]])), "--"))
+if isinstance(test_auc[0][0], float):
+    logger.info(
+            "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}".
+            format('TESTING MEANS', *list(map(mean, [test_sens, test_spec, [el[0] for el in test_auc]])), "--"))
+else:
+    logger.info(
+        "--{:>18s} : {:1.3f}, {:1.3f}, {}{:>12}".
+            format('TESTING MEANS', *list(map(mean, [test_sens, test_spec])), test_auc[0][0], "--"))
 logger.info('Testing of {} finished in {:.2f} min'.format(namespace, (time() - t0)/60))
