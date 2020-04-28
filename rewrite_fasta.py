@@ -2,7 +2,7 @@ import argparse
 import os
 
 
-def rewrite_fasta(file, outdir=None):
+def rewrite_fasta(file, outdir=None, name_pos=None):
     with open(file, 'r') as f:
         i = 0
         line = f.readline()
@@ -23,7 +23,10 @@ def rewrite_fasta(file, outdir=None):
     with open(file, 'r') as f:
         for line in f:
             if line.startswith('>'):
-                filename = ':'.join(line.split(' ')[1:3]).strip('chr ') + '.fasta'
+                if name_pos is not None:
+                    filename = line.split(' ')[name_pos] + '.fasta'
+                else:
+                    filename = ':'.join(line.split(' ')[1:3]).strip('chr ') + '.fasta'
                 w = open(os.path.join(outdir, filename), 'w')
                 w.write(line)
                 i += 1

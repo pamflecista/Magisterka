@@ -74,7 +74,7 @@ if subset.startswith('all'):
     names = []
 else:
     names = open(os.path.join(output, '{}_{}.txt'.format(namespace, subset)), 'r').read().strip().split('\n')
-dataset = SeqsDataset(data_dir, subset=names, seq_len=seq_len)
+dataset = SeqsDataset(data_dir, subset=names, seq_len=seq_len, name_pos=-1)
 classes = dataset.classes
 num_classes = len(classes)
 loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)

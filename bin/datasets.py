@@ -10,12 +10,12 @@ import math
 
 class SeqsDataset(Dataset):
 
-    def __init__(self, data, subset=(), filetype='fasta', seq_len=2000, packedtype='fa'):
+    def __init__(self, data, subset=(), filetype='fasta', seq_len=2000, packedtype='fa', name_pos=None):
 
         # Establishing files' IDs and their directories
         if isinstance(data, str):
             if data.endswith((filetype, packedtype)):
-                i, path = rewrite_fasta(data)
+                i, path = rewrite_fasta(data, name_pos=name_pos)
                 if i == 1:
                     warn('Only one sequence found in the given data!')
                 data = [path]
@@ -33,7 +33,7 @@ class SeqsDataset(Dataset):
                     old_data.add(old)
                     dd, _ = os.path.splitext(file)
                     if not os.path.isdir(dd):
-                        i, path = rewrite_fasta(file)
+                        i, path = rewrite_fasta(file, name_pos=name_pos)
                         if i == 1:
                             warn('Only one sequence found in the given data!')
                         new_data.append(path)
