@@ -136,7 +136,7 @@ test_loss_reduced = math.floor(mean([el for el in test_losses if el])*10/10)
 try:
     test_auc = calculate_auc(true, scores)
 except ValueError:
-    test_auc = [np.nan for _ in dataset.classes]
+    test_auc = [['-' for _ in dataset.classes] for _ in dataset.classes]
 
 # Write the results
 write_results(results_table, columns, ['test'], globals(), data_dir, subset)
@@ -149,8 +149,8 @@ logger.info("Testing finished in {:.2f} min\nTest loss: {:1.3f}\n{:>35s}{:.5s}, 
             .format((time() - t0) / 60, test_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
 logger.info("--{:>18s} :{:>5} seqs{:>22}".format('TESTING', len(dataset), "--"))
 for cl, sens, spec, auc in zip(dataset.classes, test_sens, test_spec, test_auc):
-    logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[cl]), sens, spec, auc[0]))
+    logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:4s}'.format(cl, len(class_stage[cl]), sens, spec, auc[0]))
 logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}".
+        "--{:>18s} : {:1.3f}, {:1.3f}, {:4s}{:>12}".
         format('TESTING MEANS', *list(map(mean, [test_sens, test_spec, [el[0] for el in test_auc]])), "--"))
 logger.info('Testing of {} finished in {:.2f} min'.format(namespace, (time() - t0)/60))
