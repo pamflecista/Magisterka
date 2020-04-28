@@ -25,10 +25,10 @@ parser.add_argument('--all_classes', action='store_true',
 parser = basic_params(parser, param=True)
 args = parser.parse_args()
 
-path, output, namespace, seed = parse_arguments(args, args.model)
+path, output, namespace, seed = parse_arguments(args, args.model, model_path=True)
 
 if args.model is None:
-    model_file = os.path.join(path, 'results/{}/{}_last.model'.format(namespace, namespace))
+    model_file = os.path.join(path, '{}_last.model'.format(namespace, namespace))
 elif os.path.isfile(args.model):
     model_file = args.model
 else:
@@ -53,7 +53,7 @@ if os.path.isfile(args.seq):
 elif os.path.isfile(os.path.join(model_path, args.seq)):
     seq_file = os.path.join(model_path, args.seq)
 else:
-    warnings.warn('Sequence file could not be found!')
+    warnings.warn('Neither {} nor {} does not exist!'.format(args.seq, os.path.join(model_path, args.seq)))
 _, seq_name = os.path.split(seq_file)
 seq_name, _ = os.path.splitext(seq_name)
 

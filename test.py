@@ -133,7 +133,10 @@ with torch.no_grad():
 # Calculate metrics
 test_losses, test_sens, test_spec = calculate_metrics(confusion_matrix, test_loss_neurons)
 test_loss_reduced = math.floor(mean([el for el in test_losses if el])*10/10)
-test_auc = calculate_auc(true, scores)
+try:
+    test_auc = calculate_auc(true, scores)
+except ValueError:
+    test_auc = [np.nan for _ in dataset.classes]
 
 # Write the results
 write_results(results_table, columns, ['test'], globals(), data_dir, subset)

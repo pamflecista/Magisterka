@@ -38,9 +38,9 @@ if os.path.isfile(seq_file):
                 id = '{}:{}'.format(l[0].lstrip('chr'), l[1])
                 pos = seq_ids.index(id)
                 label_names[pos] = '{} {}'.format(l[3], l[4])
-                patients[pos] = l[1]
+                patients[pos] = l[-1]
             else:
-                if l[-1] == 'ref':
+                if l[-1] == 'REF':
                     ref_seq = line.strip()
                 seqs[pos] = line.strip()
     num_snp = [max(len([a for a, r in zip(seq, ref_seq) if a != r]), 1) for seq in seqs]

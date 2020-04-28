@@ -6,7 +6,7 @@ from bin.common import OHEncoder
 
 
 def integrated_gradients(model, inputs, labels, baseline=None, num_trials=10, steps=50, use_cuda=False):
-    all_intgrads = []
+    all_integrads = []
     for i in range(num_trials):
         print('Trial {}'.format(i))
         if baseline is None:
@@ -17,13 +17,13 @@ def integrated_gradients(model, inputs, labels, baseline=None, num_trials=10, st
                 base[j] = torch.tensor(encoder(seq))
         elif type(baseline) is np.ndarray:
             base = torch.from_numpy(baseline[i]).reshape(inputs.shape)
-        scaled_inputs = [base + (float(i) / steps) * (inputs - base) for i in range(0, steps + 1)]
+        scaled_inputs = [base + (float(i) / steps) * (inputs - base) for i in range(1, steps + 1)]
         grads = calculate_gradients(model, scaled_inputs, labels, use_cuda=use_cuda)
         avg_grads = np.average(grads[:-1], axis=0)
         integrated_grad = (inputs - base) * torch.tensor(avg_grads)
-        all_intgrads.append(integrated_grad)
-    avg_intgrads = np.average(np.stack(all_intgrads), axis=0)
-    return avg_intgrads
+        all_integrads.append(integrated_grad)
+    avg_integrads = np.average(np.stack(all_integrads), axis=0)
+    return avg_integrads
 
 
 def calculate_gradients(model, inputs, labels, use_cuda=False):
