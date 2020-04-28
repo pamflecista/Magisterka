@@ -281,7 +281,8 @@ def write_results(logger, columns, stages, variables, *beginning):
             else:
                 variable = variables['{}_{}'.format(stage, col)]
             if formatting == 'float-list':
-                result_string += '\t' + ', '.join(['{:.2f}'.format(el) for el in variable])
+                result_string += '\t' + ', '.join(['{:.2f}'.format(el) if isinstance(el, float) else '{}'.format(el)
+                                                   for el in variable])
             elif formatting == 'float':
                 result_string += '\t{:.2f}'.format(variables['{}_{}'.format(stage, col)])
         logger.info(result_string.strip())
