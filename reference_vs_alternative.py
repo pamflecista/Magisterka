@@ -11,7 +11,7 @@ parser.add_argument('--name', '--test_namespace', action='store', metavar='NAME'
                     help='Namespace of test analysis, default: test')
 parser = basic_params(parser)
 args = parser.parse_args()
-path, output, namespace, seed = parse_arguments(args, args.name, model_path=True)
+path, outdir, namespace, seed = parse_arguments(args, args.name, model_path=True)
 
 name = args.name.replace('_', '-')
 outputs = np.load(os.path.join(path, '{}_{}_outputs.npy'.format(namespace, name)))
@@ -66,15 +66,16 @@ for i, (label, n) in enumerate(zip(labels, label_names)):
         sizes['False class'].append(num_snp[i])
 
 plt.figure(figsize=(15, 10))
-for legend_label, color, marker in zip(['True class', 'False class'], ['green', 'red'], ['*', 'o']):
+for legend_label, color, marker in zip(['True class', 'False class'], ['C2', 'C1'], ['*', 'o']):
     plt.scatter(xvalues[legend_label], yvalues[legend_label], s=sizes[legend_label], color=color, marker=marker,
-                label=legend_label)
+                label=legend_label, alpha=0.8)
 xticks = [la for el in xvalues.values() for la in el]
 xticks.sort()
 plt.xticks(xticks, patients*len(classes), fontsize=12, rotation=45, ha='right')
-plt.xlabel(('   ' * num_seqs).join(classes), fontsize=16)
+plt.xlabel(('  ' * num_seqs).join(classes), fontsize=16)
 plt.ylabel('Output value', fontsize=16)
-plt.legend(fontsize=12)
+plt.legend(fontsize=12, prop={'size': 20})
 plt.title('{} - {}'.format(namespace, name), fontsize=20)
 plt.tight_layout()
+plt.savefig(os.path.join(outdir, '{}_{}_ref:alt.png'.format(namespace, name)))
 plt.show()
