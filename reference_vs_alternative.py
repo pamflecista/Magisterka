@@ -14,9 +14,15 @@ args = parser.parse_args()
 path, outdir, namespace, seed = parse_arguments(args, args.name, model_path=True)
 
 name = args.name.replace('_', '-')
-outputs = np.load(os.path.join(path, '{}_{}_outputs.npy'.format(namespace, name)))
-labels = list(np.load(os.path.join(path, '{}_{}_labels.npy'.format(namespace, name))))
-seq_ids = open(os.path.join(path, '{}_{}.txt'.format(namespace, name)), 'r').read().strip().split('\n')
+outputs_file = os.path.join(path, '{}_{}_outputs.npy'.format(namespace, name))
+outputs = np.load(outputs_file, allow_pickle=True)
+print('Loaded network outputs from {}'.format(outputs_file))
+labels_file = os.path.join(path, '{}_{}_labels.npy'.format(namespace, name))
+labels = list(np.load(labels_file, allow_pickle=True))
+print('Loaded sequences labels from {}'.format(labels_file))
+ids_file = os.path.join(path, '{}_{}.txt'.format(namespace, name))
+seq_ids = open(ids_file, 'r').read().strip().split('\n')
+print('Loaded sequences IDs from {}'.format(ids_file))
 num_seqs = len(seq_ids)
 seq_file = None
 with open(os.path.join(path, '{}_test_results.tsv'.format(namespace)), 'r') as f:
@@ -47,6 +53,7 @@ if os.path.isfile(seq_file):
 else:
     patients = seq_ids
     num_snp = {pat: 1 for pat in patients}
+print('Alternative and reference sequences read from {}'.format(seq_file))
 
 classes = get_classes_names(os.path.join(path, '{}_params.txt'.format(namespace)))
 xvalues = {'True class': [], 'False class': []}
@@ -64,6 +71,7 @@ for i, (label, n) in enumerate(zip(labels, label_names)):
         xvalues['False class'].append(wrong_label * num_seqs + i + wrong_label + 1)
         yvalues['False class'].append(output[wrong_label][seq_pos])
         sizes['False class'].append(num_snp[i])
+print('Number of sequences: {}, number of classes: {}'.format(num_seqs, len(classes)))
 
 plt.figure(figsize=(15, 10))
 for legend_label, color, marker in zip(['True class', 'False class'], ['C2', 'C1'], ['*', 'o']):
@@ -77,5 +85,7 @@ plt.ylabel('Output value', fontsize=16)
 plt.legend(fontsize=12, prop={'size': 20})
 plt.title('{} - {}'.format(namespace, name), fontsize=20)
 plt.tight_layout()
-plt.savefig(os.path.join(outdir, '{}_{}_ref:alt.png'.format(namespace, name)))
+plot_file = os.path.join(outdir, '{}_{}_ref:alt.png'.format(namespace, name))
+plt.savefig(plot_file)
 plt.show()
+print('Plot saved to {}'.format(plot_file))
