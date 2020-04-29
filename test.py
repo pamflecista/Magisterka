@@ -122,7 +122,7 @@ with torch.no_grad():
         _, indices = torch.max(outputs, axis=1)
         for ind, label, outp in zip(indices, labels.cpu(), outputs):
             confusion_matrix[ind][label] += 1
-            output_values[label] = [el + [outp[j].cpu()] for j, el in enumerate(output_values[label])]
+            output_values[label] = [el + [outp[j].cpu().item()] for j, el in enumerate(output_values[label])]
 
         true += labels.tolist()
         scores += outputs.tolist()
