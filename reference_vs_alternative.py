@@ -41,10 +41,14 @@ if os.path.isfile(seq_file):
         for line in f:
             if line.startswith('>'):
                 l = line.strip('>\n ').split(' ')
-                id = '{}:{}'.format(l[0].lstrip('chr'), l[1])
-                pos = seq_ids.index(id)
+                try:
+                    id = l[-1]
+                    pos = seq_ids.index(id)
+                except ValueError:
+                    id = '{}:{}'.format(l[0].lstrip('chr'), l[1])
+                    pos = seq_ids.index(id)
                 label_names[pos] = '{} {}'.format(l[3], l[4])
-                patients[pos] = l[-1]
+                patients[pos] = id
             else:
                 if l[-1] == 'REF':
                     ref_seq = line.strip()
