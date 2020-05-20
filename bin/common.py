@@ -200,15 +200,16 @@ def basic_params(parser, param=False):
 def parse_arguments(args, file, namesp=None, model_path=False):
     if args.path is not None:
         path = args.path
-    elif isinstance(file, list):
-        path = '/' + '/'.join(file[0].strip('/').split('/')[:-1])
-        for f in file[1:]:
-            p = '/' + '/'.join(f.strip('/').split('/')[:-1])
-            path = ''.join([el for el, le in zip(p, path) if el == le])
-    else:
-        path = os.path.dirname(file)
-        if not os.path.isfile(file):
-            path = os.path.join(os.getcwd().rstrip('bin'), 'data/custom40', path)  # default example dataset of the project
+    if file is not None:
+        if isinstance(file, list):
+            path = os.path.dirname(file[0])
+            for f in file[1:]:
+                p = os.path.dirname(f)
+                path = ''.join([el for el, le in zip(p, path) if el == le])
+        else:
+            path = os.path.dirname(file)
+            if not os.path.isfile(file):
+                path = os.path.join(os.getcwd().rstrip('bin'), 'data/custom40', path)  # default example dataset of the project
     if path.endswith('data'):
         path = path[:-4]
     if args.namespace is not None:
