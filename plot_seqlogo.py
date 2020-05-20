@@ -147,7 +147,7 @@ if not args.average:
     for seq, grads, label, d in zip(seqs, integrads, labels, desc):
         name = '{}:{}'.format(classes[label].replace(' ', '-'), d)
         print('Plotting {}'.format(name))
-        stitch(grads[:, 1000-clip:1000+clip], seq[1000-clip:1000+clip], working_dir, name_prefix=name, ylim=global_ylim, one=one)
+        stitch(grads[:, 1000-clip:1000+clip], working_dir, seq=seq[1000-clip:1000+clip], name_prefix=name, ylim=global_ylim, one=one)
 else:
     name += '-average'
     working_dir = os.path.join(output, name)
