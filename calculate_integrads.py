@@ -8,11 +8,11 @@ import warnings
 
 parser = argparse.ArgumentParser(description='Calculate integrated gradients based on given sequences and '
                                              'network')
+parser.add_argument('seq', metavar='FILE', type=str,
+                    help='File with sequences to check')
 parser.add_argument('--model', action='store', metavar='NAME', type=str, default=None,
                     help='File with the model to check, if PATH is given, model is supposed to be in PATH directory, '
                          'if NAMESPACE is given model is supposed to be in [PATH]/results/[NAMESPACE]/ directory')
-parser.add_argument('--seq', action='store', metavar='DATA', type=str, required=True,
-                    help='File or folder with sequences to check')
 parser.add_argument('--baseline', action='store', metavar='DATA', type=str, default=None,
                     help='Baseline for calculating integrated gradients: None/fixed, random, zeros or npy file. '
                          'By default is None - random baseline, the same for all sequences, is used')
@@ -25,7 +25,11 @@ parser.add_argument('--all_classes', action='store_true',
 parser = basic_params(parser, param=True)
 args = parser.parse_args()
 
-path, output, namespace, seed = parse_arguments(args, args.model, model_path=True)
+if args.namespace is None:
+    namesp = os.path.dirname(args.seq).strip('/').split('/')[-1]
+else:
+    namesp = args.namespace
+path, output, namespace, seed = parse_arguments(args, args.seq, namesp=namesp, model_path=True)
 
 if args.model is None:
     model_file = os.path.join(path, '{}_last.model'.format(namespace, namespace))
@@ -43,10 +47,11 @@ if args.param is not None:
     else:
         warnings.warn('Param file could not be found!')
 elif args.param is None:
-    if os.path.isfile(os.path.join(model_path, '{}_params.txt'.format(namespace))):
-        param_file = os.path.join(model_path, '{}_params.txt'.format(namespace))
+    param_dir = os.path.join(model_path, '{}_params.txt'.format(namespace))
+    if os.path.isfile(param_dir):
+        param_file = param_dir
     else:
-        warnings.warn('Param file could not be found!')
+        warnings.warn('Param file cannot be found in location: {}'.format(param_dir))
 
 if os.path.isfile(args.seq):
     seq_file = args.seq
