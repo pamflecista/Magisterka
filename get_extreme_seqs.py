@@ -26,7 +26,7 @@ network, data_dir, seq_len, ch, classes, name = params_from_file(param_file)
 dataset = SeqsDataset(data_dir, seq_len=seq_len)
 
 if args.classes:
-    classes = [el for la in args.classes for el in classes if el.startswith(la.replace('-', ' '))]
+    classes = [el for la in args.classes for el in classes if el.startswith(la.replace('-', ' ').replace('_', ' '))]
     classes_str = '-'.join(args.classes)
 else:
     classes_str = 'all'

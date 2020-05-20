@@ -28,7 +28,8 @@ PARAMS = OrderedDict({
     'Loss function': 'lossfn_name',
     'Learning rate': 'lr',
     'Adjusting lr': 'adjust_lr',
-    'Weight decay': 'weight_decay'
+    'Weight decay': 'weight_decay',
+    'Retraining': 'modelfile'
 })
 
 

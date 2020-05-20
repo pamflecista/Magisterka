@@ -90,6 +90,10 @@ parser.add_argument('--no_adjust_lr', action='store_true',
                     help='no reduction of learning rate during training')
 parser.add_argument('--seq_len', action='store', metavar='INT', type=int, default=2000,
                     help='Length of the input sequences to the network, default: 2000')
+parser.add_argument('--model', action='store', metavar='NAME', type=str, default=None,
+                    help='File with the model weights to load before training, if PATH is given, '
+                         'model is supposed to be in PATH directory, '
+                         'if NAMESPACE is given model is supposed to be in [PATH]/results/[NAMESPACE]/ directory')
 args = parser.parse_args()
 
 batch_size, num_workers, num_epochs, acc_threshold, seq_len = args.batch_size, args.num_workers, args.num_epochs, \
@@ -127,6 +131,14 @@ if args.no_adjust_lr:
     adjust_lr = False
 else:
     adjust_lr = True
+if args.model is None:
+    modelfile = None
+else:
+    if args.model.startswith('/'):
+        modelfile = args.model
+    else:
+        modelfile = os.path.join(output, args.model)
+    namespace += '-retrain'
 
 # Define files for logs and for results
 (logger, results_table), old_results = build_loggers('train', output=output, namespace=namespace)
@@ -144,7 +156,7 @@ elif set(val_chr) & set(test_chr):
     logger.warning('WARNING - Chromosomes for validation and testing overlap!')
 
 # CUDA for PyTorch
-use_cuda, _ = check_cuda(logger)
+use_cuda, device = check_cuda(logger)
 
 dataset = SeqsDataset(data_dir, seq_len=seq_len)
 num_classes = dataset.num_classes
@@ -182,6 +194,11 @@ logger.info('\nTraining and validation datasets built in {:.2f} s'.format(time()
 num_batches = math.ceil(train_len / batch_size)
 
 model = network(dataset.seq_len)
+if modelfile is not None:
+    # Load weights from the file
+    t0 = time()
+    model.load_state_dict(torch.load(modelfile, map_location=torch.device(device)))
+    logger.info('\nModel from {} loaded in {:.2f} s'.format(modelfile, time() - t0))
 network_params = model.params
 optimizer = optim_method(model.parameters(), lr=lr, weight_decay=weight_decay)
 loss_fn = lossfn()
