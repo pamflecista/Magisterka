@@ -19,7 +19,11 @@ parser.add_argument('--average', action='store_true',
                     help='If only average seqlogo should be plotted')
 parser = basic_params(parser, param=True)
 args = parser.parse_args()
-path, output, namespace, seed = parse_arguments(args, args.integrads, model_path=True)
+if args.namespace is None:
+    namesp = args.integrads.split('_')[1]
+else:
+    namesp = args.namespace
+path, output, namespace, seed = parse_arguments(args, args.integrads, namesp=namesp, model_path=True)
 
 integrads = np.load(args.integrads)
 with open(os.path.join(path, 'params.txt'), 'r') as f:
