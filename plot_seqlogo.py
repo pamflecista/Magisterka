@@ -66,11 +66,17 @@ def create_counts(arr, seq=None, max_v=None, min_v=None, one=False):
             for (nuc, v) in zip("ACGT", arr[:, pos]):
                 if nuc == letter or not one:
                     if v > 0:
-                        val_pos.append((nuc, v / max_v))
+                        if max_v != 0:
+                            val_pos.append((nuc, v / max_v))
+                        else:
+                            val_pos.append((nuc, 0.0))
                         val_neg.append((nuc, 0.0))
                     else:
                         val_pos.append((nuc, 0.0))
-                        val_neg.append((nuc, v / min_v))
+                        if min_v != 0:
+                            val_neg.append((nuc, v / min_v))
+                        else:
+                            val_neg.append((nuc, 0.0))
                 else:
                     val_pos.append((nuc, 0.0))
                     val_neg.append((nuc, 0.0))
@@ -82,11 +88,17 @@ def create_counts(arr, seq=None, max_v=None, min_v=None, one=False):
             val_neg = []
             for (nuc, v) in zip("ACGT", arr[:, pos]):
                 if v > 0:
-                    val_pos.append((nuc, v / max_v))
+                    if max_v != 0:
+                        val_pos.append((nuc, v / max_v))
+                    else:
+                        val_pos.append((nuc, 0.0))
                     val_neg.append((nuc, 0.0))
                 else:
                     val_pos.append((nuc, 0.0))
-                    val_neg.append((nuc, v / min_v))
+                    if min_v != 0:
+                        val_neg.append((nuc, v / min_v))
+                    else:
+                        val_neg.append((nuc, 0.0))
             res_pos.append(val_pos)
             res_neg.append(val_neg)
     return res_pos, res_neg
