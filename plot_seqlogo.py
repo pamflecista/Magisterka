@@ -168,10 +168,10 @@ else:
         os.mkdir(working_dir)
     if not os.path.isdir(os.path.join(working_dir, 'subplots')):
         os.mkdir(os.path.join(working_dir, 'subplots'))
-    for group in ['best', 'worst']:
-        _, name_prefix = os.path.split(seq_file)
-        name_prefix = '{}:average-{}'.format(name_prefix.replace('.fasta', ''), group)
-        print('Plotting {}'.format(name_prefix))
-        subset = [i for i, el in enumerate(desc) if group in el]
-        grads = np.mean(integrads[subset], axis=0)
-        stitch(grads[:, 1000-clip:1000+clip], working_dir, name_prefix=name_prefix)
+    for label in set(labels):
+        for group in ['best', 'worst']:
+            name_prefix = '{}:average-{}'.format(classes[label].replace(' ', '-'), group)
+            print('Plotting {}'.format(name_prefix))
+            subset = [i for i, (l, d) in enumerate(zip(labels, desc)) if l == label and group in d]
+            grads = np.mean(integrads[subset], axis=0)
+            stitch(grads[:, 1000-clip:1000+clip], working_dir, name_prefix=name_prefix)
