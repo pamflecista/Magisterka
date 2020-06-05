@@ -3,6 +3,7 @@ from bin.networks import *
 from collections import OrderedDict
 from sklearn.preprocessing import OneHotEncoder as Encoder
 import numpy as np
+import random
 
 NET_TYPES = {
     'basset': BassetNetwork,
@@ -41,7 +42,16 @@ class OHEncoder:
         self.encoder.fit(categories.reshape(-1, 1))
 
     def __call__(self, seq):
-        s = np.array([el for el in seq]).reshape(-1, 1)
+        seq = list(seq)
+        if 'N' in seq:
+            pos = [i for i, el in enumerate(seq) if el == 'N']
+            if len(pos) <= 0.05*len(seq):
+                print('{} unknown position(s) in given sequence - changed to random one(s)'.format(len(pos)))
+                for p in pos:
+                    seq[p] = random.choice(self.dictionary)
+            else:
+                return None
+        s = np.array(seq).reshape(-1, 1)
         return self.encoder.transform(s).T
 
     def decode(self, array):
@@ -221,6 +231,7 @@ def parse_arguments(args, file, namesp=None, model_path=False):
         namespace = f.strip('/').split('/')[-1].split('_')[0]
     else:
         namespace = path.strip('/').split('/')[-1]
+    print('Namespace: {}'.format(namespace))
     if args.output is not None:
         output = args.output
     else:
@@ -230,7 +241,8 @@ def parse_arguments(args, file, namesp=None, model_path=False):
             output = os.path.join(path, 'results', namespace)
     if model_path and 'results' not in path:
         path = os.path.join(path, 'results', namespace)
-        print('Established path: {}'.format(path))
+    print('Path: {}'.format(path))
+    print('Output directory: {}'.format(output))
     return path, output, namespace, args.seed
 
 

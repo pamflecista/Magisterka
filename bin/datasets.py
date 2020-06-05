@@ -81,6 +81,7 @@ class SeqsDataset(Dataset):
         self.num_seqs = len(self.IDs)
         self.seq_len = seq_len
         self.encoder = OHEncoder()
+        self.to_remove = []
 
     def __len__(self):
         return len(self.IDs)
@@ -112,7 +113,12 @@ class SeqsDataset(Dataset):
                 warn('In file {} is more than one sequence!'.format(filename))
         if info:
             return ch, midpoint, strand, label, seq, desc
-        X = torch.tensor(self.encoder(seq))
+        encoded_seq = self.encoder(seq)
+        if encoded_seq is None:
+            print('In {} sequence is more than 5% unknown values - sequence removed from dataset'.format(ID))
+            self.to_remove.append(ID)
+            return None, None
+        X = torch.tensor(encoded_seq)
         X = X.reshape(1, *X.size())
         y = torch.tensor(label)
         return X, y
@@ -129,9 +135,13 @@ class SeqsDataset(Dataset):
 
     def get_classes(self, indices=None):
         if indices is None:
-            indices = [i for i in range(self.__len__())]
+            indices = [i for i in range(self.num_seqs)]
         result = {el: [] for el in self.classes}
         for i in indices:
             _, y = self.__getitem__(i)
-            result[self.classes[y]].append(i)
+            if y is not None:
+                result[self.classes[y]].append(i)
+        for el in self.to_remove:
+            self.IDs.remove(el)
+            self.num_seqs = len(self.IDs)
         return result

@@ -10,6 +10,11 @@ parser = argparse.ArgumentParser(description='Plot results based on given table'
 parser.add_argument('-f', '--file', action='store', metavar='NAME', type=str, default=None, nargs='+',
                     help='Files with the outputs to plot, if PATH is given, file is supposed to be '
                          'in PATH directory: [PATH]/[NAME], default: [PATH]/[NAMESPACE]_outputs.npy')
+group1 = parser.add_mutually_exclusive_group(required=False)
+group1.add_argument('--train', action='store_true',
+                    help='Use values from training, default values from validation are used')
+group1.add_argument('--test', action='store_true',
+                    help='Use testing results.')
 parser = basic_params(parser, param=True)
 args = parser.parse_args()
 
@@ -20,7 +25,12 @@ if args.file:
     else:
         file = args.file
 else:
-    file = os.path.join(path, '{}_outputs.npy'.format(namespace))
+    if args.test:
+        file = os.path.join(path, '{}_test_outputs.npy'.format(namespace))
+    else:
+        file = os.path.join(path, '{}_train_outputs.npy'.format(namespace))
+if not os.path.isfile(file):
+    table = os.path.join(path, namespace + '_results.tsv')
 
 with open(os.path.join(path, '{}_params.txt'.format(namespace)), 'r') as f:
     for line in f:

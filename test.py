@@ -31,6 +31,8 @@ group1.add_argument('--dataset', action='store', metavar='DATA', type=str, defau
                     help='Directory or file with the data for testing')
 parser.add_argument('--batch_size', action='store', metavar='INT', type=int, default=64,
                     help='size of the batch, default: 64')
+parser.add_argument('--name_pos', action='store', metavar='INT', type=int, default=None,
+                    help='Position of sequence name in the fasta header, by default created as CHR:POSITION')
 parser = basic_params(parser)
 args = parser.parse_args()
 path, output, namespace, seed = parse_arguments(args, args.model, model_path=True)
@@ -55,6 +57,7 @@ if args.dataset is not None:
 else:
     data_dir = []
     subset = 'train' if args.train else 'valid' if args.valid else 'test'
+print('Subset name: {}'.format(subset))
 
 network, data_dir, seq_len, ch, classes, _ = \
     params_from_file(os.path.join(output, '{}_params.txt'.format(namespace)), data_dir=data_dir)
@@ -74,7 +77,7 @@ if subset.startswith('all'):
     names = []
 else:
     names = open(os.path.join(output, '{}_{}.txt'.format(namespace, subset)), 'r').read().strip().split('\n')
-dataset = SeqsDataset(data_dir, subset=names, seq_len=seq_len, name_pos=-1)
+dataset = SeqsDataset(data_dir, subset=names, seq_len=seq_len, name_pos=args.name_pos)
 classes = dataset.classes
 num_classes = len(classes)
 loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)

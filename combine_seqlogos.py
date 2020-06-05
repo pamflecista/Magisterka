@@ -52,22 +52,27 @@ if os.path.isdir(outdir):
 os.mkdir(outdir)
 
 for type_ in ['seqlogo{}'.format(clip), 'seqlogo{}-global-ylim'.format(clip), 'seqlogo{}-one'.format(clip),
-              'seqlogo{}-one-global-ylim'.format(clip)]:
+              'seqlogo{}-one-global-ylim'.format(clip), 'seqlogo{}-average'.format(clip)]:
     for class_ in ['promoter-active', 'promoter-inactive', 'nonpromoter-active', 'nonpromoter-inactive']:
-        for extreme_ in ['best1', 'worst1']:
+        for extreme_ in ['best', 'worst']:
             namespace = '{} : {} - {} - {}'.format(name, type_, class_, extreme_)
             try:
-                img1 = Image.open(os.path.join(dir1, type_, '{}:{}.png'.format(class_, extreme_)))
-                img2 = Image.open(os.path.join(dir2, type_, '{}:{}.png'.format(class_, extreme_)))
+                if 'average' in type_:
+                    img1 = Image.open(os.path.join(dir1, type_, '{}:average-{}.png'.format(class_, extreme_)))
+                    img2 = Image.open(os.path.join(dir2, type_, '{}:average-{}.png'.format(class_, extreme_)))
+                else:
+                    img1 = Image.open(os.path.join(dir1, type_, '{}:{}.png'.format(class_, extreme_)))
+                    img2 = Image.open(os.path.join(dir2, type_, '{}:{}.png'.format(class_, extreme_)))
                 print(namespace)
             except FileNotFoundError:
                 print('Images for {} do not exist!'.format(namespace))
+                print(os.path.join(dir1, type_, '{}:average-{}.png'.format(class_, extreme_)))
                 continue
             new = Image.new(mode="RGB", size=(max(img1.size[0], img2.size[0])+20, img1.size[1]+img2.size[1]+400), color=(255,255,255,0))
             new.paste(img1, (10, 200))
             new.paste(img2, (10, img1.size[1]+400))
             draw = ImageDraw.Draw(new)
-            font = ImageFont.truetype("/home/marni/Dokumenty/magisterka/arial.ttf", 35)
+            font = ImageFont.truetype("/home/marni/magisterka/arial.ttf", 35)
             # draw.text((x, y),"Sample Text",(r,g,b))
             draw.text((new.size[0]/2-500, 50), namespace + '- #1', (0, 0, 0), font=font)
             draw.text((new.size[0]/2-500, img1.size[1]+200), namespace + '- #2', (0, 0, 0), font=font)

@@ -137,9 +137,10 @@ with open(table, 'r') as f:
             epochs.append(e+1)
             xticks.append('{}-{}'.format(os.path.split(line[0])[1], line[1]))
             for j, c in enumerate(colnum):
-                values[0][j].append([float(el) if el != '-' else np.nan for el in line[c].split(', ')])
+                values[0][j].append([float(el) if el != '-' and el != 'None' else np.nan for el in line[c].split(', ')])
 
 try:
+    values = np.nan_to_num(values)
     ylims = [np.min(values) - 0.05, np.max(values) + 0.05]
 except ValueError:
     print('No values were read from the results file!')

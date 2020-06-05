@@ -9,9 +9,11 @@ COLORS = ['C{}'.format(i) for i in range(10)]
 parser = argparse.ArgumentParser(description='Compare network outputs for reference and for alternative sequences')
 parser.add_argument('--name', '--test_namespace', metavar='NAMES', nargs='+', default=['test'],
                     help='Namespaces of test analyses, default: test')
+parser.add_argument('--name_pos', action='store', metavar='INT', type=int, default=None,
+                    help='Position of sequence name in the fasta header, by default created as CHR:POSITION')
 parser = basic_params(parser)
 args = parser.parse_args()
-path, outdir, namespace, seed = parse_arguments(args, args.name, model_path=True)
+path, outdir, namespace, seed = parse_arguments(args, None, model_path=True)
 
 
 def plot_ref_alt(name):
@@ -39,14 +41,15 @@ def plot_ref_alt(name):
     if os.path.isfile(seq_file):
         seqs = ['' for _ in range(num_seqs)]
         patients = ['' for _ in range(num_seqs)]
+        ref_seq = None
         with open(seq_file, 'r') as f:
             for line in f:
                 if line.startswith('>'):
                     l = line.strip('>\n ').split(' ')
-                    try:
-                        id = l[-1]
-                        pos = seq_ids.index(id)
-                    except ValueError:
+                    if args.name_pos is not None:
+                        pos = args.name_pos
+                        id = l[pos]
+                    else:
                         id = '{}:{}'.format(l[0].lstrip('chr'), l[1])
                         pos = seq_ids.index(id)
                     label_names[pos] = '{} {}'.format(l[3], l[4])
@@ -55,14 +58,18 @@ def plot_ref_alt(name):
                     if l[-1] == 'REF':
                         ref_seq = line.strip().upper()
                     seqs[pos] = line.strip().upper()
-        num_snp = [len([a for a, r in zip(seq, ref_seq) if a != r]) for seq in seqs]
-        min_nsnp = min([el for el in num_snp if el != 0])
-        max_nsnp = max([el for el in num_snp if el != 0])
-        num_snp = [(el - min_nsnp + 1) * 30 if el != 0 else 12 for el in num_snp]
+        if ref_seq is not None:
+            num_snp = [len([a for a, r in zip(seq, ref_seq) if a != r]) for seq in seqs]
+            min_nsnp = min([el for el in num_snp if el != 0])
+            max_nsnp = max([el for el in num_snp if el != 0])
+            dots = [(el - min_nsnp + 1) * 30 if el != 0 else 12 for el in num_snp]
+        else:
+            min_nsnp, max_nsnp = 0, 0
+            dots = [12 for _ in seqs]
 
     else:
         patients = seq_ids
-        num_snp = {pat: 1 for pat in patients}
+        dots = [12 for _ in range(len(seq_ids))]
     print('Alternative and reference sequences read from {}'.format(seq_file))
 
     classes = get_classes_names(os.path.join(path, '{}_params.txt'.format(namespace)))
@@ -77,7 +84,7 @@ def plot_ref_alt(name):
         xvalues['True class'].append(label * num_seqs + i + label + 1)
         correct_out = output[label][seq_pos]
         yvalues['True class'].append(correct_out)
-        sizes['True class'].append(num_snp[i])
+        sizes['True class'].append(dots[i])
         classified = True
         for wrong_name in [el for el in classes if el != n]:
             wrong_label = classes.index(wrong_name)
@@ -86,7 +93,7 @@ def plot_ref_alt(name):
             yvalues['False class'].append(wrong_out)
             if wrong_out >= correct_out:
                 classified = False
-            sizes['False class'].append(num_snp[i])
+            sizes['False class'].append(dots[i])
         if classified:
             correct_classified += 1
     print('Number of sequences: {}, number of classes: {}'.format(num_seqs, len(classes)))
@@ -103,8 +110,12 @@ def plot_ref_alt(name):
     plt.legend(fontsize=12, prop={'size': 16})
     plt.title('{} - {}'.format(namespace, name), fontsize=20)
     plt.ylim((0.45, 1.05))
-    plt.text(0.0, 1.045, 'Correctly classified seqs: {}/{}\nNumber of SNPs in alt seqs: {}-{}'.
-             format(correct_classified, num_seqs, min_nsnp, max_nsnp), fontsize=12, va='top')
+    if min_nsnp == max_nsnp == 0:
+        plt.text(0.0, 1.045, 'Correctly classified seqs: {}/{}'.
+                 format(correct_classified, num_seqs), fontsize=12, va='top')
+    else:
+        plt.text(0.0, 1.045, 'Correctly classified seqs: {}/{}\nNumber of SNPs in alt seqs: {}-{}'.
+                 format(correct_classified, num_seqs, min_nsnp, max_nsnp), fontsize=12, va='top')
     plt.tight_layout()
     plot_file = os.path.join(outdir, '{}_{}_ref:alt.png'.format(namespace, name))
     plt.savefig(plot_file)
