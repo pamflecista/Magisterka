@@ -43,7 +43,7 @@ for (i, ax), neuron in zip(enumerate(axes), neurons):
         labels += [label for _ in row[i]]
     y_true = [1 if el == i else 0 for el in labels]
     values = []
-    values = [item.item() for sublist in [values + el for el in outputs[:, i].flatten()] for item in sublist]
+    values = [item for sublist in [values + el for el in outputs[:, i].flatten()] for item in sublist]
     if len(set(values)) < len(values):
         print('Repetitions for {}'.format(neuron))
         for value, counts in {k: v for k, v in Counter(values).items() if v > 1}.items():

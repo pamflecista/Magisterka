@@ -33,6 +33,15 @@ PARAMS = OrderedDict({
     'Retraining': 'modelfile'
 })
 
+SHORTCUTS = {
+    'loss': 'Loss',
+    'sens': 'Sensitivity',
+    'spec': 'Specificity',
+    'auc': 'AUC'
+}
+
+COLORS = ['C{}'.format(i) for i in range(10)]
+
 
 class OHEncoder:
 
@@ -432,7 +441,9 @@ def params_from_file(param_file, data_dir=()):
                 ch['valid'] = read_chrstr(line.split(':')[-1].strip())
             elif line.startswith('Test chr'):
                 ch['test'] = read_chrstr(line.split(':')[-1].strip())
-    return network, data_dir, seq_len, ch, classes, name
+            elif line.startswith('Number of epochs'):
+                num_epochs = int(line.split(':')[-1].strip())
+    return network, data_dir, seq_len, ch, classes, name, num_epochs
 
 
 '''def print_results(logger, columns, variables, epoch):

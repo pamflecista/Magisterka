@@ -22,7 +22,7 @@ if args.param is None:
 else:
     param_file = args.param
 
-network, data_dir, seq_len, ch, classes, name = params_from_file(param_file)
+network, data_dir, seq_len, ch, classes, name, num_epochs = params_from_file(param_file)
 dataset = SeqsDataset(data_dir, seq_len=seq_len)
 
 if args.classes:

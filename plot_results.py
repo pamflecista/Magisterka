@@ -6,21 +6,12 @@ from statistics import mean
 import math
 from bin.common import *
 
-COLORS = ['C{}'.format(i) for i in range(10)]
-
 STAGES = {
     'train': 'Training',
     'val': 'Validation',
     'test': 'Testing',
     'all': 'All',
     'cv': 'CV'
-}
-
-SHORTCUTS = {
-    'loss': 'Loss',
-    'sens': 'Sensitivity',
-    'spec': 'Specificity',
-    'auc': 'AUC'
 }
 
 parser = argparse.ArgumentParser(description='Plot results based on given table')

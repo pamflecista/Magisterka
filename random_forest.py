@@ -70,7 +70,7 @@ parser.add_argument('--valid', action='store', metavar='FILE', type=str, default
                     help='File with names of sequences for validation')
 args = parser.parse_args()
 
-path, output, namespace, seed = parse_arguments(args, args.data, namesp='forest{}'.format(args.run))
+path, output, namespace, seed = parse_arguments(args, None, namesp='forest{}'.format(args.run))
 cv = args.cv
 if args.data_div is not None:
     train = open(os.path.join(path, 'results', args.data_div, '{}_train.txt'.format(args.data_div)), 'r').read().strip().split('\n')

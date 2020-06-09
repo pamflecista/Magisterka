@@ -65,7 +65,7 @@ seq_name, _ = os.path.splitext(seq_name)
 # CUDA for PyTorch
 use_cuda, device = check_cuda(None)
 
-network, _, seq_len, _, classes, analysis_name = params_from_file(param_file)
+network, _, seq_len, _, classes, analysis_name, num_epochs = params_from_file(param_file)
 trials = args.trials
 
 dataset = SeqsDataset(seq_file, seq_len=seq_len)

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import argparse
 import os
 import numpy as np
-from bin.common import basic_params, parse_arguments
+from bin.common import *
 
 COLORS = ['C{}'.format(i) for i in range(10)]
 
@@ -32,11 +32,7 @@ else:
 if not os.path.isfile(file):
     table = os.path.join(path, namespace + '_results.tsv')
 
-with open(os.path.join(path, '{}_params.txt'.format(namespace)), 'r') as f:
-    for line in f:
-        if line.startswith('Possible classes'):
-            neurons = [el.strip().replace(' ', '-') for el in line.split(':')[1].split('; ')]
-            break
+neurons = get_classes_names(os.path.join(path, '{}_params.txt'.format(namespace)))
 
 
 def set_box_color(box, color):
@@ -54,7 +50,7 @@ for j, (row, ax, name) in enumerate(zip(values, axes, neurons)):
             set_box_color(box, colors[i])
     else:
         ax.plot([])
-    ax.set_ylabel(name.replace('-', '\n'), color=colors[j], rotation=0, horizontalalignment='right', fontsize=8)
+    ax.set_ylabel(name.replace(' ', '\n'), color=colors[j], rotation=0, horizontalalignment='right', fontsize=8)
     ax.yaxis.set_label_coords(-0.06, 0.45)
     ax.set_xticks([])
     ax.tick_params(size=3)
@@ -72,5 +68,8 @@ ax.grid(False)
 ax.set_ylabel("Real labels", fontsize=12)
 ax.set_title('Neurons', fontsize=12)
 ax.yaxis.set_label_coords(-0.12, 0.5)
-plt.savefig(os.path.join(output, '{}_outputs.png'.format(namespace)))
+if args.test:
+    plt.savefig(os.path.join(output, '{}_test_outputs.png'.format(namespace)))
+else:
+    plt.savefig(os.path.join(output, '{}_train_outputs.png'.format(namespace)))
 plt.show()

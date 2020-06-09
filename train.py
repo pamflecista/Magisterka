@@ -39,7 +39,7 @@ RESULTS_COLS = OrderedDict({
 
 
 def adjust_learning_rate(epoch, optimizer):
-    lr = 0.001
+    lr = 0.01
 
     if epoch > 500:
         lr = lr / 100000

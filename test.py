@@ -59,7 +59,7 @@ else:
     subset = 'train' if args.train else 'valid' if args.valid else 'test'
 print('Subset name: {}'.format(subset))
 
-network, data_dir, seq_len, ch, classes, _ = \
+network, data_dir, seq_len, ch, classes, _, _ = \
     params_from_file(os.path.join(output, '{}_params.txt'.format(namespace)), data_dir=data_dir)
 
 # Define loggers for logfile and for results
