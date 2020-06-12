@@ -30,7 +30,7 @@ for n in networks:
     if not classes:
         classes = cl
     else:
-        assert classes == cl
+        assert classes == cl, '{} *** {}'.format(classes, cl)
     epochs.append(num_epochs)
 print('Found {} common classes: {}'.format(len(classes), ', '.join(classes)))
 
@@ -57,12 +57,16 @@ for name, num_epochs in zip(networks, epochs):
                     v.append([float(el) if el != '-' else np.nan for el in line[colnum].split(', ')])
         values.append(v)
 
-fig = plt.figure(figsize=(10, 15))
+marks = ['o', '*', 'x', '+']
+fig = plt.figure(figsize=(15, 10))
 xvalues = [i+1 for i in range(len(classes))]
 for i, (name, v) in enumerate(zip(networks, values)):
-    plt.scatter(xvalues, v, label=name)
+    plt.scatter(xvalues, v, label=name, marker=marks[i], s=90)
 plt.xticks(xvalues, classes, fontsize=15)
-plt.legend()
+plt.legend(fontsize=15)
 plt.title('Comparison of results', fontsize=20)
 plt.ylabel(SHORTCUTS[column], fontsize=15)
+outdir = os.path.join(path, 'comparison_{}:{}.png'.format('-'.join(networks), column))
+plt.savefig(outdir)
+print('Plot saved to {}'.format(outdir))
 plt.show()

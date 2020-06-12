@@ -8,7 +8,8 @@ import random
 NET_TYPES = {
     'basset': BassetNetwork,
     'custom': CustomNetwork,
-    'test': TestNetwork
+    'test': TestNetwork,
+    'random-forest': 'RandomForest'
 }
 
 PARAMS = OrderedDict({
@@ -417,11 +418,14 @@ def params_from_file(param_file, data_dir=()):
     with open(param_file, 'r') as f:
         for line in f:
             if line.startswith('Possible classes'):
-                line = f.readline()
-                classes = []
-                while line.startswith('\t'):
-                    classes.append(line.strip('\t\n'))
+                if len(line.split(';')) > 1:
+                    classes = line.split(':')[1].strip().split('; ')
+                else:
                     line = f.readline()
+                    classes = []
+                    while line.startswith('\t'):
+                        classes.append(line.strip('\t\n'))
+                        line = f.readline()
             if line.startswith('Network type'):
                 network = NET_TYPES[line.split(':')[-1].strip().lower()]
             elif line.startswith('Name of the analysis'):
