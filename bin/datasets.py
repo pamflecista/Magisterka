@@ -138,6 +138,14 @@ class SeqsDataset(Dataset):
         return indices
 
     def get_classes(self, indices=None):
+        # remove sequences with too many NN
+        for i in range(self.num_seqs):
+            _, _ = self.__getitem__(i)
+        for el in self.to_remove:
+            self.IDs.remove(el)
+        self.num_seqs = len(self.IDs)
+        self.to_remove = []
+        # get number of sequences from each class
         if indices is None:
             indices = [i for i in range(self.num_seqs)]
         result = {el: [] for el in self.classes}
@@ -145,8 +153,4 @@ class SeqsDataset(Dataset):
             _, y = self.__getitem__(i)
             if y is not None:
                 result[self.classes[y]].append(i)
-        for el in self.to_remove:
-            self.IDs.remove(el)
-        self.num_seqs = len(self.IDs)
-        self.to_remove = []
         return result
