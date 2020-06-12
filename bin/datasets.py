@@ -76,7 +76,7 @@ class SeqsDataset(Dataset):
                         raise RepeatedFileError(name, dirs[locs[name]], r)
         if len(ids) == 0:
             warn('No files of {} type was found in the given data'.format(filetype), UserWarning)
-        self.IDs = ids
+        self.IDs = ids.copy()
         self.locs = locs
         self.dirs = dirs
         self.filetype = filetype
@@ -85,7 +85,14 @@ class SeqsDataset(Dataset):
         self.num_seqs = len(self.IDs)
         self.seq_len = seq_len
         self.encoder = OHEncoder()
-        self.to_remove = []
+        # check if sequences haven't got too many NN
+        print('Checking number of NN in given sequences')
+        for i in range(len(ids)):
+            out, id = self.__getitem__(i)
+            if out is None:
+                ids.remove(id)
+        self.IDs = ids
+        self.num_seqs = len(self.IDs)
 
     def __len__(self):
         return len(self.IDs)
@@ -120,8 +127,7 @@ class SeqsDataset(Dataset):
         encoded_seq = self.encoder(seq)
         if encoded_seq is None:
             print('In {} sequence is more than 5% unknown values - sequence removed from dataset'.format(ID))
-            self.to_remove.append(ID)
-            return None, None
+            return None, ID
         X = torch.tensor(encoded_seq)
         X = X.reshape(1, *X.size())
         y = torch.tensor(label)
@@ -138,13 +144,6 @@ class SeqsDataset(Dataset):
         return indices
 
     def get_classes(self, indices=None):
-        # remove sequences with too many NN
-        for i in range(self.num_seqs):
-            _, _ = self.__getitem__(i)
-        for el in self.to_remove:
-            self.IDs.remove(el)
-        self.num_seqs = len(self.IDs)
-        self.to_remove = []
         # get number of sequences from each class
         if indices is None:
             indices = [i for i in range(self.num_seqs)]
@@ -153,4 +152,6 @@ class SeqsDataset(Dataset):
             _, y = self.__getitem__(i)
             if y is not None:
                 result[self.classes[y]].append(i)
+            else:
+                warn('{} sequence has too many NN'.format(self.IDs[i]))
         return result
