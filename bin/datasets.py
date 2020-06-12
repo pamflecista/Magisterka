@@ -147,5 +147,6 @@ class SeqsDataset(Dataset):
                 result[self.classes[y]].append(i)
         for el in self.to_remove:
             self.IDs.remove(el)
-            self.num_seqs = len(self.IDs)
+        self.num_seqs = len(self.IDs)
+        self.to_remove = []
         return result
