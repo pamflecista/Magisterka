@@ -23,6 +23,10 @@ class SeqsDataset(Dataset):
                 data = [data]
             else:
                 raise GivenDataError(data, filetype)
+        elif isinstance(data, list) and any([el.endswith((filetype, packedtype)) for el in data]):
+            for file in [el for el in data if el.endswith((filetype, packedtype))]:
+                _, path = rewrite_fasta(file, name_pos=name_pos)
+                data[data.index(file)] = path
         else:
             fs = [la for la in [os.path.join(dd, el) for dd in data for el in os.listdir(dd)] if la.endswith(packedtype)]
             if fs:
