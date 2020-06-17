@@ -10,7 +10,7 @@ import math
 
 class SeqsDataset(Dataset):
 
-    def __init__(self, data, subset=(), filetype='fasta', seq_len=2000, packedtype='fa', name_pos=None):
+    def __init__(self, data, subset=(), filetype='fasta', seq_len=2000, packedtype='fa', name_pos=None, constant_class=None):
 
         # Establishing files' IDs and their directories
         if isinstance(data, str):
@@ -85,6 +85,10 @@ class SeqsDataset(Dataset):
         self.num_seqs = len(self.IDs)
         self.seq_len = seq_len
         self.encoder = OHEncoder()
+        if constant_class is not None:
+            self.constant_class = self.classes.index(constant_class.replace('-', ' '))
+        else:
+            self.constant_class = None
         # check if sequences haven't got too many NN
         print('Checking number of NN in given sequences')
         for i in range(len(ids)):
@@ -122,6 +126,8 @@ class SeqsDataset(Dataset):
                     break
             if file.readline().strip():
                 warn('In file {} is more than one sequence!'.format(filename))
+        if self.constant_class is not None:
+            label = self.constant_class
         if info:
             return ch, midpoint, strand, label, seq, desc
         encoded_seq = self.encoder(seq)

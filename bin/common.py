@@ -20,9 +20,9 @@ PARAMS = OrderedDict({
     'Number of epochs': 'num_epochs',
     'Number of seqs': 'num_seqs',
     'Batch size': 'batch_size',
-    'Training chr': 'train_chr',
-    'Validation chr': 'val_chr',
-    'Test chr': 'test_chr',
+    'Training seqs': 'train_num',
+    'Validation seqs': 'valid_num',
+    'Test seqs': 'test_num',
     'Data directory': 'data_dir',
     'Random seed': 'seed',
     'CUDA available': 'use_cuda',
@@ -176,7 +176,7 @@ def write_params(glob, file):
         for name, value in PARAMS.items():
             v = glob[value]
             if isinstance(v, list):
-                if 'chr' in value:
+                if 'num' in value:
                     f.write('{}: {}\n'.format(name, make_chrstr(v)))
                 else:
                     f.write('{}: {}\n'.format(name, ''.join(['\n\t{}'.format(el) for el in list(map(str, v))])))
@@ -220,7 +220,7 @@ def basic_params(parser, param=False):
 def parse_arguments(args, file, namesp=None, model_path=False):
     if args.path is not None:
         path = args.path
-    if file is not None:
+    elif file is not None:
         if isinstance(file, list):
             path = os.path.dirname(file[0])
             for f in file[1:]:

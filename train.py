@@ -65,13 +65,19 @@ parser.add_argument('-n', '--network', action='store', metavar='NAME', type=str,
 parser = basic_params(parser)
 parser.add_argument('--run', action='store', metavar='NUMBER', type=str, default='0',
                     help='number of the analysis, by default NAMESPACE is set to [NETWORK][RUN]')
-parser.add_argument('--train', action='store', metavar='CHR', type=str, default='1-16',
+parser.add_argument('--train', action='store', metavar='NUM', type=int, default=None,
+                    help='Number of sequences for training')
+parser.add_argument('--valid', action='store', metavar='NUM', type=int, default=None,
+                    help='Number of sequences for validation')
+parser.add_argument('--test', action='store', metavar='NUM', type=int, default=None,
+                    help='Number of sequences for testing')
+parser.add_argument('--train_chr', action='store', metavar='CHR', type=str, default='1-16',
                     help='chromosome(s) for training, if negative it means the number of chromosomes ' +
                          'which should be randomly chosen. Default: 1-16')
-parser.add_argument('--val', action='store', metavar='CHR', type=str, default='17-20',
+parser.add_argument('--valid_chr', action='store', metavar='CHR', type=str, default='17-20',
                     help='chromosome(s) for validation, if negative it means the number of chromosomes ' +
                          'which should be randomly chosen. Default: 17-20')
-parser.add_argument('--test', action='store', metavar='CHR', type=str, default='21-23',
+parser.add_argument('--test_chr', action='store', metavar='CHR', type=str, default='21-23',
                     help='chromosome(s) for testing, if negative it means the number of chromosomes ' +
                          'which should be randomly chosen. Default: 21-23')
 parser.add_argument('--optimizer', action='store', metavar='NAME', type=str, default='RMSprop',
@@ -94,6 +100,8 @@ parser.add_argument('--model', action='store', metavar='NAME', type=str, default
                     help='File with the model weights to load before training, if PATH is given, '
                          'model is supposed to be in PATH directory, '
                          'if NAMESPACE is given model is supposed to be in [PATH]/results/[NAMESPACE]/ directory')
+parser.add_argument('--constant_class', action='store', metavar='CLASS', type=str, default=None,
+                    help='If all sequences from the given dataset should belong to given class')
 args = parser.parse_args()
 
 batch_size, num_workers, num_epochs, acc_threshold, seq_len = args.batch_size, args.num_workers, args.num_epochs, \
@@ -138,7 +146,8 @@ else:
         modelfile = args.model
     else:
         modelfile = os.path.join(output, args.model)
-    namespace += '-retrain'
+    if args.namespace is None:
+        namespace += '-retrain'
 
 # Define files for logs and for results
 (logger, results_table), old_results = build_loggers('train', output=output, namespace=namespace)
@@ -147,18 +156,21 @@ logger.info('\nAnalysis {} begins {}\nInput data: {}\nOutput directory: {}\n'.fo
     namespace, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), '; '.join(data_dir), output))
 
 t0 = time()
-train_chr, val_chr, test_chr = divide_chr(args.train, args.val, args.test)
-if set(train_chr) & set(val_chr):
-    logger.warning('WARNING - Chromosomes for training and validation overlap!')
-elif set(train_chr) & set(test_chr):
-    logger.warning('WARNING - Chromosomes for training and testing overlap!')
-elif set(val_chr) & set(test_chr):
-    logger.warning('WARNING - Chromosomes for validation and testing overlap!')
+if args.train is not None:
+    train_num = args.train
+else:
+    train_num, valid_num, test_num = divide_chr(args.train_chr, args.valid_chr, args.test_chr)
+    if set(train_num) & set(valid_num):
+        logger.warning('WARNING - Chromosomes for training and validation overlap!')
+    elif set(train_num) & set(test_num):
+        logger.warning('WARNING - Chromosomes for training and testing overlap!')
+    elif set(valid_num) & set(test_num):
+        logger.warning('WARNING - Chromosomes for validation and testing overlap!')
 
 # CUDA for PyTorch
 use_cuda, device = check_cuda(logger)
 
-dataset = SeqsDataset(data_dir, seq_len=seq_len)
+dataset = SeqsDataset(data_dir, seq_len=seq_len, constant_class=args.constant_class)
 num_classes = dataset.num_classes
 classes = dataset.classes
 
@@ -169,14 +181,35 @@ else:
     columns = read_results_columns(results_table, RESULTS_COLS)
 
 # Creating data indices for training, validation and test splits:
-indices = dataset.get_chrs([train_chr, val_chr, test_chr])
-class_stage = [dataset.get_classes(i) for i in indices]
-train_indices, val_indices, test_indices = indices
-train_len, val_len = len(train_indices), len(val_indices)
-num_seqs = ' + '.join([str(len(el)) for el in [train_indices, val_indices, test_indices]])
-for i, (n, ch, ind) in enumerate(zip(['train', 'valid', 'test'], map(make_chrstr, [train_chr, val_chr, test_chr]),
-                                     [train_indices, val_indices, test_indices])):
-    logger.info('\nChromosomes for {} ({}) - contain {} seqs:'.format(n, ch, len(indices[i])))
+if args.train is not None:
+    train_indices = random.sample(range(dataset.num_seqs), train_num)
+    if args.valid is not None:
+        valid_num = args.valid
+    elif args.test is None:
+        test_num = (dataset.num_seqs - train_num) // 2
+        valid_num = dataset.num_seqs - train_num - test_num
+    else:
+        test_num = args.test
+        valid_num = dataset.num_seqs - train_num - test_num
+    if train_num + valid_num + test_num > dataset.num_seqs:
+        print('Number of train, valid and test sequences need to sum up to {}'.format(dataset.num_seqs))
+        raise ValueError
+    valid_indices = random.sample([i for i in range(dataset.num_seqs) if i not in train_indices], valid_num)
+    test_indices = random.sample([i for i in range(dataset.num_seqs) if i not in train_indices and i not in
+                                  valid_indices], test_num)
+    indices = [train_indices, valid_indices, test_indices]
+else:
+    train_indices, valid_indices, test_indices = dataset.get_chrs([train_num, valid_num, test_num])
+class_stage = [dataset.get_classes(el) for el in [train_indices, valid_indices, test_indices]]
+train_len, valid_len = len(train_indices), len(valid_indices)
+num_seqs = ' + '.join([str(len(el)) for el in [train_indices, valid_indices, test_indices]])
+if args.train is not None:
+    chr_string = ['', '', '']
+else:
+    chr_string = ['({})'.format(el) for el in map(make_chrstr, [train_num, valid_num, test_num])]
+for i, (n, ch, ind) in enumerate(zip(['train', 'valid', 'test'], chr_string,
+                                     [train_indices, valid_indices, test_indices])):
+    logger.info('\n{} set contains {} seqs {}:'.format(n, len(ind), ch))
     for classname, el in class_stage[i].items():
         logger.info('{} - {}'.format(classname, len(el)))
     # Writing IDs for each split into file
@@ -184,10 +217,10 @@ for i, (n, ch, ind) in enumerate(zip(['train', 'valid', 'test'], map(make_chrstr
         f.write('\n'.join([dataset.IDs[j] for j in ind]))
 
 train_sampler = SubsetRandomSampler(train_indices)
-valid_sampler = SubsetRandomSampler(val_indices)
+valid_sampler = SubsetRandomSampler(valid_indices)
 
 train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
-val_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=valid_sampler)
+valid_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, sampler=valid_sampler)
 
 logger.info('\nTraining and validation datasets built in {:.2f} s'.format(time() - t0))
 
@@ -215,7 +248,7 @@ for epoch in range(num_epochs):
     true, scores = [], []
     if epoch == num_epochs - 1:
         train_output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
-        val_output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
+        valid_output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
     for i, (seqs, labels) in enumerate(train_loader):
         model.train()
         if use_cuda:
@@ -267,9 +300,9 @@ for epoch in range(num_epochs):
     with torch.no_grad():
         model.eval()
         confusion_matrix = np.zeros((num_classes, num_classes))
-        val_loss_neurons = [[] for _ in range(num_classes)]
+        valid_loss_neurons = [[] for _ in range(num_classes)]
         true, scores = [], []
-        for i, (seqs, labels) in enumerate(val_loader):
+        for i, (seqs, labels) in enumerate(valid_loader):
             if use_cuda:
                 seqs = seqs.cuda()
                 labels = labels.cuda()
@@ -279,31 +312,31 @@ for epoch in range(num_epochs):
             outputs = model(seqs)
 
             for o, l in zip(outputs, labels):
-                val_loss_neurons[l].append(-math.log((math.exp(o[l])) / (sum([math.exp(el) for el in o]))))
+                valid_loss_neurons[l].append(-math.log((math.exp(o[l])) / (sum([math.exp(el) for el in o]))))
 
             _, indices = torch.max(outputs, axis=1)
             for ind, label, outp in zip(indices, labels.cpu(), outputs):
                 confusion_matrix[ind][label] += 1
                 if epoch == num_epochs - 1:
-                    val_output_values[label] = [el + [outp[j].cpu().item()] for j, el in enumerate(val_output_values[label])]
+                    valid_output_values[label] = [el + [outp[j].cpu().item()] for j, el in enumerate(valid_output_values[label])]
 
             true += labels.tolist()
             scores += outputs.tolist()
 
     # Calculate metrics
-    val_losses, val_sens, val_spec = calculate_metrics(confusion_matrix, val_loss_neurons)
-    val_auc = calculate_auc(true, scores)
+    valid_losses, valid_sens, valid_spec = calculate_metrics(confusion_matrix, valid_loss_neurons)
+    valid_auc = calculate_auc(true, scores)
 
     # Save the model if the test acc is greater than our current best
-    if mean(val_sens) > best_acc and epoch < num_epochs - 1:
+    if mean(valid_sens) > best_acc and epoch < num_epochs - 1:
         torch.save(model.state_dict(), os.path.join(output, "{}_{}.model".format(namespace, epoch + 1)))
-        best_acc = mean(val_sens)
+        best_acc = mean(valid_sens)
 
     # If it is a last epoch write neurons' outputs, labels and model
     if epoch == num_epochs - 1:
         logger.info('Last epoch - writing neurons outputs for each class!')
         np.save(os.path.join(output, '{}_train_outputs'.format(namespace)), np.array(train_output_values))
-        np.save(os.path.join(output, '{}_valid_outputs'.format(namespace)), np.array(val_output_values))
+        np.save(os.path.join(output, '{}_valid_outputs'.format(namespace)), np.array(valid_output_values))
         torch.save(model.state_dict(), os.path.join(output, '{}_last.model'.format(namespace)))
 
     # Write the results
@@ -314,17 +347,17 @@ for epoch in range(num_epochs):
     logger.info("--{:>18s} :{:>5} seqs{:>22}".format('TRAINING', train_len, "--"))
     for cl, sens, spec, auc in zip(dataset.classes, train_sens, train_spec, train_auc):
         logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[0][cl]), sens, spec, auc[0]))
-    logger.info("--{:>18s} :{:>5} seqs{:>22}".format('VALIDATION', val_len, "--"))
-    for cl, sens, spec, auc in zip(dataset.classes, val_sens, val_spec, val_auc):
+    logger.info("--{:>18s} :{:>5} seqs{:>22}".format('VALIDATION', valid_len, "--"))
+    for cl, sens, spec, auc in zip(dataset.classes, valid_sens, valid_spec, valid_auc):
         logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[1][cl]), sens, spec, auc[0]))
     logger.info(
         "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}".
         format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec, [el[0] for el in train_auc]])), "--"))
     logger.info(
         "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}\n\n".
-        format('VALIDATION MEANS', *list(map(mean, [val_sens, val_spec, [el[0] for el in val_auc]])), "--"))
+        format('VALIDATION MEANS', *list(map(mean, [valid_sens, valid_spec, [el[0] for el in valid_auc]])), "--"))
 
-    if mean(val_sens) >= acc_threshold:
+    if mean(valid_sens) >= acc_threshold:
         logger.info('Validation accuracy threshold reached!')
         break
 
