@@ -92,8 +92,12 @@ class SeqsDataset(Dataset):
         # check if sequences haven't got too many NN
         print('Checking number of NN in given sequences')
         for i in range(len(ids)):
-            out, id = self.__getitem__(i)
+            out, id, ch = self.__getitem__(i, checking=True)
+            ch = ch.lstrip('chr')
             if out is None:
+                ids.remove(id)
+            if not ch.replace('X', '23').replace('Y', '23').isdigit():
+                print('{} sequence comes from chr {} - sequence removed from the dataset'.format(id, ch))
                 ids.remove(id)
         self.IDs = ids
         self.num_seqs = len(self.IDs)
@@ -101,7 +105,7 @@ class SeqsDataset(Dataset):
     def __len__(self):
         return len(self.IDs)
 
-    def __getitem__(self, index, info=False):
+    def __getitem__(self, index, info=False, checking=False):
         try:
             ID = self.IDs[int(index)]
         except ValueError:
@@ -132,18 +136,23 @@ class SeqsDataset(Dataset):
             return ch, midpoint, strand, label, seq, desc
         encoded_seq = self.encoder(seq)
         if encoded_seq is None:
-            print('In {} sequence is more than 5% unknown values - sequence removed from dataset'.format(ID))
-            return None, ID
+            print('In {} sequence is more than 5% unknown values - sequence removed from the dataset'.format(ID))
+            return None, ID, ch
         X = torch.tensor(encoded_seq)
         X = X.reshape(1, *X.size())
         y = torch.tensor(label)
+        if checking:
+            return X, ID, ch
         return X, y
 
     def get_chrs(self, chr_lists):
         indices = [[] for _ in range(len(chr_lists))]
         for i in range(self.__len__()):
             c, _, _, label, seq, _ = self.__getitem__(i, info=True)
-            ch = int(c.strip('chr').replace('X', '23').replace('Y', '23'))
+            try:
+                ch = int(c.strip('chr').replace('X', '23').replace('Y', '23'))
+            except ValueError:
+                print(c)
             for j, chr_list in enumerate(chr_lists):
                 if ch in chr_list:
                     indices[j].append(i)
