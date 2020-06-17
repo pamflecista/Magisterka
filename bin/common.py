@@ -297,14 +297,19 @@ def write_results(logger, columns, stages, variables, *beginning):
                 result_string += '\t{}'.format('; '.join(begin))
             else:
                 result_string += '\t{}'.format(begin)
-        if stage in ['train', 'val']:
+        if stage in ['train', 'valid']:
             result_string += '\t{}'.format(stage)
         for col, formatting in columns.values():
             if col[-1].isdigit():
-                variable = variables['{}_{}'.format(stage, col[:-1])][int(col[-1])]
+                try:
+                    variable = variables['{}_{}'.format(stage, col[:-1])][int(col[-1])]
+                except TypeError:
+                    variable = None
             else:
                 variable = variables['{}_{}'.format(stage, col)]
-            if formatting == 'float-list':
+            if variable is None:
+                result_string += '\t----'
+            elif formatting == 'float-list':
                 result_string += '\t' + ', '.join(['{:.2f}'.format(el) if isinstance(el, float) else '{}'.format(el)
                                                    for el in variable])
             elif formatting == 'float':

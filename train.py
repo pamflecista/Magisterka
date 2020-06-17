@@ -296,7 +296,10 @@ for epoch in range(num_epochs):
     train_losses, train_sens, train_spec = calculate_metrics(confusion_matrix, train_loss_neurons)
     train_loss_reduced = train_loss_reduced / num_batches
     assert math.floor(mean([el for el in train_losses if el])*10/10) == math.floor(float(train_loss_reduced)*10/10)
-    train_auc = calculate_auc(true, scores)
+    try:
+        train_auc = calculate_auc(true, scores)
+    except ValueError:
+        train_auc = None
 
     with torch.no_grad():
         model.eval()
@@ -326,7 +329,10 @@ for epoch in range(num_epochs):
 
     # Calculate metrics
     valid_losses, valid_sens, valid_spec = calculate_metrics(confusion_matrix, valid_loss_neurons)
-    valid_auc = calculate_auc(true, scores)
+    try:
+        valid_auc = calculate_auc(true, scores)
+    except ValueError:
+        valid_auc = None
 
     # Save the model if the test acc is greater than our current best
     if mean(valid_sens) > best_acc and epoch < num_epochs - 1:
@@ -341,22 +347,40 @@ for epoch in range(num_epochs):
         torch.save(model.state_dict(), os.path.join(output, '{}_last.model'.format(namespace)))
 
     # Write the results
-    write_results(results_table, columns, ['train', 'val'], globals(), epoch+1)
+    write_results(results_table, columns, ['train', 'valid'], globals(), epoch+1)
     # Print the metrics
     logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
                 .format(epoch+1, (time() - t0)/60, train_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
     logger.info("--{:>18s} :{:>5} seqs{:>22}".format('TRAINING', train_len, "--"))
-    for cl, sens, spec, auc in zip(dataset.classes, train_sens, train_spec, train_auc):
-        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[0][cl]), sens, spec, auc[0]))
+    if train_auc is not None:
+        for cl, sens, spec, auc in zip(dataset.classes, train_sens, train_spec, train_auc):
+            logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[0][cl]), sens, spec, auc[0]))
+    else:
+        for cl, sens, spec in zip(dataset.classes, train_sens, train_spec):
+            logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, ----'.format(cl, len(class_stage[0][cl]), sens, spec))
     logger.info("--{:>18s} :{:>5} seqs{:>22}".format('VALIDATION', valid_len, "--"))
-    for cl, sens, spec, auc in zip(dataset.classes, valid_sens, valid_spec, valid_auc):
-        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[1][cl]), sens, spec, auc[0]))
-    logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}".
-        format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec, [el[0] for el in train_auc]])), "--"))
-    logger.info(
-        "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}\n\n".
-        format('VALIDATION MEANS', *list(map(mean, [valid_sens, valid_spec, [el[0] for el in valid_auc]])), "--"))
+    if valid_auc is not None:
+        for cl, sens, spec, auc in zip(dataset.classes, valid_sens, valid_spec, valid_auc):
+            logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[1][cl]), sens, spec, auc[0]))
+    else:
+        for cl, sens, spec in zip(dataset.classes, valid_sens, valid_spec):
+            logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, ----'.format(cl, len(class_stage[1][cl]), sens, spec))
+    if train_auc is not None:
+        logger.info(
+            "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}".
+            format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec, [el[0] for el in train_auc]])), "--"))
+    else:
+        logger.info(
+            "--{:>18s} : {:1.3f}, {:1.3f}{:>18}".
+                format('TRAINING MEANS', *list(map(mean, [train_sens, train_spec])), "--"))
+    if valid_auc is not None:
+        logger.info(
+            "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}\n\n".
+            format('VALIDATION MEANS', *list(map(mean, [valid_sens, valid_spec, [el[0] for el in valid_auc]])), "--"))
+    else:
+        logger.info(
+            "--{:>18s} : {:1.3f}, {:1.3f}{:>18}\n\n".
+            format('VALIDATION MEANS', *list(map(mean, [valid_sens, valid_spec])), "--"))
 
     if mean(valid_sens) >= acc_threshold:
         logger.info('Validation accuracy threshold reached!')
