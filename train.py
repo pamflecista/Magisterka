@@ -185,6 +185,7 @@ if args.train is not None:
     train_indices = random.sample(range(dataset.num_seqs), train_num)
     if args.valid is not None:
         valid_num = args.valid
+        test_num = dataset.num_seqs - train_num - valid_num
     elif args.test is None:
         test_num = (dataset.num_seqs - train_num) // 2
         valid_num = dataset.num_seqs - train_num - test_num
