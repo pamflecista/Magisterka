@@ -111,11 +111,8 @@ t0 = time()
 with torch.no_grad():
     model.eval()
     for i, (seqs, labels) in enumerate(loader):
-        if use_cuda:
-            seqs = seqs.cuda()
-            labels = labels.cuda()
-        seqs = seqs.float()
-        labels = labels.long()
+        seqs = seqs.float().to(device=device)
+        labels = labels.long().to(device=device)
 
         outputs = model(seqs)
 
