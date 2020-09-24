@@ -154,13 +154,16 @@ with open(os.path.join(output, '{}_{}.txt'.format(namespace, subset)), 'w') as f
 logger.info("Testing finished in {:.2f} min\nTest loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
             .format((time() - t0) / 60, test_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
 logger.info("--{:>18s} :{:>5} seqs{:>22}".format('TESTING', len(dataset), "--"))
-for cl, sens, spec, auc in zip(dataset.classes, test_sens, test_spec, test_auc):
-    logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:4s}'.format(cl, len(class_stage[cl]), sens, spec, auc[0]))
+
 if isinstance(test_auc[0][0], float):
+    for cl, sens, spec, auc in zip(dataset.classes, test_sens, test_spec, test_auc):
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:1.3f}'.format(cl, len(class_stage[cl]), sens, spec, auc[0]))
     logger.info(
             "--{:>18s} : {:1.3f}, {:1.3f}, {:1.3f}{:>12}".
             format('TESTING MEANS', *list(map(mean, [test_sens, test_spec, [el[0] for el in test_auc]])), "--"))
 else:
+    for cl, sens, spec, auc in zip(dataset.classes, test_sens, test_spec, test_auc):
+        logger.info('{:>20} :{:>5} seqs - {:1.3f}, {:1.3f}, {:4s}'.format(cl, len(class_stage[cl]), sens, spec, auc[0]))
     logger.info(
         "--{:>18s} : {:1.3f}, {:1.3f}, {}{:>12}".
             format('TESTING MEANS', *list(map(mean, [test_sens, test_spec])), test_auc[0][0], "--"))
