@@ -50,7 +50,7 @@ else:
     modelfile = os.path.join(path, args.model)
 if args.dataset is not None:
     data_name = args.dataset.split('/')[-1].split('.')[0].replace('_', '-')
-    if os.path.isfile(args.dataset):
+    if os.path.isfile(args.dataset) or os.path.isdir(args.dataset):
         data_dir = args.dataset
     elif os.path.isfile(os.path.join(path, args.dataset)):
         data_dir = os.path.join(path, args.dataset)
