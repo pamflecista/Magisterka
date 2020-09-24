@@ -33,6 +33,10 @@ parser.add_argument('--batch_size', action='store', metavar='INT', type=int, def
                     help='size of the batch, default: 64')
 parser.add_argument('--name_pos', action='store', metavar='INT', type=int, default=None,
                     help='Position of sequence name in the fasta header, by default created as CHR:POSITION')
+parser.add_argument('--subset', action='store', metavar='NAME', type=str, default=None,
+                    help='Subset of given dataset for testing (txt file with names of sequences to select)')
+parser.add_argument('--constant_class', action='store', metavar='CLASS', type=str, default=None,
+                    help='If all sequences from the given dataset should belong to given class')
 parser = basic_params(parser)
 args = parser.parse_args()
 path, output, namespace, seed = parse_arguments(args, args.model, model_path=True)
@@ -53,10 +57,16 @@ if args.dataset is not None:
     else:
         print('Dataset {} not found'.format(args.dataset))
         raise ValueError
-    subset = 'all:{}'.format(data_name)
+    if args.subset is None:
+        subset = 'all:{}'.format(data_name)
+        names = []
+    else:
+        subset = '{}:{}'.format(args.subset.split('_')[1].split('.')[0], data_name)
+        names = open(args.subset, 'r').read().strip().split('\n')
 else:
     data_dir = []
     subset = 'train' if args.train else 'valid' if args.valid else 'test'
+    names = open(os.path.join(output, '{}_{}.txt'.format(namespace, subset)), 'r').read().strip().split('\n')
 print('Subset name: {}'.format(subset))
 
 network, data_dir, seq_len, ch, classes, _, _ = \
@@ -73,11 +83,7 @@ use_cuda, device = check_cuda(logger)
 
 # Build dataset for testing
 t0 = time()
-if subset.startswith('all'):
-    names = []
-else:
-    names = open(os.path.join(output, '{}_{}.txt'.format(namespace, subset)), 'r').read().strip().split('\n')
-dataset = SeqsDataset(data_dir, subset=names, seq_len=seq_len, name_pos=args.name_pos)
+dataset = SeqsDataset(data_dir, subset=names, seq_len=seq_len, name_pos=args.name_pos, constant_class=args.constant_class)
 classes = dataset.classes
 num_classes = len(classes)
 loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
@@ -99,7 +105,7 @@ t0 = time()
 # Build network - this type which was used during training the model
 model = network(seq_len)
 # Load weights from the file
-model.load_state_dict(torch.load(modelfile, map_location=torch.device(device)))
+model.load_state_dict(torch.load(modelfile, map_location=device))
 logger.info('\nModel from {} loaded in {:.2f} s'.format(modelfile, time() - t0))
 
 test_loss_neurons = [[] for _ in range(num_classes)]

@@ -191,15 +191,6 @@ def write_params(glob, file):
                 f.write('{}: {}\n'.format(name, v))
 
 
-def read_classes(file):
-    with open(file, 'r') as f:
-        for line in f:
-            if line.startswith('Possible classes'):
-                neurons = line.split(':')[1].strip().split('; ')
-                break
-    return neurons
-
-
 def basic_params(parser, param=False):
     parser.add_argument('-p', '--path', action='store', metavar='DIR', type=str, default=None,
                         help='Working directory.')
@@ -454,6 +445,10 @@ def params_from_file(param_file, data_dir=()):
                 num_epochs = int(line.split(':')[-1].strip())
     return network, data_dir, seq_len, ch, classes, name, num_epochs
 
+
+def read_classes(file):
+    _, _, _, _, neurons, _, _ = params_from_file(file)
+    return neurons
 
 '''def print_results(logger, columns, variables, epoch):
     logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}"
