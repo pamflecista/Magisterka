@@ -266,9 +266,11 @@ def read_results_columns(results_table, columns):
     with open(file, 'r') as f:
         header = f.readline().strip().split('\t')
         i = 0
+        if header == ['']:
+            return []
         for h in header:
             if h not in columns:
-                if 'AUC' in h:
+                if 'auc' in h.lower():
                     name, formatting = columns['AUC-neuron']
                     columns[h] = [name.replace('INT', str(i)), formatting]
                     i += 1

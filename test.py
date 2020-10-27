@@ -54,6 +54,8 @@ if args.dataset is not None:
         data_dir = args.dataset
     elif os.path.isfile(os.path.join(path, args.dataset)):
         data_dir = os.path.join(path, args.dataset)
+    elif os.path.isfile(os.path.join(path, 'data', args.dataset)):
+        data_dir = os.path.join(path, 'data', args.dataset)
     else:
         print('Dataset {} not found'.format(args.dataset))
         raise ValueError
@@ -61,8 +63,17 @@ if args.dataset is not None:
         subset = 'all:{}'.format(data_name)
         names = []
     else:
+        if os.path.isfile(args.subset):
+            names = open(args.subset, 'r').read().strip().split('\n')
+        elif os.path.isfile(os.path.join(path, args.subset)):
+            names = open(os.path.join(path, args.subset), 'r').read().strip().split('\n')
+        elif os.path.isfile(os.path.join(path, 'results', args.subset)):
+            names = open(os.path.join(path, 'results', args.subset), 'r').read().strip().split('\n')
+        else:
+            print('Subset file {} not found'.format(args.subset))
+            raise ValueError
         subset = '{}:{}'.format(args.subset.split('_')[1].split('.')[0], data_name)
-        names = open(args.subset, 'r').read().strip().split('\n')
+
 else:
     data_dir = []
     subset = 'train' if args.train else 'valid' if args.valid else 'test'
@@ -84,6 +95,8 @@ use_cuda, device = check_cuda(logger)
 # Build dataset for testing
 t0 = time()
 dataset = SeqsDataset(data_dir, subset=names, seq_len=seq_len, name_pos=args.name_pos, constant_class=args.constant_class)
+if args.constant_class is not None:
+    logger.info('\nConstant class set to: {}'.format(args.constant_class))
 classes = dataset.classes
 num_classes = len(classes)
 loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
@@ -97,6 +110,8 @@ if not old_results:
     results_table, columns = results_header('test', results_table, RESULTS_COLS, classes)
 else:
     columns = read_results_columns(results_table, RESULTS_COLS)
+    if not columns:
+        results_table, columns = results_header('test', results_table, RESULTS_COLS, classes)
 logger.info('\nTesting dataset built in {:.2f} s'.format(time() - t0))
 
 num_batches = math.ceil(len(dataset) / batch_size)
@@ -106,6 +121,8 @@ t0 = time()
 model = network(seq_len)
 # Load weights from the file
 model.load_state_dict(torch.load(modelfile, map_location=device))
+if use_cuda:
+    model.cuda()
 logger.info('\nModel from {} loaded in {:.2f} s'.format(modelfile, time() - t0))
 
 test_loss_neurons = [[] for _ in range(num_classes)]
@@ -151,8 +168,9 @@ np.save(os.path.join(output, '{}_{}_labels'.format(namespace, subset)), np.array
 with open(os.path.join(output, '{}_{}.txt'.format(namespace, subset)), 'w') as f:
     f.write('\n'.join(dataset.IDs))
 
-logger.info("Testing finished in {:.2f} min\nTest loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
-            .format((time() - t0) / 60, test_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
+accuracy = sum([confusion_matrix[i][i] for i in range(confusion_matrix.shape[0])]) / len(dataset)
+logger.info("Testing finished in {:.2f} min\nTest loss: {:1.3f}\nTest accuracy: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
+            .format((time() - t0) / 60, test_loss_reduced, accuracy, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
 logger.info("--{:>18s} :{:>5} seqs{:>22}".format('TESTING', len(dataset), "--"))
 
 if isinstance(test_auc[0][0], float):
