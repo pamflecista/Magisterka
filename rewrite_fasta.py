@@ -26,7 +26,7 @@ def rewrite_fasta(file, outdir=None, name_pos=None):
                 if name_pos is not None:
                     filename = line.strip().split(' ')[name_pos] + '.fasta'
                 else:
-                    filename = ':'.join(line.strip().split(' ')[1:3]).strip('chr ') + '.fasta'
+                    filename = '-'.join(line.strip().split(' ')[1:3]).strip('chr ') + '.fasta'
                 w = open(os.path.join(outdir, filename), 'w')
                 w.write(line)
                 i += 1

@@ -124,7 +124,7 @@ def read_seq(file, subset, X, y, neg=False):
             seq = line.strip().upper()
     if f.readline().strip():
         warn('In file {} is more than one sequence!'.format(file))
-    name = '{}:{}'.format(ch.strip('chr'), midpoint)
+    name = '{}_{}'.format(ch.strip('chr'), midpoint)
     if subset is not None:
         if not neg and name not in subset:
             return X, y

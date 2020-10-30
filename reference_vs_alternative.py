@@ -50,7 +50,7 @@ def plot_ref_alt(name):
                         pos = args.name_pos
                         id = l[pos]
                     else:
-                        id = '{}:{}'.format(l[0].lstrip('chr'), l[1])
+                        id = '{}_{}'.format(l[0].lstrip('chr'), l[1])
                         pos = seq_ids.index(id)
                     label_names[pos] = '{} {}'.format(l[3], l[4])
                     patients[pos] = id
