@@ -16,8 +16,8 @@ class BassetNetwork(torch.nn.Module):
         paddings = [int((w-1)/2) for w in kernel_widths]
         num_units = [1000, 4]
         self.params = {
-            'Input sequence length': seq_len,
-            'Dropout': dropout
+            'input sequence length': seq_len,
+            'dropout': dropout
         }
 
         self.layer1 = nn.Sequential(
@@ -65,7 +65,7 @@ class BassetNetwork(torch.nn.Module):
 class CustomNetwork(torch.nn.Module):
 
     def __init__(self, seq_len, num_channels=[300, 200, 200], kernel_widths=[19, 11, 7], pooling_widths=[3, 4, 4],
-                 num_units=[2000, 4]):
+                 num_units=[2000, 4], dropout=0.5):
         super(CustomNetwork, self).__init__()
         paddings = [int((w-1)/2) for w in kernel_widths]
         self.seq_len = seq_len
@@ -76,7 +76,8 @@ class CustomNetwork(torch.nn.Module):
             'number of channels': num_channels,
             'kernels widths': kernel_widths,
             'pooling widths': pooling_widths,
-            'units in fc': num_units
+            'units in fc': num_units,
+            'dropout': dropout
 
         }
 
@@ -101,7 +102,7 @@ class CustomNetwork(torch.nn.Module):
             fc_modules += [
                 nn.Linear(in_features=input_units, out_features=output_units),
                 nn.ReLU(),
-                nn.Dropout()
+                nn.Dropout(p=self.dropout)
             ]
         self.fc_layers = nn.Sequential(*fc_modules)
 

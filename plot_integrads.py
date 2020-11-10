@@ -16,7 +16,7 @@ parser.add_argument('--single', action='store_true',
 parser.add_argument('--clip', action='store', metavar='NUMBER', type=int, default=None,
                     help='Number of +- subset of nucleotides from the middle of the sequence to plot')
 args = parser.parse_args()
-path, output, namespace, seed = parse_arguments(args, None)
+path, output, namespace, seed = parse_arguments(args, None, model_path=True)
 
 param_file = os.path.join(path, 'params.txt')
 with open(param_file) as f:

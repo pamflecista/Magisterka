@@ -40,7 +40,7 @@ group2.add_argument('--boxplot', action='store_true',
 args = parser.parse_args()
 
 
-path, output, namespace, seed = parse_arguments(args, args.table)
+path, output, namespace, seed = parse_arguments(args, args.table, model_path=True)
 
 train = False
 val = True

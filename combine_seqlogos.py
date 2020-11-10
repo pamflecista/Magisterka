@@ -21,11 +21,11 @@ parser = basic_params(parser, param=True)
 args = parser.parse_args()
 path, output, namespace, seed = parse_arguments(args, args.dir1)
 
-if not args.dir1.startswith('/'):
+if not os.path.isdir(args.dir1):
     dir1 = os.path.join(path, args.dir1)
 else:
     dir1 = args.dir1
-if not args.dir2.startswith('/'):
+if not os.path.isdir(args.dir2):
     dir2 = os.path.join(path, args.dir2)
 else:
     dir2 = args.dir2
@@ -36,9 +36,11 @@ else:
     clip = ''
 
 if args.name is None:
-    name1 = dir1.split('/')[-1].split('_')[-2:]
+    _, name1 = os.path.split(dir1)
+    name1 = name1.split('_')[-2:]
     name1 = '{}:{}'.format(name1[0].replace('1', ''), name1[1])
-    name2 = dir2.split('/')[-1].split('_')[-2:]
+    _, name2 = os.path.split(dir2)
+    name2 = name2.split('_')[-2:]
     name2 = '{}:{}'.format(name2[0].replace('2', ''), name2[1])
     assert name1 == name2
     name = name1

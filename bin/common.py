@@ -220,7 +220,7 @@ def parse_arguments(args, file, namesp=None, model_path=False):
         else:
             path = os.path.dirname(file)
             if not os.path.isfile(file):
-                path = os.path.join(os.getcwd().rstrip('bin'), 'data/custom40', path)  # default example dataset of the project
+                path = os.path.join(os.getcwd().rstrip('bin'), 'data', 'custom40', path)  # default example dataset of the project
     if path.endswith('data'):
         path = path[:-4]
     if args.namespace is not None:
@@ -229,9 +229,10 @@ def parse_arguments(args, file, namesp=None, model_path=False):
         namespace = namesp
     elif file is not None:
         f = file if not isinstance(file, list) else file[0]
-        namespace = f.strip('/').split('/')[-1].split('_')[0]
+        _, namespace = os.path.split(f)
+        namespace = namespace.split('_')[0]
     else:
-        namespace = path.strip('/').split('/')[-1]
+        _, namespace = os.path.split(path)
     print('Namespace: {}'.format(namespace))
     if args.output is not None:
         output = args.output
@@ -343,7 +344,7 @@ def check_cuda(logger):
     return use_cuda, device
 
 
-def build_loggers(stage, output='./', namespace='test', verbose_mode=True, logfile=True, resultfile=True):
+def build_loggers(stage, output='.', namespace='test', verbose_mode=True, logfile=True, resultfile=True):
     import logging
     formatter = logging.Formatter('%(message)s')
     loggers = []

@@ -142,7 +142,7 @@ else:
 if args.model is None:
     modelfile = None
 else:
-    if args.model.startswith('/'):
+    if os.path.isfile(args.model):
         modelfile = args.model
     else:
         modelfile = os.path.join(output, args.model)

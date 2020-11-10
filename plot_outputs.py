@@ -18,7 +18,7 @@ group1.add_argument('--test', action='store_true',
 parser = basic_params(parser, param=True)
 args = parser.parse_args()
 
-path, output, namespace, seed = parse_arguments(args, args.file)
+path, output, namespace, seed = parse_arguments(args, args.file, model_path=True)
 if args.file:
     if args.path is not None:
         file = os.path.join(path, args.file)
@@ -27,8 +27,10 @@ if args.file:
 else:
     if args.test:
         file = os.path.join(path, '{}_test_outputs.npy'.format(namespace))
-    else:
+    elif args.train:
         file = os.path.join(path, '{}_train_outputs.npy'.format(namespace))
+    else:
+        file = os.path.join(path, '{}_valid_outputs.npy'.format(namespace))
 if not os.path.isfile(file):
     table = os.path.join(path, namespace + '_results.tsv')
 

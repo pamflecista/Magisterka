@@ -18,7 +18,7 @@ parser.add_argument('--labels_file', action='store', metavar='FILE', type=str, d
                     help='Name of the file with labels based on which ROC curve should be plotted, '
                          'default: [PATH]/[NAMESPACE]_[SUBSET]_labels.npy')
 args = parser.parse_args()
-path, output, namespace, seed = parse_arguments(args, args.outputs_file)
+path, output, namespace, seed = parse_arguments(args, args.outputs_file, model_path=True)
 subset = args.subset
 
 if args.outputs_file is None:

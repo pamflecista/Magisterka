@@ -44,12 +44,14 @@ path, output, namespace, seed = parse_arguments(args, args.model, model_path=Tru
 batch_size = args.batch_size
 if args.model is None:
     modelfile = os.path.join(path, '{}_last.model'.format(namespace))
-elif args.model.startswith('/'):
+elif os.path.isfile(args.model):
     modelfile = args.model
 else:
     modelfile = os.path.join(path, args.model)
 if args.dataset is not None:
-    data_name = args.dataset.split('/')[-1].split('.')[0].replace('_', '-')
+    _, data_name = os.path.split(args.dataset)
+    data_name, _ = os.path.splitext(data_name)
+    data_name = data_name.replace('_', '-')
     if os.path.isfile(args.dataset) or os.path.isdir(args.dataset):
         data_dir = args.dataset
     elif os.path.isfile(os.path.join(path, args.dataset)):

@@ -85,9 +85,9 @@ else:
         valid = open(args.valid, 'r').read().strip().split('\n')
     else:
         valid = None
-    trainpath, _ = os.path.split(args.train)
-    validpath, _ = os.path.split(args.valid)
-    datadiv = '{}/{}'.format(trainpath.split('/')[-1], validpath.split('/')[-1])
+    trainpath, trainname = os.path.split(args.train)
+    validpath, validname = os.path.split(args.valid)
+    datadiv = '{}/{}'.format(trainname, validname)
 # create folder for the output files
 if os.path.isdir(output):
     shutil.rmtree(output)
