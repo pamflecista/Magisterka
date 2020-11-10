@@ -222,10 +222,10 @@ else:
 class_stage = [dataset.get_classes(el) for el in [train_indices, valid_indices, test_indices]]
 train_len, valid_len = len(train_indices), len(valid_indices)
 num_seqs = ' + '.join([str(len(el)) for el in [train_indices, valid_indices, test_indices]])
-if args.train is not None:
-    chr_string = ['', '', '']
-else:
+if not (args.train is not None or args.valid is not None or args.test is not None):
     chr_string = ['({})'.format(el) for el in map(make_chrstr, [train_num, valid_num, test_num])]
+else:
+    chr_string = ['', '', '']
 for i, (n, ch, ind) in enumerate(zip(['train', 'valid', 'test'], chr_string,
                                      [train_indices, valid_indices, test_indices])):
     logger.info('\n{} set contains {} seqs {}:'.format(n, len(ind), ch))
