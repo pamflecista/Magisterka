@@ -69,6 +69,7 @@ class CustomNetwork(torch.nn.Module):
         super(CustomNetwork, self).__init__()
         paddings = [int((w-1)/2) for w in kernel_widths]
         self.seq_len = seq_len
+        self.dropout = dropout
         self.params = {
             'input sequence length': seq_len,
             'convolutional layers': len(num_channels),

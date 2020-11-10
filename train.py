@@ -156,9 +156,7 @@ logger.info('\nAnalysis {} begins {}\nInput data: {}\nOutput directory: {}\n'.fo
     namespace, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), '; '.join(data_dir), output))
 
 t0 = time()
-if args.train is not None:
-    train_num = args.train
-else:
+if not (args.train is not None or args.valid is not None or args.test is not None):
     train_num, valid_num, test_num = divide_chr(args.train_chr, args.valid_chr, args.test_chr)
     if set(train_num) & set(valid_num):
         logger.warning('WARNING - Chromosomes for training and validation overlap!')
@@ -181,26 +179,46 @@ else:
     columns = read_results_columns(results_table, RESULTS_COLS)
 
 # Creating data indices for training, validation and test splits:
-if args.train is not None:
-    train_indices = random.sample(range(dataset.num_seqs), train_num)
+if not (args.train is not None or args.valid is not None or args.test is not None):
+    train_num, valid_num, test_num = divide_chr(args.train_chr, args.valid_chr, args.test_chr)
+    if set(train_num) & set(valid_num):
+        logger.warning('WARNING - Chromosomes for training and validation overlap!')
+    elif set(train_num) & set(test_num):
+        logger.warning('WARNING - Chromosomes for training and testing overlap!')
+    elif set(valid_num) & set(test_num):
+        logger.warning('WARNING - Chromosomes for validation and testing overlap!')
+    train_indices, valid_indices, test_indices = dataset.get_chrs([train_num, valid_num, test_num])
+else:
+    train_num, valid_num, test_num = None, None, None
+    if args.train is not None:
+        train_num = args.train
     if args.valid is not None:
         valid_num = args.valid
-        test_num = dataset.num_seqs - train_num - valid_num
-    elif args.test is None:
-        test_num = (dataset.num_seqs - train_num) // 2
-        valid_num = dataset.num_seqs - train_num - test_num
-    else:
+    if args.test is not None:
         test_num = args.test
-        valid_num = dataset.num_seqs - train_num - test_num
+    if train_num is None:
+        if valid_num is None:
+            train_num = (dataset.num_seqs - test_num) // 2
+        elif test_num is None:
+            train_num = (dataset.num_seqs - valid_num) // 2
+        else:
+            train_num = dataset.num_seqs - valid_num - test_num
+    if valid_num is None:
+        if test_num is None:
+            valid_num = (dataset.num_seqs - train_num) // 2
+        else:
+            valid_num = dataset.num_seqs - train_num - test_num
+    if test_num is None:
+        test_num = dataset.num_seqs - valid_num - train_num
+
     if train_num + valid_num + test_num > dataset.num_seqs:
         print('Number of train, valid and test sequences need to sum up to {}'.format(dataset.num_seqs))
         raise ValueError
+    train_indices = random.sample(range(dataset.num_seqs), train_num)
     valid_indices = random.sample([i for i in range(dataset.num_seqs) if i not in train_indices], valid_num)
     test_indices = random.sample([i for i in range(dataset.num_seqs) if i not in train_indices and i not in
                                   valid_indices], test_num)
     indices = [train_indices, valid_indices, test_indices]
-else:
-    train_indices, valid_indices, test_indices = dataset.get_chrs([train_num, valid_num, test_num])
 class_stage = [dataset.get_classes(el) for el in [train_indices, valid_indices, test_indices]]
 train_len, valid_len = len(train_indices), len(valid_indices)
 num_seqs = ' + '.join([str(len(el)) for el in [train_indices, valid_indices, test_indices]])
