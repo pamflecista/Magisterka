@@ -224,9 +224,12 @@ def parse_arguments(args, file, namesp=None, model_path=False):
     if path.endswith('data'):
         path = path[:-4]
     if args.namespace is not None:
-        if args.run is not None:
-            namespace = args.namespace + args.run
-        else:
+        try:
+            if args.run is not None:
+                namespace = args.namespace + args.run
+            else:
+                namespace = args.namespace
+        except AttributeError:
             namespace = args.namespace
     elif namesp is not None:
         namespace = namesp
