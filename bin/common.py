@@ -43,6 +43,14 @@ SHORTCUTS = {
 
 COLORS = ['C{}'.format(i) for i in range(10)]
 
+STAGES = {
+    'train': 'Training',
+    'valid': 'Validation',
+    'test': 'Testing',
+    'all': 'All',
+    'cv': 'CV'
+}
+
 
 class OHEncoder:
 

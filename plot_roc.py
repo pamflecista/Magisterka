@@ -8,30 +8,47 @@ COLORS = ['C{}'.format(i) for i in range(10)]
 
 parser = argparse.ArgumentParser(description='Plot ROC curve for the given data')
 parser = basic_params(parser)
-parser.add_argument('--subset', action='store', metavar='NAME', type=str, default='test',
-                    help='Subset of data based on which plot ROC curve. Options: train, '
-                    'test, valid, or all:[NAME] where NAME is a dataset name. Default: test')
 parser.add_argument('--outputs_file', action='store', metavar='FILE', type=str, default=None,
                     help='Name of the file with outputs based on which ROC curve should be plotted, '
                          'default: [PATH]/[NAMESPACE]_[SUBSET]_outputs.npy')
 parser.add_argument('--labels_file', action='store', metavar='FILE', type=str, default=None,
                     help='Name of the file with labels based on which ROC curve should be plotted, '
                          'default: [PATH]/[NAMESPACE]_[SUBSET]_labels.npy')
+group1 = parser.add_mutually_exclusive_group(required=False)
+group1.add_argument('--train', action='store_true',
+                    help='Use results from training, default results from validation are used')
+group1.add_argument('--test', action='store_true',
+                    help='Use testing results.')
 args = parser.parse_args()
 path, output, namespace, seed = parse_arguments(args, args.outputs_file, model_path=True)
-subset = args.subset
 
-if args.outputs_file is None:
-    infile = os.path.join(output, '{}_{}_outputs.npy'.format(namespace, subset))
+
+if args.outputs_file:
+    if args.path is not None:
+        file = os.path.join(path, args.outputs_file)
+    else:
+        file = args.outputs_file
+    stage = 'all'
 else:
-    infile = args.outputs_file
+    if args.test:
+        stage = 'test'
+    elif args.train:
+        stage = 'train'
+    else:
+        stage = 'valid'
+    file = os.path.join(path, '{}_{}_outputs.npy'.format(namespace, stage))
+if not os.path.isfile(file):
+    file = os.path.join(path, namespace + '_outputs.tsv')
+    if not os.path.isfile(file):
+        assert os.path.isfile(file), 'Output for this stage has not been written yet. ' \
+                                     'Please run testing based on it in order to create {} file'.format(file)
+
 if args.labels_file is None:
-    labelfile = os.path.join(output, '{}_{}_labels.npy'.format(namespace, subset))
+    labelfile = os.path.join(path, '{}_{}_labels.npy'.format(namespace, stage))
 else:
     labelfile = args.labels_file
-assert os.path.isfile(infile), 'Output for this subset has not been written yet. ' \
-                               'Please run testing based on it in order to create {} file'.format(infile)
-outputs = np.load(infile, allow_pickle=True)
+
+outputs = np.load(file, allow_pickle=True)
 # labels = np.load(labelfile, allow_pickle=True)
 neurons = get_classes_names(os.path.join(path, '{}_params.txt'.format(namespace)))
 assert outputs.shape[0] == outputs.shape[1] == len(neurons)
@@ -65,6 +82,6 @@ for (i, ax), neuron in zip(enumerate(axes), neurons):
         ax.legend(bbox_to_anchor=(0, -0.07), loc="upper left", ncol=4)
     ax.set_xlabel("False positive rate")
 
-fig.suptitle('{} - {}'.format(namespace, subset))
+fig.suptitle('{} - {} data'.format(namespace, STAGES[stage]))
 plt.show()
-fig.savefig(os.path.join(output, '{}_{}_roc.png'.format(namespace, subset)))
+fig.savefig(os.path.join(output, '{}_{}_roc.png'.format(namespace, stage)))

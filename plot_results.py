@@ -6,14 +6,6 @@ from statistics import mean
 import math
 from bin.common import *
 
-STAGES = {
-    'train': 'Training',
-    'val': 'Validation',
-    'test': 'Testing',
-    'all': 'All',
-    'cv': 'CV'
-}
-
 parser = argparse.ArgumentParser(description='Plot results based on given table')
 parser.add_argument('-t', '--table', action='store', metavar='NAME', type=str, default=None,
                     help='Results table with data to plot, if PATH is given, file is supposed to be '
@@ -43,7 +35,7 @@ args = parser.parse_args()
 path, output, namespace, seed = parse_arguments(args, args.table, model_path=True)
 
 train = False
-val = True
+valid = True
 test = False
 all = False
 cv = False
@@ -51,12 +43,12 @@ if args.train:
     train = True
 elif args.test:
     test = True
-    val = False
+    valid = False
 elif args.cv:
     cv = True
-    val = False
+    valid = False
 if args.not_valid:
-    val = False
+    valid = False
 
 if args.boxplot:
     boxplot = True
@@ -72,7 +64,7 @@ if args.table is not None:
         table = args.table
 elif test:
     table = os.path.join(path, namespace + '_test_results.tsv')
-elif train or val:
+elif train or valid:
     table = os.path.join(path, namespace + '_train_results.tsv')
 elif cv:
     table = os.path.join(path, namespace + '_cv_results.tsv')
@@ -114,7 +106,7 @@ with open(table, 'r') as f:
     values = [[[] for _ in colnum] for el in stages]  # for each stage and for each column
     for e, line in enumerate(f):
         line = line.strip().split('\t')
-        if train or val:
+        if train or valid:
             if int(line[0]) > epoch:
                 epoch = int(line[0])
                 epochs.append(epoch)

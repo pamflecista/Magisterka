@@ -9,7 +9,7 @@ COLORS = ['C{}'.format(i) for i in range(10)]
 parser = argparse.ArgumentParser(description='Plot results based on given table')
 parser.add_argument('-f', '--file', action='store', metavar='NAME', type=str, default=None, nargs='+',
                     help='Files with the outputs to plot, if PATH is given, file is supposed to be '
-                         'in PATH directory: [PATH]/[NAME], default: [PATH]/[NAMESPACE]_outputs.npy')
+                         'in PATH directory: [PATH]/[NAME], default: [PATH]/[NAMESPACE]_valid_outputs.npy')
 group1 = parser.add_mutually_exclusive_group(required=False)
 group1.add_argument('--train', action='store_true',
                     help='Use values from training, default values from validation are used')
@@ -24,15 +24,17 @@ if args.file:
         file = os.path.join(path, args.file)
     else:
         file = args.file
+    stage = 'all'
 else:
     if args.test:
-        file = os.path.join(path, '{}_test_outputs.npy'.format(namespace))
+        stage = 'test'
     elif args.train:
-        file = os.path.join(path, '{}_train_outputs.npy'.format(namespace))
+        stage = 'train'
     else:
-        file = os.path.join(path, '{}_valid_outputs.npy'.format(namespace))
+        stage = 'valid'
+    file = os.path.join(path, '{}_{}_outputs.npy'.format(namespace, stage))
 if not os.path.isfile(file):
-    table = os.path.join(path, namespace + '_results.tsv')
+    file = os.path.join(path, namespace + '_outputs.tsv')
 
 neurons = get_classes_names(os.path.join(path, '{}_params.txt'.format(namespace)))
 
@@ -60,7 +62,7 @@ for j, (row, ax, name) in enumerate(zip(values, axes, neurons)):
     ax.set_xlim(0.0, len(neurons)+1.0)
     plt.setp(ax.get_yticklabels(), fontsize=8)
 
-fig.suptitle(namespace, fontsize=12)
+fig.suptitle('{} - {} data'.format(namespace, STAGES[stage]), fontsize=12)
 plt.xticks([i+1 for i in range(len(neurons))], neurons, fontsize=8)
 for ticklabel, tickcolor in zip(plt.gca().get_xticklabels(), colors):
     ticklabel.set_color(tickcolor)
@@ -70,8 +72,5 @@ ax.grid(False)
 ax.set_ylabel("Real labels", fontsize=12)
 ax.set_title('Neurons', fontsize=12)
 ax.yaxis.set_label_coords(-0.12, 0.5)
-if args.test:
-    plt.savefig(os.path.join(output, '{}_test_outputs.png'.format(namespace)))
-else:
-    plt.savefig(os.path.join(output, '{}_train_outputs.png'.format(namespace)))
+plt.savefig(os.path.join(output, '{}_{}_outputs.png'.format(namespace, stage)))
 plt.show()
