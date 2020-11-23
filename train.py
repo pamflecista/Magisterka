@@ -257,19 +257,18 @@ loss_fn = lossfn()
 best_acc = 0.0
 # write parameters values into file
 write_params(globals(), os.path.join(output, '{}_params.txt'.format(namespace)))
-logger.info('\n--- TRAINING ---')
+logger.info('\n--- TRAINING ---\nEpoch 0 is a data validation without training step')
 t = time()
-for epoch in range(num_epochs):
+for epoch in range(num_epochs+1):
     t0 = time()
     confusion_matrix = np.zeros((num_classes, num_classes))
     train_loss_neurons = [[] for _ in range(num_classes)]
     train_loss_reduced = 0.0
     true, scores = [], []
-    if epoch == num_epochs - 1:
+    if epoch == num_epochs:
         train_output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
         valid_output_values = [[[] for _ in range(num_classes)] for _ in range(num_classes)]
     for i, (seqs, labels) in enumerate(train_loader):
-        model.train()
         if use_cuda:
             seqs = seqs.cuda()
             labels = labels.cuda()
@@ -277,12 +276,13 @@ for epoch in range(num_epochs):
         seqs = seqs.float()
         labels = labels.long()
 
-        optimizer.zero_grad()
-        outputs = model(seqs)
-        loss = loss_fn(outputs, labels)
-        loss.backward()
-
-        optimizer.step()
+        if epoch != 0:
+            model.train()
+            optimizer.zero_grad()
+            outputs = model(seqs)
+            loss = loss_fn(outputs, labels)
+            loss.backward()
+            optimizer.step()
 
         with torch.no_grad():
             model.eval()
@@ -297,14 +297,14 @@ for epoch in range(num_epochs):
             _, indices = torch.max(outputs, axis=1)
             for ind, label, outp in zip(indices, labels.cpu(), outputs):
                 confusion_matrix[ind][label] += 1
-                if epoch == num_epochs - 1:
+                if epoch == num_epochs:
                     train_output_values[label] = [el + [outp[j].cpu().item()] for j, el in enumerate(train_output_values[label])]
 
             true += labels.tolist()
             scores += outputs.tolist()
 
         if i % 10 == 0:
-            logger.info('Epoch {}, batch {}/{}'.format(epoch+1, i, num_batches))
+            logger.info('Epoch {}, batch {}/{}'.format(epoch, i, num_batches))
 
     # Call the learning rate adjustment function
     if not args.no_adjust_lr:
@@ -339,7 +339,7 @@ for epoch in range(num_epochs):
             _, indices = torch.max(outputs, axis=1)
             for ind, label, outp in zip(indices, labels.cpu(), outputs):
                 confusion_matrix[ind][label] += 1
-                if epoch == num_epochs - 1:
+                if epoch == num_epochs:
                     valid_output_values[label] = [el + [outp[j].cpu().item()] for j, el in enumerate(valid_output_values[label])]
 
             true += labels.tolist()
@@ -353,22 +353,22 @@ for epoch in range(num_epochs):
         valid_auc = None
 
     # Save the model if the test acc is greater than our current best
-    if mean(valid_sens) > best_acc and epoch < num_epochs - 1:
+    if mean(valid_sens) > best_acc and epoch < num_epochs:
         torch.save(model.state_dict(), os.path.join(output, "{}_{}.model".format(namespace, epoch + 1)))
         best_acc = mean(valid_sens)
 
     # If it is a last epoch write neurons' outputs, labels and model
-    if epoch == num_epochs - 1:
+    if epoch == num_epochs:
         logger.info('Last epoch - writing neurons outputs for each class!')
         np.save(os.path.join(output, '{}_train_outputs'.format(namespace)), np.array(train_output_values))
         np.save(os.path.join(output, '{}_valid_outputs'.format(namespace)), np.array(valid_output_values))
         torch.save(model.state_dict(), os.path.join(output, '{}_last.model'.format(namespace)))
 
     # Write the results
-    write_results(results_table, columns, ['train', 'valid'], globals(), epoch+1)
+    write_results(results_table, columns, ['train', 'valid'], globals(), epoch)
     # Print the metrics
     logger.info("Epoch {} finished in {:.2f} min\nTrain loss: {:1.3f}\n{:>35s}{:.5s}, {:.5s}, {:.5s}"
-                .format(epoch+1, (time() - t0)/60, train_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
+                .format(epoch, (time() - t0)/60, train_loss_reduced, '', 'SENSITIVITY', 'SPECIFICITY', 'AUC'))
     logger.info("--{:>18s} :{:>5} seqs{:>22}".format('TRAINING', train_len, "--"))
     if train_auc is not None:
         for cl, sens, spec, auc in zip(dataset.classes, train_sens, train_spec, train_auc):

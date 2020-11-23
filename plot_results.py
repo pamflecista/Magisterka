@@ -183,7 +183,8 @@ for i, (stage, value) in enumerate(zip(stages, values)):  # for each stage
                 plot_one(a, epochs, y, 'x', 'mean', COLORS[-2])
 
 fig.suptitle(namespace)
-axes[-1][0].legend(bbox_to_anchor=(0, -0.07*(i+j+1)), loc="upper left", ncol=4)
+#axes[-1][0].legend(bbox_to_anchor=(0, -0.07*(i+j+1)), loc="upper left", ncol=4)
+axes[-1][0].legend(bbox_to_anchor=(0, -0.07), loc="upper left", ncol=4)
 plt.show()
 plotname = '-'.join([s[:5].lower() for s in stages]) + ':' + '-'.join([el.lower() for el in columns])
 fig.savefig(os.path.join(output, namespace + '_{}.png'.format(plotname)))

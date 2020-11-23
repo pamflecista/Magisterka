@@ -46,8 +46,10 @@ if args.model is None:
     modelfile = os.path.join(path, '{}_last.model'.format(namespace))
 elif os.path.isfile(args.model):
     modelfile = args.model
-else:
+elif os.path.isfile(os.path.join(path, args.model)):
     modelfile = os.path.join(path, args.model)
+else:
+    modelfile = os.path.join(path, '{}_last.model'.format(args.model))
 if args.dataset is not None:
     _, data_name = os.path.split(args.dataset)
     data_name, _ = os.path.splitext(data_name)
