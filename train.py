@@ -92,8 +92,10 @@ parser.add_argument('--num_epochs', action='store', metavar='INT', type=int, def
                     help='maximum number of epochs to run, default: 300')
 parser.add_argument('--acc_threshold', action='store', metavar='FLOAT', type=float, default=0.9,
                     help='threshold of the validation accuracy - if gained training process stops, default: 0.9')
+parser.add_argument('--learning_rate', action='store', metavar='FLOAT', type=float, default=0.01,
+                    help='initial learning rate, default: 0.01')
 parser.add_argument('--no_adjust_lr', action='store_true',
-                    help='no reduction of learning rate during training')
+                    help='no reduction of learning rate during training, default: False')
 parser.add_argument('--seq_len', action='store', metavar='INT', type=int, default=2000,
                     help='Length of the input sequences to the network, default: 2000')
 parser.add_argument('--model', action='store', metavar='NAME', type=str, default=None,
@@ -133,7 +135,7 @@ lossfn_name = args.loss_fn
 network = NET_TYPES[network_name.lower()]
 optim_method = OPTIMIZERS[optimizer_name]
 lossfn = LOSS_FUNCTIONS[lossfn_name]
-lr = 0.01
+lr = args.learning_rate
 weight_decay = 0.0001
 if args.no_adjust_lr:
     adjust_lr = False

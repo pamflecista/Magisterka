@@ -83,7 +83,7 @@ else:
 
 columns = args.column
 
-epoch = 0
+epoch = -1
 epochs = []
 xticks = []
 with open(table, 'r') as f:
@@ -117,7 +117,7 @@ with open(table, 'r') as f:
                 for j, c in enumerate(colnum):
                     values[i][j].append([float(el) if el != '-' else np.nan for el in line[c].split(', ')])
         elif test or cv:
-            epochs.append(e+1)
+            epochs.append(e)
             xticks.append('{}-{}'.format(os.path.split(line[0])[1], line[1]))
             for j, c in enumerate(colnum):
                 values[0][j].append([float(el) if el != '-' and el != 'None' else np.nan for el in line[c].split(', ')])
