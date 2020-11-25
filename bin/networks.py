@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+import params
 
 
 class BassetNetwork(torch.nn.Module):
@@ -65,7 +66,7 @@ class BassetNetwork(torch.nn.Module):
 class CustomNetwork(torch.nn.Module):
 
     def __init__(self, seq_len, num_channels=[300, 200, 200], kernel_widths=[19, 11, 7], pooling_widths=[3, 4, 4],
-                 num_units=[2000, 4], dropout=0.5):
+                 num_units=[2000, 4], dropout=params.dropout_value):
         super(CustomNetwork, self).__init__()
         paddings = [int((w-1)/2) for w in kernel_widths]
         self.seq_len = seq_len
