@@ -9,6 +9,10 @@ from bin.common import *
 from bin.networks import *
 import math
 import os
+
+
+
+import params
 from statistics import mean
 from time import time
 from datetime import datetime
@@ -254,7 +258,7 @@ if modelfile is not None:
     model.load_state_dict(torch.load(modelfile, map_location=torch.device(device)))
     logger.info('\nModel from {} loaded in {:.2f} s'.format(modelfile, time() - t0))
 network_params = model.params
-optimizer = optim_method(model.parameters(), lr=lr, weight_decay=weight_decay)
+optimizer = optim_method(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=params.momentum_value)
 loss_fn = lossfn()
 best_acc = 0.0
 # write parameters values into file
