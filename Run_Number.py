@@ -8,9 +8,9 @@ path_res=Path.cwd()/'results'
 path_txt=Path.cwd()/'number.txt'
 path_paths=Path.cwd()/'paths.txt'
 
-path_to_script=Path.cwd()/'train.py'
+path_to_script=Path.cwd()/'magisterka'/'train.py'
 path_to_main=Path.cwd()
-command=' '.join(['python ',str(path_to_script),'dataset3','--path',str(path_to_main),'--num_epochs 200',
+command=' '.join(['python ',str(path_to_script),'dataset3','--path',str(path_to_main),'--num_epochs 1',
                  '--network custom --run '])
 with open(path_paths, "w") as f:
     f.write(str(command).rstrip())
