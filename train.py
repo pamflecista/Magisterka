@@ -9,6 +9,8 @@ from bin.common import *
 from bin.networks import *
 import math
 import os
+import sys
+
 
 
 
@@ -288,6 +290,7 @@ for epoch in range(num_epochs+1):
             loss.backward()
             optimizer.step()
 
+
         with torch.no_grad():
             model.eval()
             outputs = model(seqs)
@@ -409,3 +412,8 @@ for epoch in range(num_epochs+1):
         break
 
 logger.info('Training for {} finished in {:.2f} min'.format(namespace, (time() - t)/60))
+
+os._exit(0)
+
+
+
