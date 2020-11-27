@@ -1,0 +1,621 @@
+common.py:
+linia 223
+path = os.path.join(os.getcwd().rstrip('bin'), 'data','custom40', path)
+
+test.py:
+linia 53
+modelfile=os.path.join(path, '{}_last.model'.format(namespace))
+
+rewrite_fasta.py
+linia 41
+filename = '-'.join(line.strip().split(' ')[1:3]).strip('chr ') + '.fasta'
+                    w=os.path.join(outdir, filename)
+                    w.replace('-',':',1)
+
+
+
+
+run 7 1/100
+run 6 1/1000
+run 5 1/10000
+run 8 deafult
+run 9 deafult
+run 10 1/100
+run 11 1/100
+run 12 0.01/100 taka konwencja caly czas wyzej
+run 13 0.00001 nowa konwecja wg starej to 1/1000
+run 14 0.01/100:
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/100
+
+    if epoch > 500:
+        lr = lr / 100000
+    elif epoch > 400:
+        lr = lr / 10000
+    elif epoch > 150:
+        lr = lr / 50
+    elif epoch > 100:
+        lr = lr / 10
+    elif epoch > 50:
+        lr = lr / 5
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+run 15:
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 50
+    elif epoch > 300:
+        lr = lr / 10
+    elif epoch > 250:
+        lr = lr / 10
+    elif epoch > 200:
+        lr = lr / 5
+    elif epoch > 150:
+        lr = lr / 5
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+
+DROPOUT=0.3
+
+run 16
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.1
+
+    if epoch > 180:
+        lr = lr / 10
+    elif epoch > 150:
+        lr = lr / 10
+    elif epoch > 100:
+        lr = lr / 10
+    elif epoch > 75:
+        lr = lr / 10
+    elif epoch > 50:
+        lr = lr / 10
+    elif epoch > 20:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+DROPOUT=0.3
+
+run 17
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/100
+
+    if epoch > 180:
+        lr = lr / 10
+    elif epoch > 150:
+        lr = lr / 10
+    elif epoch > 100:
+        lr = lr / 10
+    elif epoch > 90:
+        lr = lr / 10
+    elif epoch > 70:
+        lr = lr / 10
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.2
+
+run 18
+
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/100
+
+    if epoch > 180:
+        lr = lr / 10
+    elif epoch > 150:
+        lr = lr / 10
+    elif epoch > 225:
+        lr = lr / 10
+    elif epoch > 175:
+        lr = lr / 10
+    elif epoch > 125:
+        lr = lr / 5
+    elif epoch > 75:
+        lr = lr / 2
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.4
+weight_decay = 0.00001
+
+
+run 19
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/100
+
+    if epoch > 500:
+        lr = lr / 100000
+    elif epoch > 400:
+        lr = lr / 10000
+    elif epoch > 300:
+        lr = lr / 1000
+    elif epoch > 100:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.5
+num units=2000
+momentum 0.9
+
+
+run 20
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 500:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.3
+num units=2000
+momentum 0.5
+
+
+run 21
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.4
+num units=2000
+momentum 0.5
+
+
+SYSTEMATYCZNE TESTOWANIE PARAMETRÓW
+
+175 EPOCHS
+
+run 22
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.6
+num units=2000
+momentum 0.5
+
+run 23
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.6
+num units=2000
+momentum 0.5
+
+run 24
+
+num epochs 200
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.7
+num units=2000
+momentum 0.5
+
+
+run 25
+
+num epochs 200
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.7
+num units=2000
+momentum 0.5
+
+
+run 26
+
+num epochs 200
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.8
+num units=2000
+momentum 0.5
+
+
+
+run 27
+
+num epochs 200
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.8
+num units=2000
+momentum 0.5
+
+run 28
+
+num epochs 200
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.9
+num units=2000
+momentum 0.5
+
+
+run 29
+
+num epochs 200
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.9
+num units=2000
+momentum 0.5
+
+
+run 30
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=1
+num units=2000
+momentum 0.5
+
+
+run 31
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.4
+num units=2000
+momentum 0.8
+
+
+run 32
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.4
+num units=2000
+momentum 0.8
+
+
+run 33
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.4
+num units=2000
+momentum 0.8
+
+
+run 34
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.4
+num units=2000
+momentum 0.8
+
+run 35
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0
+num units=2000
+momentum 0.5
+
+
+
+TESTOWANIE DROPOUTU SYSTEMATYCZNIEJSZE
+
+run 36, 37,38
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.5
+num units=2000
+momentum 0.5
+
+
+run 39, 40,41
+
+def adjust_learning_rate(epoch, optimizer):
+    lr = 0.01/10
+
+    if epoch > 350:
+        lr = lr / 100000
+    elif epoch > 250:
+        lr = lr / 10000
+    elif epoch > 200:
+        lr = lr / 1000
+    elif epoch > 150:
+        lr = lr / 100
+    elif epoch > 50:
+        lr = lr / 10
+
+    for param_group in optimizer.param_groups:
+        param_group["lr"] = lr
+
+dropout=0.55
+num units=2000
+momentum 0.5
+
+
+run 42, 43,44
+
+lr = 0.01/10
+dropout=0.6
+num units=2000
+momentum 0.5
+
+
