@@ -493,7 +493,23 @@ for logg, handlers in zip([logger, results_table], [[cmd_handler, log_handler], 
     for handler in handlers:
         handler.setFormatter(formatter)
         logg.addHandler(handler)
-    logg.setLevel(logging.INFO)                                         
+    logg.setLevel(logging.INFO)  '''
                                                         
                                                         
-                                                        '''
+def run_number():
+    from pathlib import Path
+    import re
+    import os.path
+    networkRegex = re.compile(r'(custom|basset)([0-9]{1,5})')
+    path_res = Path.cwd().parents[0] / 'results'
+
+    if os.path.isdir(path_res):
+        numbers = [int(networkRegex.search(name).group(2)) for name in
+                   os.listdir(path_res)
+                   if networkRegex.search(name) is not None]
+        number = max(numbers) + 1
+
+    else:
+        number = 1
+
+    return number
