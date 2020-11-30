@@ -618,4 +618,18 @@ dropout=0.6
 num units=2000
 momentum 0.5
 
+run 45, 46,47
+
+lr = 0.01/10
+dropout=0.45
+num units=2000
+momentum 0.5
+
+run 48, 49,50
+
+lr = 0.01/10
+dropout=0.40
+num units=2000
+momentum 0.5
+
 
