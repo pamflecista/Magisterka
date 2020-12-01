@@ -10,7 +10,10 @@ def plot_all_result(run,namespace='custom',trainset=True):
 
     Dane = [[],[],[],[],[],[]]
     file='{}_train_results.tsv'.format(namespace+str(run))
-    file = Path.cwd().parents[0] / 'results'/namespace + str(run) / file
+    run_catalog = namespace + str(run)
+
+    file = Path.cwd().parents[0] / 'results' / run_catalog / file
+
     with open(file) as tsvfile:
         tsvreader = csv.reader(tsvfile, delimiter="\t")
         next(tsvreader, None)
@@ -58,7 +61,10 @@ def plot_after_some_epoch(run,namespace='custom', epoch=150,trainset=True):
 
     Dane = [[],[],[],[],[],[]]
     file = '{}_train_results.tsv'.format(namespace + str(run))
-    file = Path.cwd().parents[0] / 'results'/namespace + str(run) / file
+    run_catalog = namespace + str(run)
+
+    file = Path.cwd().parents[0] / 'results' / run_catalog / file
+
 
     with open(file) as tsvfile:
         tsvreader = csv.reader(tsvfile, delimiter="\t")
@@ -109,7 +115,10 @@ def plot_after_some_epoch(run,namespace='custom', epoch=150,trainset=True):
 def calculate_mean_and_sd(run,namespace='custom', epoch=150, trainset=True):
     Dane = [[], [], [], [], [], []]
     file = '{}_train_results.tsv'.format(namespace + str(run))
-    file = Path.cwd().parents[0] / 'results'/namespace + str(run) / file
+    run_catalog = namespace + str(run)
+
+    file = Path.cwd().parents[0] / 'results' / run_catalog / file
+
 
     with open(file) as tsvfile:
         tsvreader = csv.reader(tsvfile, delimiter="\t")
@@ -161,30 +170,38 @@ def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
     if not my_file.is_file():
         with open(my_file,'w') as f:
             f.write("Run    Stage      Dropout  Momentum    lr  Mean of  PA  NPA PIN NPIN    Sd of   PA  NPA PIN NPIN")
+
+    file_name='{}_pamfl_params.csv'.format(namespace+str(run))
+
+    run_catalog=namespace + str(run)
+
+    path_to_file=Path.cwd().parents[0] / 'results'/ run_catalog / file_name
+    with open(path_to_file) as csvfile:
+        reader = csv.reader(csvfile, delimiter=",")
+        next(reader, None)
+        for line in reader:
+            dropout_val=float(line[0])
+            momentum_val=float(line[1])
+            lr=float(line[2])
+    if train:
+        stage='train'
     else:
-        file_name='{}_pamfl_params.csv'.format(namespace+str(run))
-        path_to_file=Path.cwd().parents[0] / 'results'/ namespace + str(run) / file_name
-        with open(path_to_file) as csvfile:
-            reader = csv.reader(csvfile, delimiter=",")
-            next(reader, None)
-            for line in reader:
-                dropout_val=line[0]
-                momentum_val=line[1]
-                lr=line[2]
-        if train:
-            stage='train'
-        else:
-            stage='valid'
-        mas=calculate_mean_and_sd(run, namespace='custom', epoch=epoch, trainset=train)
+        stage='valid'
+    mas=calculate_mean_and_sd(run, namespace='custom', epoch=epoch, trainset=train)
 
-        with open(my_file, 'a') as f:
+    with open(my_file, 'a') as f:
 
-            str_to_write='{}    {}  {}  {}  {}       {}  {}  {}  {}        {}  {}  {}  {}'.format(
-                run,stage,dropout_val,momentum_val,lr,mas['pa'][0],mas['npa'][0],
-                mas['pin'][0],mas['npin'][0],mas['pa'][1],mas['npa'][1],
-                mas['pin'][1],mas['npin'][1]
-            )
-            f.write(str_to_write)
+        str_to_write='\n{}    {}  {:.2f}  {}  {}       {:.3f}  {:.3f}  {:.3f}  {:.3f}        {:.3f}  {:.3f}  {:.3f}  {:.3f}'.format(
+            run,stage,dropout_val,momentum_val,lr,mas['pa'][0],mas['npa'][0],
+            mas['pin'][0],mas['npin'][0],mas['pa'][1],mas['npa'][1],
+            mas['pin'][1],mas['npin'][1]
+        )
+        f.write(str_to_write)
+
+
+for i in range(50,35,-1):
+    pamfl_write_result(i,epoch=150,namespace='custom', train=False)
+
 
 
 

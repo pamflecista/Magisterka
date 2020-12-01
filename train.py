@@ -414,7 +414,7 @@ for epoch in range(num_epochs+1):
 
 #write_params(globals(), os.path.join(output, '{}_pamfl_params.txt'.format(namespace)))
 with open(os.path.join(output, '{}_pamfl_params.csv'.format(namespace)),"w") as file:
-    file.write('Dropout, Momentum, learning rate')
+    file.write('Dropout, Momentum, learning rate\n')
     file.write(','.join([str(params.dropout_value),str(params.momentum_value),str(params.lr_value)]))
 
 logger.info('Training for {} finished in {:.2f} min'.format(namespace, (time() - t)/60))
