@@ -2,11 +2,15 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from pathlib import Path
 
-def plot_all_result(file,trainset=True):
+
+#function for ploting train results
+def plot_all_result(run,namespace='custom',trainset=True):
 
     Dane = [[],[],[],[],[],[]]
-
+    file='{}_train_results.tsv'.format(namespace+str(run))
+    file = Path.cwd().parents[0] / 'results'/namespace + str(run) / file
     with open(file) as tsvfile:
         tsvreader = csv.reader(tsvfile, delimiter="\t")
         next(tsvreader, None)
@@ -48,12 +52,13 @@ def plot_all_result(file,trainset=True):
     plt.show()
 
 
-#plot_all_result('custom35_train_results.tsv',True)
-#plot_all_result('custom35_train_results.tsv',False)
 
-def plot_after_some_epoch(file, epoch,trainset=True):
+#function for ploting train results starting from given epoch
+def plot_after_some_epoch(run,namespace='custom', epoch=150,trainset=True):
 
     Dane = [[],[],[],[],[],[]]
+    file = '{}_train_results.tsv'.format(namespace + str(run))
+    file = Path.cwd().parents[0] / 'results'/namespace + str(run) / file
 
     with open(file) as tsvfile:
         tsvreader = csv.reader(tsvfile, delimiter="\t")
@@ -98,12 +103,13 @@ def plot_after_some_epoch(file, epoch,trainset=True):
 
     plt.show()
 
-plot_after_some_epoch('custom35_train_results.tsv',150,True)
-plot_after_some_epoch('custom35_train_results.tsv',150,False)
 
+#function for calculating mean and sd for each class, from training results, starting from given epoch
 
-def calculate_mean_and_sd(file, epoch, trainset=True):
+def calculate_mean_and_sd(run,namespace='custom', epoch=150, trainset=True):
     Dane = [[], [], [], [], [], []]
+    file = '{}_train_results.tsv'.format(namespace + str(run))
+    file = Path.cwd().parents[0] / 'results'/namespace + str(run) / file
 
     with open(file) as tsvfile:
         tsvreader = csv.reader(tsvfile, delimiter="\t")
@@ -148,7 +154,37 @@ def calculate_mean_and_sd(file, epoch, trainset=True):
 
     return result
 
+#function for writing calculated mean and sd for each class to {}_pamfl_results.tsv file
+
+def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
+    my_file = Path("pamfl_results.tsv")
+    if not my_file.is_file():
+        with open(my_file,'w') as f:
+            f.write("Run    Stage      Dropout  Momentum    lr  Mean of  PA  NPA PIN NPIN    Sd of   PA  NPA PIN NPIN")
+    else:
+        file_name='{}_pamfl_params.csv'.format(namespace+str(run))
+        path_to_file=Path.cwd().parents[0] / 'results'/ namespace + str(run) / file_name
+        with open(path_to_file) as csvfile:
+            reader = csv.reader(csvfile, delimiter=",")
+            next(reader, None)
+            for line in reader:
+                dropout_val=line[0]
+                momentum_val=line[1]
+                lr=line[2]
+        if train:
+            stage='train'
+        else:
+            stage='valid'
+        mas=calculate_mean_and_sd(run, namespace='custom', epoch=epoch, trainset=train)
+
+        with open(my_file, 'a') as f:
+
+            str_to_write='{}    {}  {}  {}  {}       {}  {}  {}  {}        {}  {}  {}  {}'.format(
+                run,stage,dropout_val,momentum_val,lr,mas['pa'][0],mas['npa'][0],
+                mas['pin'][0],mas['npin'][0],mas['pa'][1],mas['npa'][1],
+                mas['pin'][1],mas['npin'][1]
+            )
+            f.write(str_to_write)
 
 
-print(calculate_mean_and_sd('custom35_train_results.tsv',150,True)["pa"])
-print(calculate_mean_and_sd('custom35_train_results.tsv',150,False)["pa"])
+
