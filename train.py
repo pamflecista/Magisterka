@@ -410,6 +410,10 @@ for epoch in range(num_epochs+1):
     if mean(valid_sens) >= acc_threshold:
         logger.info('Validation accuracy threshold reached!')
         break
+        
+with open(os.path.join(output, '{}_pamfl_params.csv'.format(namespace)),"w") as file:
+    file.write('Dropout, Momentum, learning rate')
+    file.write(','.join([str(params.dropout_value),str(params.momentum_value),str(params.lr_value)]))
 
 #write_params(globals(), os.path.join(output, '{}_pamfl_params.txt'.format(namespace)))
 with open(os.path.join(output, '{}_pamfl_params.csv'.format(namespace)),"w") as file:
