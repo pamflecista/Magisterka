@@ -179,12 +179,108 @@ def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
 
         with open(my_file, 'a') as f:
 
-            str_to_write='{}    {}  {}  {}  {}       {}  {}  {}  {}        {}  {}  {}  {}'.format(
+            str_to_write='{}    {}  {}  {}  {}  {}  {}  {}  {}  {}  {}  {}  {}'.format(
                 run,stage,dropout_val,momentum_val,lr,mas['pa'][0],mas['npa'][0],
                 mas['pin'][0],mas['npin'][0],mas['pa'][1],mas['npa'][1],
                 mas['pin'][1],mas['npin'][1]
             )
             f.write(str_to_write)
+
+def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom', train=False):
+    my_file = Path("pamfl_results.tsv")
+    if train:
+        stage = 'train'
+    else:
+        stage = 'valid'
+    f=open(my_file, 'w')
+    f.close()
+    results={}
+    for run in range(run_start,run_end+1):
+        pamfl_write_result(run, epoch, namespace, train)
+    with open(my_file, 'r') as file:
+        reader = csv.reader(file, delimiter="\t")
+        next(reader, None)
+        for line in reader:
+
+            dropout=line[2]
+            momentum=line[3]
+            lr=line[4]
+            mean_pa=float(line[5])
+            mean_npa = float(line[6])
+            mean_pin = float(line[7])
+            mean_npin = float(line[8])
+
+            sd_pa=float(line[9])
+            sd_npa = float(line[10])
+            sd_pin = float(line[11])
+            sd_npin = float(line[12])
+
+            if dropout not in results:
+                results[dropout]={'params':[dropout,momentum,lr],'mean_pa':[mean_pa],
+                                  'mean_npa':[mean_npa],'mean_pin':[mean_pin],
+                                  'mean_npin':[mean_npin],'sd_pa':[sd_pa],'sd_npa':[sd_npa],
+                                  'sd_pin':[sd_pin],'sd_npin':[sd_npin]}
+            else:
+                results[dropout]['mean_pa'].append(mean_pa)
+                results[dropout]['mean_npa'].append(mean_npa)
+                results[dropout]['mean_pin'].append(mean_pin)
+                results[dropout]['mean_npin'].append(mean_npin)
+
+                results[dropout]['sd_pa'].append(sd_pa)
+                results[dropout]['sd_npa'].append(sd_npa)
+                results[dropout]['sd_pin'].append(sd_pin)
+                results[dropout]['sd_npin'].append(sd_npin)
+
+            for key in results.keys():
+                results[key]['sd_of_mean_pa']=np.std(results[key]['mean_pa'])
+                results[key]['sd_of_mean_npa'] = np.std(results[key]['mean_npa'])
+                results[key]['sd_of_mean_pin'] = np.std(results[key]['mean_pin'])
+                results[key]['sd_of_mean_npin'] = np.std(results[key]['mean_npin'])
+                length=len(results[key]['mean_pa'])
+
+                results[key]['mean_pa']=sum(results[key]['mean_pa'])/length
+                results[key]['mean_npa'] = sum(results[key]['mean_npa']) / length
+                results[key]['mean_pin'] = sum(results[key]['mean_pin']) / length
+                results[key]['mean_npin'] = sum(results[key]['mean_pin']) / length
+
+                results[key]['sd_pa'] = sum(results[key]['sd_pa']) / length
+                results[key]['sd_npa'] = sum(results[key]['sd_npa']) / length
+                results[key]['sd_pin'] = sum(results[key]['sd_pin']) / length
+                results[key]['sd_npin'] = sum(results[key]['sd_npin']) / length
+
+            my_file=Path("pamfl_mean_results.tsv")
+
+            with open(my_file, 'w') as f:
+                f.write(
+                    "Stage      Dropout  Momentum    lr  Mean of  PA  NPA PIN NPIN    Mean_Sd of   PA  NPA PIN NPIN     Sd of   PA  NPA PIN NPIN")
+                for key in results.keys():
+                    str_to_write = '{}    {}  {}  {}  {}  {}  {}  {}  {}  {}  {}  {}  {}    {}  {}  {}'.format(
+                    stage, results[key]['params'][0], results[key]['params'][1], results[key]['params'][2],
+                    results[key]['mean_pa'],
+                    results[key]['mean_npa'],
+                    results[key]['mean_pin'],
+                    results[key]['mean_npin'],
+
+                    results[key]['sd_of_mean_pa'],
+                    results[key]['sd_of_mean_npa'],
+                    results[key]['sd_of_mean_pin'],
+                    results[key]['sd_of_mean_npin'],
+
+                    results[key]['sd_pa'],
+                    results[key]['sd_npa'],
+                    results[key]['sd_pin'],
+                    results[key]['sd_npin'],
+
+
+
+
+                    )
+                    f.write(str_to_write)
+
+
+
+
+
 
 
 
