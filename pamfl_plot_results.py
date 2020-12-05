@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from pathlib import Path
+import os
 
 
 #function for ploting train results
@@ -118,50 +119,52 @@ def calculate_mean_and_sd(run,namespace='custom', epoch=150, trainset=True):
     run_catalog = namespace + str(run)
 
     file = Path.cwd().parents[0] / 'results' / run_catalog / file
+    dir=Path.cwd().parents[0] / 'results' / run_catalog
 
+    if os.path.isdir(dir):
 
-    with open(file) as tsvfile:
-        tsvreader = csv.reader(tsvfile, delimiter="\t")
-        next(tsvreader, None)
-        for line in tsvreader:
-            a, b, c, d = line[2].split(' ')
-            Dane[0].append(line[0])
-            Dane[1].append(line[1])
-            Dane[2].append(a.strip(','))
-            Dane[3].append(b.strip(','))
-            Dane[4].append(c.strip(','))
-            Dane[5].append(d.strip(','))
+        with open(file) as tsvfile:
+            tsvreader = csv.reader(tsvfile, delimiter="\t")
+            next(tsvreader, None)
+            for line in tsvreader:
+                a, b, c, d = line[2].split(' ')
+                Dane[0].append(line[0])
+                Dane[1].append(line[1])
+                Dane[2].append(a.strip(','))
+                Dane[3].append(b.strip(','))
+                Dane[4].append(c.strip(','))
+                Dane[5].append(d.strip(','))
 
-    Dane = np.array(Dane)
-    Dane = Dane[:, epoch * 2:]
+        Dane = np.array(Dane)
+        Dane = Dane[:, epoch * 2:]
 
-    a = Dane[1] == 'train'
-    train = Dane[:, a]
-    valid = Dane[:, ~a]
+        a = Dane[1] == 'train'
+        train = Dane[:, a]
+        valid = Dane[:, ~a]
 
-    train_bool = trainset
+        train_bool = trainset
 
-    if train_bool:
-        dane = train
-    else:
-        dane = valid
+        if train_bool:
+            dane = train
+        else:
+            dane = valid
 
-    mean_of_promoter_active=sum(list(map(float, dane[2])))/len(dane[2])
-    mean_of_nonpromoter_active = sum(list(map(float, dane[3]))) / len(dane[3])
-    mean_of_promoter_inactive = sum(list(map(float, dane[4]))) / len(dane[4])
-    mean_of_nonpromoter_inactive = sum(list(map(float, dane[5]))) / len(dane[5])
+        mean_of_promoter_active=sum(list(map(float, dane[2])))/len(dane[2])
+        mean_of_nonpromoter_active = sum(list(map(float, dane[3]))) / len(dane[3])
+        mean_of_promoter_inactive = sum(list(map(float, dane[4]))) / len(dane[4])
+        mean_of_nonpromoter_inactive = sum(list(map(float, dane[5]))) / len(dane[5])
 
-    sd_of_promoter_active = np.std(list(map(float, dane[2])))
-    sd_of_nonpromoter_active = np.std(list(map(float, dane[3])))
-    sd_of_promoter_inactive = np.std(list(map(float, dane[4])))
-    sd_of_nonpromoter_inactive = np.std(list(map(float, dane[5])))
+        sd_of_promoter_active = np.std(list(map(float, dane[2])))
+        sd_of_nonpromoter_active = np.std(list(map(float, dane[3])))
+        sd_of_promoter_inactive = np.std(list(map(float, dane[4])))
+        sd_of_nonpromoter_inactive = np.std(list(map(float, dane[5])))
 
-    result={"pa":(mean_of_promoter_active,sd_of_promoter_active),"npa":(mean_of_nonpromoter_active
-                                                                        ,sd_of_nonpromoter_active),
-            "pin":(mean_of_promoter_inactive,sd_of_promoter_inactive),
-            "npin":(mean_of_nonpromoter_inactive,sd_of_nonpromoter_inactive)}
+        result={"pa":(mean_of_promoter_active,sd_of_promoter_active),"npa":(mean_of_nonpromoter_active
+                                                                            ,sd_of_nonpromoter_active),
+                "pin":(mean_of_promoter_inactive,sd_of_promoter_inactive),
+                "npin":(mean_of_nonpromoter_inactive,sd_of_nonpromoter_inactive)}
 
-    return result
+        return result
 
 #function for writing calculated mean and sd for each class to {}_pamfl_results.tsv file
 
@@ -199,8 +202,8 @@ def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
         f.write(str_to_write)
 
 
-for i in range(50,35,-1):
-    pamfl_write_result(i,epoch=150,namespace='custom', train=False)
+#for i in range(50,35,-1):
+   #pamfl_write_result(i,epoch=150,namespace='custom', train=False)
 
 
 def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom', train=False):
