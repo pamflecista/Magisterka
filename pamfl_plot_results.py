@@ -15,47 +15,73 @@ def plot_all_result(run,namespace='custom',trainset=True):
 
     file = Path.cwd().parents[0] / 'results' / run_catalog / file
 
-    with open(file) as tsvfile:
-        tsvreader = csv.reader(tsvfile, delimiter="\t")
-        next(tsvreader, None)
-        for line in tsvreader:
-            a,b,c,d=line[2].split(' ')
-            Dane[0].append(line[0])
-            Dane[1].append(line[1])
-            Dane[2].append(a.strip(','))
-            Dane[3].append(b.strip(','))
-            Dane[4].append(c.strip(','))
-            Dane[5].append(d.strip(','))
+    file_name = '{}_pamfl_params.csv'.format(namespace + str(run))
 
-    Dane=np.array(Dane)
-    a=Dane[1]=='train'
-    train=Dane[:,a]
-    valid=Dane[:,~a]
+    path_to_file = Path.cwd().parents[0] / 'results' / run_catalog / file_name
 
-    train_bool=trainset
 
-    if train_bool:
-        dane=train
+    dir_path = Path.cwd().parents[0] / 'results' / run_catalog
+
+    if os.path.isdir(dir_path):
+        with open(path_to_file) as csvfile:
+            reader = csv.reader(csvfile, delimiter=",")
+            next(reader, None)
+            for line in reader:
+                dropout_val = float(line[0])
+                momentum_val = float(line[1])
+                lr = float(line[2])
+        if trainset:
+            stage = 'train'
+        else:
+            stage = 'valid'
+
+        with open(file) as tsvfile:
+            tsvreader = csv.reader(tsvfile, delimiter="\t")
+            next(tsvreader, None)
+            for line in tsvreader:
+                a,b,c,d=line[2].split(' ')
+                Dane[0].append(line[0])
+                Dane[1].append(line[1])
+                Dane[2].append(a.strip(','))
+                Dane[3].append(b.strip(','))
+                Dane[4].append(c.strip(','))
+                Dane[5].append(d.strip(','))
+
+        Dane=np.array(Dane)
+        a=Dane[1]=='train'
+        train=Dane[:,a]
+        valid=Dane[:,~a]
+
+        train_bool=trainset
+
+        if train_bool:
+            dane=train
+        else:
+            dane=valid
+
+        fig, ax =plt.subplots()
+        ax.set_xticks([24,49,74,99,124,149,174,199,224,249,274,299,324,349,374,399])
+        fig.suptitle(
+            'stage: {}, dropout={}, momentum={}, learning rate={}'.format(stage, dropout_val, momentum_val, lr),
+            fontsize=9, fontweight='bold')
+
+        ax.plot(dane[0],list(map(float,dane[2])),marker='o', c='blue', ms=2, lw=0)
+        ax.plot(dane[0],list(map(float,dane[3])),marker='o', c='green', ms=2, lw=0)
+        ax.plot(dane[0],list(map(float,dane[4])),marker='o', c='red', ms=2, lw=0)
+        ax.plot(dane[0],list(map(float,dane[5])),marker='o', c='yellow', ms=2, lw=0 )
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('Value of Cross-entropy loss')
+        blue_patch = mpatches.Patch(color='blue', label='promoter active')
+        green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+        red_patch = mpatches.Patch(color='red', label='promoter inactive')
+        yellow_patch = mpatches.Patch(color='yellow', label='nonpromoter inactive')
+        plt.legend(handles=[red_patch,blue_patch,green_patch,yellow_patch])
+        plt.show()
     else:
-        dane=valid
-
-    fig, ax =plt.subplots()
-    ax.set_xticks([24,49,74,99,124,149,174,199,224,249,274,299,324,349,374,399])
-
-    ax.plot(dane[0],list(map(float,dane[2])),marker='o', c='blue', ms=2, lw=0)
-    ax.plot(dane[0],list(map(float,dane[3])),marker='o', c='green', ms=2, lw=0)
-    ax.plot(dane[0],list(map(float,dane[4])),marker='o', c='red', ms=2, lw=0)
-    ax.plot(dane[0],list(map(float,dane[5])),marker='o', c='yellow', ms=2, lw=0 )
-    ax.set_xlabel('Epoch')
-    ax.set_ylabel('Value of Cross-entropy loss')
-    blue_patch = mpatches.Patch(color='blue', label='promoter active')
-    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
-    red_patch = mpatches.Patch(color='red', label='promoter inactive')
-    yellow_patch = mpatches.Patch(color='yellow', label='nonpromoter inactive')
-    plt.legend(handles=[red_patch,blue_patch,green_patch,yellow_patch])
-    plt.show()
+        print('no such directory {}'.format(dir_path))
 
 
+#plot_all_result(36,namespace='custom',trainset=True)
 
 #function for ploting train results starting from given epoch
 def plot_after_some_epoch(run,namespace='custom', epoch=150,trainset=True):
@@ -66,49 +92,75 @@ def plot_after_some_epoch(run,namespace='custom', epoch=150,trainset=True):
 
     file = Path.cwd().parents[0] / 'results' / run_catalog / file
 
+    file_name = '{}_pamfl_params.csv'.format(namespace + str(run))
 
-    with open(file) as tsvfile:
-        tsvreader = csv.reader(tsvfile, delimiter="\t")
-        next(tsvreader, None)
-        for line in tsvreader:
-            a,b,c,d=line[2].split(' ')
-            Dane[0].append(line[0])
-            Dane[1].append(line[1])
-            Dane[2].append(a.strip(','))
-            Dane[3].append(b.strip(','))
-            Dane[4].append(c.strip(','))
-            Dane[5].append(d.strip(','))
 
-    Dane=np.array(Dane)
-    Dane=Dane[:,epoch*2:]
 
-    a=Dane[1]=='train'
-    train=Dane[:,a]
-    valid=Dane[:,~a]
+    path_to_file = Path.cwd().parents[0] / 'results' / run_catalog / file_name
+    dir_path = Path.cwd().parents[0] / 'results' / run_catalog
+    if os.path.isdir(dir_path):
+        with open(path_to_file) as csvfile:
+            reader = csv.reader(csvfile, delimiter=",")
+            next(reader, None)
+            for line in reader:
+                dropout_val = float(line[0])
+                momentum_val = float(line[1])
+                lr = float(line[2])
+        if trainset:
+            stage = 'train'
+        else:
+            stage = 'valid'
 
-    train_bool=trainset
 
-    if train_bool:
-        dane=train
+        with open(file) as tsvfile:
+            tsvreader = csv.reader(tsvfile, delimiter="\t")
+            next(tsvreader, None)
+            for line in tsvreader:
+                a,b,c,d=line[2].split(' ')
+                Dane[0].append(line[0])
+                Dane[1].append(line[1])
+                Dane[2].append(a.strip(','))
+                Dane[3].append(b.strip(','))
+                Dane[4].append(c.strip(','))
+                Dane[5].append(d.strip(','))
+
+        Dane=np.array(Dane)
+        Dane=Dane[:,epoch*2:]
+
+        a=Dane[1]=='train'
+        train=Dane[:,a]
+        valid=Dane[:,~a]
+
+        train_bool=trainset
+
+        if train_bool:
+            dane=train
+        else:
+            dane=valid
+
+        fig, ax =plt.subplots()
+
+        fig.suptitle('stage: {}, dropout={}, momentum={}, learning rate={}'.format(stage, dropout_val, momentum_val, lr), fontsize=9,
+                     fontweight='bold')
+
+        plt.setp(ax,xticks=range(0,200-epoch,10))
+        ax.plot(dane[0],list(map(float,dane[2])),marker='o', c='blue', ms=2, lw=0)
+        ax.plot(dane[0],list(map(float,dane[3])),marker='o', c='green', ms=2, lw=0)
+        ax.plot(dane[0],list(map(float,dane[4])),marker='o', c='red', ms=2, lw=0)
+        ax.plot(dane[0],list(map(float,dane[5])),marker='o', c='yellow', ms=2, lw=0 )
+        ax.set_xlabel('Epoch')
+        ax.set_ylabel('Value of Cross-entropy loss')
+        blue_patch = mpatches.Patch(color='blue', label='promoter active')
+        green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+        red_patch = mpatches.Patch(color='red', label='promoter inactive')
+        yellow_patch = mpatches.Patch(color='yellow', label='nonpromoter inactive')
+        plt.legend(handles=[red_patch,blue_patch,green_patch,yellow_patch])
+
+        plt.show()
     else:
-        dane=valid
+        print('no such directory {}'.format(dir_path))
 
-    fig, ax =plt.subplots()
-
-    plt.setp(ax,xticks=range(0,200-epoch,10))
-    ax.plot(dane[0],list(map(float,dane[2])),marker='o', c='blue', ms=2, lw=0)
-    ax.plot(dane[0],list(map(float,dane[3])),marker='o', c='green', ms=2, lw=0)
-    ax.plot(dane[0],list(map(float,dane[4])),marker='o', c='red', ms=2, lw=0)
-    ax.plot(dane[0],list(map(float,dane[5])),marker='o', c='yellow', ms=2, lw=0 )
-    ax.set_xlabel('Epoch')
-    ax.set_ylabel('Value of Cross-entropy loss')
-    blue_patch = mpatches.Patch(color='blue', label='promoter active')
-    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
-    red_patch = mpatches.Patch(color='red', label='promoter inactive')
-    yellow_patch = mpatches.Patch(color='yellow', label='nonpromoter inactive')
-    plt.legend(handles=[red_patch,blue_patch,green_patch,yellow_patch])
-
-    plt.show()
+#plot_after_some_epoch(30,namespace='custom', epoch=150,trainset=True)
 
 
 #function for calculating mean and sd for each class, from training results, starting from given epoch
@@ -179,32 +231,35 @@ def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
     run_catalog=namespace + str(run)
 
     path_to_file=Path.cwd().parents[0] / 'results'/ run_catalog / file_name
-    with open(path_to_file) as csvfile:
-        reader = csv.reader(csvfile, delimiter=",")
-        next(reader, None)
-        for line in reader:
-            dropout_val=float(line[0])
-            momentum_val=float(line[1])
-            lr=float(line[2])
-    if train:
-        stage='train'
-    else:
-        stage='valid'
-    mas=calculate_mean_and_sd(run, namespace='custom', epoch=epoch, trainset=train)
+    dir_path=Path.cwd().parents[0] / 'results'/ run_catalog
+    if os.path.isdir(dir_path):
+        with open(path_to_file) as csvfile:
+            reader = csv.reader(csvfile, delimiter=",")
+            next(reader, None)
+            for line in reader:
+                dropout_val=float(line[0])
+                momentum_val=float(line[1])
+                lr=float(line[2])
+        if train:
+            stage='train'
+        else:
+            stage='valid'
+        mas=calculate_mean_and_sd(run, namespace='custom', epoch=epoch, trainset=train)
 
-    with open(my_file, 'a') as f:
+        with open(my_file, 'a') as f:
 
-        str_to_write = '{}    {}  {}  {}  {}  {}  {}  {}  {}  {}  {}  {}  {}\n'.format(
-            run, stage, dropout_val, momentum_val, lr, mas['pa'][0], mas['npa'][0],
-            mas['pin'][0], mas['npin'][0], mas['pa'][1], mas['npa'][1],
-            mas['pin'][1], mas['npin'][1]
-        )
-        f.write(str_to_write)
+            str_to_write = '{}    {}  {}  {}  {}  {}  {}  {}  {}  {}  {}  {}  {}\n'.format(
+                run, stage, dropout_val, momentum_val, lr, mas['pa'][0], mas['npa'][0],
+                mas['pin'][0], mas['npin'][0], mas['pa'][1], mas['npa'][1],
+                mas['pin'][1], mas['npin'][1]
+            )
+            f.write(str_to_write)
 
 
 #for i in range(50,35,-1):
    #pamfl_write_result(i,epoch=150,namespace='custom', train=False)
 
+#function which creates file which consists of means of many runs for each value of dropout
 
 def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom', train=False):
     my_file = Path("pamfl_results.tsv")
@@ -307,7 +362,156 @@ def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom
 
 
 
-pamfl_mean_and_sd_of_many_runs(36,61,epoch=190,namespace='custom', train=False)
+#pamfl_mean_and_sd_of_many_runs(36,61,epoch=175,namespace='custom', train=False)
+
+#function  for plotting loss vs dropout
+
+def pamfl_plot_mean_vs_dropout(file):
+    dropout=[]
+    momentum=set()
+    lr=set()
+    stage=set()
+
+    mean_pa=[]
+    mean_npa=[]
+    mean_pin = []
+    mean_npin = []
+
+    sd_of_means_pa=[]
+    sd_of_means_npa = []
+    sd_of_means_pin = []
+    sd_of_means_npin = []
+
+    mean_of_sd_pa=[]
+    mean_of_sd_npa = []
+    mean_of_sd_pin = []
+    mean_of_sd_npin = []
+
+    with open(file, 'r') as f:
+        reader = csv.reader(f, delimiter="\t")
+        next(reader, None)
+        for line in reader:
+            line=line[0].split()
+            dropout.append(line[1])
+            momentum.add(line[2])
+            lr.add(line[3])
+            stage.add(line[0])
+
+            mean_pa.append(line[4])
+            mean_npa.append(line[5])
+            mean_pin.append(line[6])
+            mean_npin.append(line[7])
+
+            sd_of_means_pa.append(line[8])
+            sd_of_means_npa.append(line[9])
+            sd_of_means_pin.append(line[10])
+            sd_of_means_npin.append(line[11])
+
+            mean_of_sd_pa.append(line[12])
+            mean_of_sd_npa.append(line[13])
+            mean_of_sd_pin.append(line[14])
+            mean_of_sd_npin.append(line[15])
+
+    sort_index=sorted(range(len(dropout)), key=lambda k: dropout[k])
+    print(sort_index)
+
+    print(dropout)
+    dropout.sort()
+
+    sort_index= [x for _, x in sorted(zip(sort_index, range(len(sort_index))))]
+    print(sort_index)
+
+    print(mean_pa)
+    mean_pa=list(map(float, mean_pa))
+    mean_pa = [x for _, x in sorted(zip(sort_index, mean_pa))]
+    print(mean_pa)
+    mean_npa = list(map(float, mean_npa))
+    mean_npa = [x for _, x in sorted(zip(sort_index, mean_npa))]
+    mean_pin = list(map(float, mean_pin))
+    mean_pin = [x for _, x in sorted(zip(sort_index, mean_pin))]
+    mean_npin = list(map(float, mean_npin))
+    mean_npin = [x for _, x in sorted(zip(sort_index, mean_npin))]
+
+
+
+    sd_of_means_pa=list(map(float, sd_of_means_pa))
+    sd_of_means_pa = [x for _, x in sorted(zip(sort_index, sd_of_means_pa))]
+    sd_of_means_npa = list(map(float, sd_of_means_npa))
+    sd_of_means_npa = [x for _, x in sorted(zip(sort_index, sd_of_means_npa))]
+    sd_of_means_pin = list(map(float, sd_of_means_pin))
+    sd_of_means_pin = [x for _, x in sorted(zip(sort_index, sd_of_means_pin))]
+    sd_of_means_npin = list(map(float, sd_of_means_npin))
+    sd_of_means_npin = [x for _, x in sorted(zip(sort_index, sd_of_means_npin))]
+
+    mean_of_sd_pa = list(map(float, mean_of_sd_pa))
+    mean_of_sd_pa = [x for _, x in sorted(zip(sort_index, mean_of_sd_pa))]
+    mean_of_sd_npa = list(map(float, mean_of_sd_npa))
+    mean_of_sd_npa = [x for _, x in sorted(zip(sort_index, mean_of_sd_npa))]
+    mean_of_sd_pin = list(map(float, mean_of_sd_pin))
+    mean_of_sd_pin = [x for _, x in sorted(zip(sort_index, mean_of_sd_pin))]
+    mean_of_sd_npin = list(map(float, mean_of_sd_npin))
+    mean_of_sd_npin = [x for _, x in sorted(zip(sort_index, mean_of_sd_npin))]
+
+    fig, ax = plt.subplots()
+
+    #fig.suptitle('bold figure suptitle', fontsize=14, fontweight='bold')
+    ax.plot(dropout, mean_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(dropout, mean_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(dropout, mean_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(dropout, mean_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel('p dropout')
+    ax.set_ylabel('Mean value of Cross-entropy loss')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch],prop={'size': 6})
+
+    plt.show()
+
+    fig, ax = plt.subplots()
+
+    # fig.suptitle('bold figure suptitle', fontsize=14, fontweight='bold')
+    ax.plot(dropout, sd_of_means_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(dropout, sd_of_means_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(dropout, sd_of_means_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(dropout, sd_of_means_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel('p dropout')
+    ax.set_ylabel('Standard deviation of mean value of Cross-entropy loss')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+    fig, ax = plt.subplots()
+
+    # fig.suptitle('bold figure suptitle', fontsize=14, fontweight='bold')
+    ax.plot(dropout, mean_of_sd_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(dropout, mean_of_sd_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(dropout, mean_of_sd_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(dropout, mean_of_sd_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel('p dropout')
+    ax.set_ylabel('Mean of Standard deviation for trajectory for Cross-entropy loss')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+
+pamfl_plot_mean_vs_dropout('pamfl_mean_results.tsv')
+
+
+
+
 
 
 
