@@ -92,7 +92,8 @@ class CustomNetwork(torch.nn.Module):
                 nn.Conv2d(input_channels, output_channels, kernel_size=(k, kernel), padding=(0, padding)),
                 nn.BatchNorm2d(output_channels),
                 nn.ReLU(),
-                nn.MaxPool2d(kernel_size=(1, pooling), ceil_mode=True)
+                nn.MaxPool2d(kernel_size=(1, pooling), ceil_mode=True),
+                nn.Dropout(p=params.conv_dropout_value)
             ]
             seq_len = math.ceil(seq_len / pooling)
         self.conv_layers = nn.Sequential(*conv_modules)
