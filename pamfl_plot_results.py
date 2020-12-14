@@ -30,6 +30,8 @@ def plot_all_result(run,namespace='custom',trainset=True):
                 dropout_val = float(line[0])
                 momentum_val = float(line[1])
                 lr = float(line[2])
+                conv_dropout=float(line[3])
+
         if trainset:
             stage = 'train'
         else:
@@ -62,7 +64,7 @@ def plot_all_result(run,namespace='custom',trainset=True):
         fig, ax =plt.subplots()
         ax.set_xticks([24,49,74,99,124,149,174,199,224,249,274,299,324,349,374,399])
         fig.suptitle(
-            'stage: {}, dropout={}, momentum={}, learning rate={}'.format(stage, dropout_val, momentum_val, lr),
+            'stage: {}, dropout={}, momentum={}, learning rate={}, conv dropout={}'.format(stage, dropout_val, momentum_val, lr, conv_dropout),
             fontsize=9, fontweight='bold')
 
         ax.plot(dane[0],list(map(float,dane[2])),marker='o', c='blue', ms=2, lw=0)
@@ -106,6 +108,7 @@ def plot_after_some_epoch(run,namespace='custom', epoch=150,trainset=True):
                 dropout_val = float(line[0])
                 momentum_val = float(line[1])
                 lr = float(line[2])
+                conv_dropout=float(line[3])
         if trainset:
             stage = 'train'
         else:
@@ -140,7 +143,7 @@ def plot_after_some_epoch(run,namespace='custom', epoch=150,trainset=True):
 
         fig, ax =plt.subplots()
 
-        fig.suptitle('stage: {}, dropout={}, momentum={}, learning rate={}'.format(stage, dropout_val, momentum_val, lr), fontsize=9,
+        fig.suptitle('stage: {}, dropout={}, momentum={}, learning rate={}, convolutional dropout={}'.format(stage, dropout_val, momentum_val, lr,conv_dropout), fontsize=9,
                      fontweight='bold')
 
         plt.setp(ax,xticks=range(0,200-epoch,10))
@@ -258,7 +261,7 @@ def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
             f.write(str_to_write)
 
 
-#for i in range(50,35,-1):
+#for i in range(75,35,-1):
    #pamfl_write_result(i,epoch=150,namespace='custom', train=False)
 
 #function which creates file which consists of means of many runs for each value of dropout
@@ -281,7 +284,7 @@ def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom
             line=line[0].split()
             if cdrop:
                 dropout=line[5]
-                kind_of_dropout='conv dropout'
+                kind_of_dropout='conv-dropout'
             else:
                 kind_of_dropout='dropout'
                 dropout=line[2]
@@ -421,18 +424,18 @@ def pamfl_plot_mean_vs_dropout(file):
             mean_of_sd_npin.append(line[15])
 
     sort_index=sorted(range(len(dropout)), key=lambda k: dropout[k])
-    print(sort_index)
 
-    print(dropout)
+
+
     dropout.sort()
 
     sort_index= [x for _, x in sorted(zip(sort_index, range(len(sort_index))))]
-    print(sort_index)
 
-    print(mean_pa)
+
+
     mean_pa=list(map(float, mean_pa))
     mean_pa = [x for _, x in sorted(zip(sort_index, mean_pa))]
-    print(mean_pa)
+
     mean_npa = list(map(float, mean_npa))
     mean_npa = [x for _, x in sorted(zip(sort_index, mean_npa))]
     mean_pin = list(map(float, mean_pin))
@@ -498,7 +501,7 @@ def pamfl_plot_mean_vs_dropout(file):
 
     fig, ax = plt.subplots()
 
-    # fig.suptitle('bold figure suptitle', fontsize=14, fontweight='bold')
+    #fig.suptitle('stage: {} momentum', fontsize=14, fontweight='bold')
     ax.plot(dropout, mean_of_sd_pa, marker='o', c='blue', ms=2, lw=0.1)
     ax.plot(dropout, mean_of_sd_npa, marker='o', c='green', ms=2, lw=0.1)
     ax.plot(dropout, mean_of_sd_pin, marker='o', c='red', ms=2, lw=0.1)
@@ -515,21 +518,228 @@ def pamfl_plot_mean_vs_dropout(file):
     plt.show()
 
 
-pamfl_plot_mean_vs_dropout('pamfl_mean_results.tsv')
+#pamfl_plot_mean_vs_dropout('pamfl_mean_results.tsv')
 
-def plot_conv_dropout_vs_no_conv_dropout(crun_start,crun_end,cepoch=200,namespace='custom',
-                                         train=False, run_start, run_end, epoch=150):
+
+
+
+def pamfl_get_mean_vs_dropout(file):
+    dropout=[]
+    momentum=set()
+    lr=set()
+    stage=set()
+
+    mean_pa=[]
+    mean_npa=[]
+    mean_pin = []
+    mean_npin = []
+
+    sd_of_means_pa=[]
+    sd_of_means_npa = []
+    sd_of_means_pin = []
+    sd_of_means_npin = []
+
+    mean_of_sd_pa=[]
+    mean_of_sd_npa = []
+    mean_of_sd_pin = []
+    mean_of_sd_npin = []
+
+    with open(file, 'r') as f:
+        reader = csv.reader(f, delimiter="\t")
+        next(reader, None)
+        for line in reader:
+            line=line[0].split()
+            dropout.append(line[1])
+            momentum.add(line[2])
+            lr.add(line[3])
+            stage.add(line[0])
+
+            mean_pa.append(line[4])
+            mean_npa.append(line[5])
+            mean_pin.append(line[6])
+            mean_npin.append(line[7])
+
+            sd_of_means_pa.append(line[8])
+            sd_of_means_npa.append(line[9])
+            sd_of_means_pin.append(line[10])
+            sd_of_means_npin.append(line[11])
+
+            mean_of_sd_pa.append(line[12])
+            mean_of_sd_npa.append(line[13])
+            mean_of_sd_pin.append(line[14])
+            mean_of_sd_npin.append(line[15])
+
+    sort_index=sorted(range(len(dropout)), key=lambda k: dropout[k])
+
+
+
+    dropout.sort()
+
+    sort_index= [x for _, x in sorted(zip(sort_index, range(len(sort_index))))]
+
+
+
+    mean_pa=list(map(float, mean_pa))
+    mean_pa = [x for _, x in sorted(zip(sort_index, mean_pa))]
+
+    mean_npa = list(map(float, mean_npa))
+    mean_npa = [x for _, x in sorted(zip(sort_index, mean_npa))]
+    mean_pin = list(map(float, mean_pin))
+    mean_pin = [x for _, x in sorted(zip(sort_index, mean_pin))]
+    mean_npin = list(map(float, mean_npin))
+    mean_npin = [x for _, x in sorted(zip(sort_index, mean_npin))]
+
+
+
+    sd_of_means_pa=list(map(float, sd_of_means_pa))
+    sd_of_means_pa = [x for _, x in sorted(zip(sort_index, sd_of_means_pa))]
+    sd_of_means_npa = list(map(float, sd_of_means_npa))
+    sd_of_means_npa = [x for _, x in sorted(zip(sort_index, sd_of_means_npa))]
+    sd_of_means_pin = list(map(float, sd_of_means_pin))
+    sd_of_means_pin = [x for _, x in sorted(zip(sort_index, sd_of_means_pin))]
+    sd_of_means_npin = list(map(float, sd_of_means_npin))
+    sd_of_means_npin = [x for _, x in sorted(zip(sort_index, sd_of_means_npin))]
+
+    mean_of_sd_pa = list(map(float, mean_of_sd_pa))
+    mean_of_sd_pa = [x for _, x in sorted(zip(sort_index, mean_of_sd_pa))]
+    mean_of_sd_npa = list(map(float, mean_of_sd_npa))
+    mean_of_sd_npa = [x for _, x in sorted(zip(sort_index, mean_of_sd_npa))]
+    mean_of_sd_pin = list(map(float, mean_of_sd_pin))
+    mean_of_sd_pin = [x for _, x in sorted(zip(sort_index, mean_of_sd_pin))]
+    mean_of_sd_npin = list(map(float, mean_of_sd_npin))
+    mean_of_sd_npin = [x for _, x in sorted(zip(sort_index, mean_of_sd_npin))]
+
+    result={'dropout': dropout, 'means': [mean_pa,mean_npa,mean_pin,mean_npin], 'sd_of_means': [sd_of_means_pa, sd_of_means_npa, sd_of_means_pin, sd_of_means_npin],
+            'means_of_sd': [mean_of_sd_pa,mean_of_sd_npa,mean_of_sd_pin,mean_of_sd_npin], 'lr':lr, 'momentum':momentum, 'stage':stage}
+    return result
+
+def plot_conv_dropout_vs_no_conv_dropout(crun_start,crun_end,run_start, run_end,cepoch=200,namespace='custom',
+                                         train=False,  epoch=150, file='pamfl_mean_results.tsv'):
+    my_file = Path("pamfl_results.tsv")
+    if my_file.is_file():
+        os.remove(my_file)
     pamfl_mean_and_sd_of_many_runs(crun_start, crun_end, epoch=cepoch, namespace=namespace,
                                    train=train, cdrop=True)
+
+    conv_results=pamfl_get_mean_vs_dropout(file)
+
+    dropout=conv_results['dropout']
+    mean_pa=conv_results['means'][0]
+    mean_npa = conv_results['means'][1]
+    mean_pin = conv_results['means'][2]
+    mean_npin = conv_results['means'][3]
+
+    sd_of_means_pa=conv_results['sd_of_means'][0]
+    sd_of_means_npa = conv_results['sd_of_means'][1]
+    sd_of_means_pin = conv_results['sd_of_means'][2]
+    sd_of_means_npin = conv_results['sd_of_means'][3]
+
+    mean_of_sd_pa=conv_results['means_of_sd'][0]
+    mean_of_sd_npa = conv_results['means_of_sd'][1]
+    mean_of_sd_pin = conv_results['means_of_sd'][2]
+    mean_of_sd_npin = conv_results['means_of_sd'][3]
+
+
+
+    if my_file.is_file():
+        os.remove(my_file)
     pamfl_mean_and_sd_of_many_runs(run_start, run_end, epoch=epoch, namespace=namespace,
                                    train=train, cdrop=False)
 
+    non_cov_results=pamfl_get_mean_vs_dropout(file)
+    #no convolution dropout
+
+    dropout_noconv=non_cov_results['dropout'][0]
+    lr=list(non_cov_results['lr'])[0]
+    momentum=list(non_cov_results['momentum'])[0]
+    stage=list(non_cov_results['stage'])[0]
+
+    means=non_cov_results['means']
+    sd_of_means=non_cov_results['sd_of_means']
+    means_of_sd=non_cov_results['means_of_sd']
+    print(dropout_noconv)
+
+    fig, ax = plt.subplots()
+
+    fig.suptitle('p dropout={}, lr={}, momentum={}, stage: {}'.format(dropout_noconv,lr,momentum,stage), fontsize=11, fontweight='bold')
+    ax.axhline(y=means[0][0], color='blue', linestyle='-')
+    ax.plot(dropout, mean_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.axhline(y=means[1][0], color='green', linestyle='-')
+    ax.plot(dropout, mean_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.axhline(y=means[2][0], color='red', linestyle='-')
+    ax.plot(dropout, mean_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.axhline(y=means[3][0], color='black', linestyle='-')
+    ax.plot(dropout, mean_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel('p convolutional dropout')
+    ax.set_ylabel('Mean value of Cross-entropy loss')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+    fig, ax = plt.subplots()
+
+    # fig.suptitle('bold figure suptitle', fontsize=14, fontweight='bold')
+    fig.suptitle('p dropout={}, lr={}, momentum={}, stage: {}'.format(dropout_noconv,lr,momentum,stage), fontsize=11, fontweight='bold')
+    ax.axhline(y=sd_of_means[0][0], color='blue', linestyle='-')
+    ax.plot(dropout, sd_of_means_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.axhline(y=sd_of_means[1][0], color='green', linestyle='-')
+    ax.plot(dropout, sd_of_means_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.axhline(y=sd_of_means[2][0], color='red', linestyle='-')
+    ax.plot(dropout, sd_of_means_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.axhline(y=sd_of_means[3][0], color='black', linestyle='-')
+    ax.plot(dropout, sd_of_means_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel('p convolutional dropout')
+    ax.set_ylabel('Standard deviation of mean value of Cross-entropy loss')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+    fig, ax = plt.subplots()
+
+    # fig.suptitle('stage: {} momentum', fontsize=14, fontweight='bold')
+    fig.suptitle('p dropout={}, lr={}, momentum={}, stage: {}'.format(dropout_noconv,lr,momentum,stage), fontsize=11, fontweight='bold')
+    ax.axhline(y=means_of_sd[0][0], color='blue', linestyle='-')
+    ax.plot(dropout, mean_of_sd_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.axhline(y=means_of_sd[1][0], color='green', linestyle='-')
+    ax.plot(dropout, mean_of_sd_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.axhline(y=means_of_sd[2][0], color='red', linestyle='-')
+    ax.plot(dropout, mean_of_sd_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.axhline(y=means_of_sd[3][0], color='black', linestyle='-')
+    ax.plot(dropout, mean_of_sd_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel('p convolutional dropout')
+    ax.set_ylabel('Mean of Standard deviation for trajectory for Cross-entropy loss')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+plot_conv_dropout_vs_no_conv_dropout(65, 75, 36, 38, cepoch=200, namespace='custom',
+                                         train=False, epoch=150)
 
 
 
+#for i in range(75,35,-1):
+   #pamfl_write_result(i,epoch=150,namespace='custom', train=False)
 
+#pamfl_mean_and_sd_of_many_runs(35,63,epoch=150,namespace='custom', train=False,
+                                   #cdrop=False)
 
-
+#pamfl_mean_and_sd_of_many_runs(64,75,epoch=200,namespace='custom', train=False,
+                                   #cdrop=True)
 
 
 
