@@ -220,11 +220,12 @@ def calculate_mean_and_sd(run,namespace='custom', epoch=150, trainset=True):
 
 #function for writing calculated mean and sd for each class to {}_pamfl_results.tsv file
 
+
 def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
     my_file = Path("pamfl_results.tsv")
     if not my_file.is_file():
         with open(my_file,'w') as f:
-            f.write("Run    Stage      Dropout  Momentum    lr  Mean of  PA  NPA PIN NPIN    Sd of   PA  NPA PIN NPIN\n")
+            f.write("Run    Stage      Dropout  Momentum    lr  Conv_Dropout  Mean of  PA  NPA PIN NPIN    Sd of   PA  NPA PIN NPIN\n")
 
     file_name='{}_pamfl_params.csv'.format(namespace+str(run))
 
@@ -240,6 +241,7 @@ def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
                 dropout_val=float(line[0])
                 momentum_val=float(line[1])
                 lr=float(line[2])
+                conv_dropout=float(line[3])
         if train:
             stage='train'
         else:
@@ -248,8 +250,8 @@ def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
 
         with open(my_file, 'a') as f:
 
-            str_to_write = '{}    {}  {}  {}  {}  {}  {}  {}  {}  {}  {}  {}  {}\n'.format(
-                run, stage, dropout_val, momentum_val, lr, mas['pa'][0], mas['npa'][0],
+            str_to_write = '{}    {}  {}    {}  {}  {}  {}  {}  {}  {}  {}  {}  {}  {}\n'.format(
+                run, stage, dropout_val, momentum_val, lr, conv_dropout, mas['pa'][0], mas['npa'][0],
                 mas['pin'][0], mas['npin'][0], mas['pa'][1], mas['npa'][1],
                 mas['pin'][1], mas['npin'][1]
             )
@@ -261,7 +263,8 @@ def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
 
 #function which creates file which consists of means of many runs for each value of dropout
 
-def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom', train=False):
+def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom', train=False,
+                                   cdrop=False):
     my_file = Path("pamfl_results.tsv")
     if train:
         stage = 'train'
@@ -276,19 +279,23 @@ def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom
         next(reader, None)
         for line in reader:
             line=line[0].split()
-
-            dropout=line[2]
+            if cdrop:
+                dropout=line[5]
+                kind_of_dropout='conv dropout'
+            else:
+                kind_of_dropout='dropout'
+                dropout=line[2]
             momentum=line[3]
             lr=line[4]
-            mean_pa=float(line[5])
-            mean_npa = float(line[6])
-            mean_pin = float(line[7])
-            mean_npin = float(line[8])
+            mean_pa=float(line[6])
+            mean_npa = float(line[7])
+            mean_pin = float(line[8])
+            mean_npin = float(line[9])
 
-            sd_pa=float(line[9])
-            sd_npa = float(line[10])
-            sd_pin = float(line[11])
-            sd_npin = float(line[12])
+            sd_pa=float(line[10])
+            sd_npa = float(line[11])
+            sd_pin = float(line[12])
+            sd_npin = float(line[13])
 
             if dropout not in results:
                 results[dropout]={'params':[dropout,momentum,lr],'mean_pa':[mean_pa],
@@ -335,7 +342,8 @@ def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom
 
         with open(my_file, 'w') as f:
             f.write(
-                "Stage      Dropout  Momentum    lr  Mean of  PA  NPA PIN NPIN    Mean_Sd of   PA  NPA PIN NPIN     Sd of   PA  NPA PIN NPIN\n")
+                "Stage      {}  Momentum    lr  Mean of  PA  NPA PIN NPIN    Mean_Sd of   PA  NPA PIN NPIN    "
+                " Sd of   PA  NPA PIN NPIN\n".format(kind_of_dropout))
             for key in results.keys():
                 str_to_write = '{}    {}  {}  {}        {:.4f}  {:.4f}  {:.4f}  {:.4f}       {:.4f}  {:.4f}  {:.4f}  {:.4f}          {:.4f}    {:.4f}  {:.4f}  {:.4f}\n'.format(
                 stage, results[key]['params'][0], results[key]['params'][1], results[key]['params'][2],
@@ -508,6 +516,14 @@ def pamfl_plot_mean_vs_dropout(file):
 
 
 pamfl_plot_mean_vs_dropout('pamfl_mean_results.tsv')
+
+def plot_conv_dropout_vs_no_conv_dropout(crun_start,crun_end,cepoch=200,namespace='custom',
+                                         train=False, run_start, run_end, epoch=150):
+    pamfl_mean_and_sd_of_many_runs(crun_start, crun_end, epoch=cepoch, namespace=namespace,
+                                   train=train, cdrop=True)
+    pamfl_mean_and_sd_of_many_runs(run_start, run_end, epoch=epoch, namespace=namespace,
+                                   train=train, cdrop=False)
+
 
 
 
