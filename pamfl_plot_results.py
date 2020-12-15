@@ -657,7 +657,7 @@ def plot_conv_dropout_vs_no_conv_dropout(crun_start,crun_end,run_start, run_end,
     means=non_cov_results['means']
     sd_of_means=non_cov_results['sd_of_means']
     means_of_sd=non_cov_results['means_of_sd']
-    print(dropout_noconv)
+
 
     fig, ax = plt.subplots()
 
@@ -727,7 +727,7 @@ def plot_conv_dropout_vs_no_conv_dropout(crun_start,crun_end,run_start, run_end,
 
     plt.show()
 
-plot_conv_dropout_vs_no_conv_dropout(65, 75, 36, 38, cepoch=200, namespace='custom',
+plot_conv_dropout_vs_no_conv_dropout(65, 76, 36, 38, cepoch=200, namespace='custom',
                                          train=False, epoch=150)
 
 
