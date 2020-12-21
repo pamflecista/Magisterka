@@ -727,6 +727,368 @@ def plot_conv_dropout_vs_no_conv_dropout(crun_start,crun_end,run_start, run_end,
 
     plt.show()
 
+
+def read_data(run,namespace='custom',trainset=True):
+    Dane = [[], [],
+            [], [], [], [],
+            [], [], [], [],
+            [], [], [], [],
+            [], [], [], [],
+            [], [], [], [],
+            [], [], [], [],
+            [], [], [], []]
+    file = '{}_train_results.tsv'.format(namespace + str(run))
+    run_catalog = namespace + str(run)
+
+    file = Path.cwd().parents[0] / 'results' / run_catalog / file
+
+    file_name = '{}_pamfl_params.csv'.format(namespace + str(run))
+
+    path_to_file = Path.cwd().parents[0] / 'results' / run_catalog / file_name
+
+    dir_path = Path.cwd().parents[0] / 'results' / run_catalog
+
+    if os.path.isdir(dir_path):
+        with open(path_to_file) as csvfile:
+            reader = csv.reader(csvfile, delimiter=",")
+            next(reader, None)
+            for line in reader:
+                dropout_val = float(line[0])
+                momentum_val = float(line[1])
+                lr = float(line[2])
+                conv_dropout = float(line[3])
+
+        if trainset:
+            stage = 'train'
+        else:
+            stage = 'valid'
+
+        with open(file) as tsvfile:
+            tsvreader = csv.reader(tsvfile, delimiter="\t")
+            next(tsvreader, None)
+            for line in tsvreader:
+                a, b, c, d = line[2].split(' ')
+                Dane[0].append(line[0])
+                Dane[1].append(line[1])
+                Dane[2].append(a.strip(','))
+                Dane[3].append(b.strip(','))
+                Dane[4].append(c.strip(','))
+                Dane[5].append(d.strip(','))
+                a, b, c, d = line[3].split(' ')
+                Dane[6].append(a.strip(','))
+                Dane[7].append(b.strip(','))
+                Dane[8].append(c.strip(','))
+                Dane[9].append(d.strip(','))
+                a, b, c, d = line[4].split(' ')
+                Dane[10].append(a.strip(','))
+                Dane[11].append(b.strip(','))
+                Dane[12].append(c.strip(','))
+                Dane[13].append(d.strip(','))
+                a, b, c, d = line[5].split(' ')
+                Dane[14].append(a.strip(','))
+                Dane[15].append(b.strip(','))
+                Dane[16].append(c.strip(','))
+                Dane[17].append(d.strip(','))
+                a, b, c, d = line[6].split(' ')
+                Dane[18].append(a.strip(','))
+                Dane[19].append(b.strip(','))
+                Dane[20].append(c.strip(','))
+                Dane[21].append(d.strip(','))
+                a, b, c, d = line[7].split(' ')
+                Dane[22].append(a.strip(','))
+                Dane[23].append(b.strip(','))
+                Dane[24].append(c.strip(','))
+                Dane[25].append(d.strip(','))
+
+        Dane = np.array(Dane)
+        a = Dane[1] == 'train'
+        train = Dane[:, a]
+        valid = Dane[:, ~a]
+
+        train_bool = trainset
+
+        if train_bool:
+            dane = train
+        else:
+            dane = valid
+        parameters=[dropout_val,momentum_val,lr,conv_dropout, stage]
+        return dane, parameters
+
+
+def plot_sensitivity(run_start,run_end,x_axis='dropout',namespace='custom',trainset=True):
+    x_axis_list=[]
+    sensitivity_pa=[]
+    sensitivity_npa=[]
+    sensitivity_pin=[]
+    sensitivity_npin=[]
+
+    for run in range(run_start,run_end+1):
+        dane,parameters=read_data(run,namespace,trainset)
+        if x_axis=='dropout':
+            x_axis_list.append(float(parameters[0]))
+            parameters[0]='x-axis'
+
+        elif x_axis=='conv_dropout':
+            x_axis_list.append(float(parameters[3]))
+            parameters[3] = 'x-axis'
+        elif x_axis == 'momentum':
+            x_axis_list.append(float(parameters[1]))
+            parameters[1] = 'x-axis'
+        elif x_axis == 'lr':
+            x_axis_list.append(float(parameters[2]))
+            parameters[2] = 'x-axis'
+
+        sensitivity_pa.append(float(dane[6][len(dane[6])]))
+        sensitivity_npa.append(float(dane[7][len(dane[7])]))
+        sensitivity_pin.append(float(dane[8][len(dane[8])]))
+        sensitivity_npin.append(float(dane[9][len(dane[9])]))
+
+    sort_index = sorted(range(len(x_axis_list)), key=lambda k: x_axis_list[k])
+
+    x_axis_list.sort()
+
+    sort_index = [x for _, x in sorted(zip(sort_index, range(len(sort_index))))]
+
+    sensitivity_pa = [x for _, x in sorted(zip(sort_index, sensitivity_pa))]
+    sensitivity_npa = [x for _, x in sorted(zip(sort_index, sensitivity_npa))]
+    sensitivity_pin = [x for _, x in sorted(zip(sort_index, sensitivity_pin))]
+    sensitivity_npin = [x for _, x in sorted(zip(sort_index, sensitivity_npin))]
+
+
+
+    fig, ax = plt.subplots()
+
+    fig.suptitle('dropout={}, lr={}, momentum={}, stage: {}, conv dropout={}'.format(parameters[0],
+                    parameters[2], parameters[1], parameters[5], parameters[3]), fontsize=8,
+                 fontweight='bold')
+    ax.plot(x_axis_list, sensitivity_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(x_axis_list, sensitivity_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(x_axis_list, sensitivity_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(x_axis_list, sensitivity_npin, marker='o', c='black', ms=2, lw=0.1)
+
+    ax.set_xlabel('{}'.format(x_axis))
+    ax.set_ylabel('Sensitivity')
+
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+
+
+
+def plot_specificity(run_start,run_end,x_axis='dropout',namespace='custom',trainset=True):
+    x_axis_list=[]
+    specitifity_pa=[]
+    specitifity_npa=[]
+    specitifity_pin=[]
+    specitifity_npin=[]
+
+    for run in range(run_start,run_end+1):
+        dane,parameters=read_data(run,namespace,trainset)
+        if x_axis=='dropout':
+            x_axis_list.append(float(parameters[0]))
+            parameters[0]='x-axis'
+
+        elif x_axis=='conv_dropout':
+            x_axis_list.append(float(parameters[3]))
+            parameters[3] = 'x-axis'
+        elif x_axis == 'momentum':
+            x_axis_list.append(float(parameters[1]))
+            parameters[1] = 'x-axis'
+        elif x_axis == 'lr':
+            x_axis_list.append(float(parameters[2]))
+            parameters[2] = 'x-axis'
+
+        specitifity_pa.append(float(dane[10][len(dane[10])]))
+        specitifity_npa.append(float(dane[11][len(dane[11])]))
+        specitifity_pin.append(float(dane[12][len(dane[12])]))
+        specitifity_npin.append(float(dane[13][len(dane[13])]))
+
+    sort_index = sorted(range(len(x_axis_list)), key=lambda k: x_axis_list[k])
+
+    x_axis_list.sort()
+
+    sort_index = [x for _, x in sorted(zip(sort_index, range(len(sort_index))))]
+
+    specitifity_pa = [x for _, x in sorted(zip(sort_index, specitifity_pa))]
+    specitifity_npa = [x for _, x in sorted(zip(sort_index, specitifity_npa))]
+    specitifity_pin = [x for _, x in sorted(zip(sort_index, specitifity_pin))]
+    specitifity_npin = [x for _, x in sorted(zip(sort_index, specitifity_npin))]
+
+    fig, ax = plt.subplots()
+
+    fig.suptitle('dropout={}, lr={}, momentum={}, stage: {}, conv dropout={}'.format(parameters[0],
+                    parameters[2], parameters[1], parameters[5], parameters[3]), fontsize=8,
+                 fontweight='bold')
+    ax.plot(x_axis_list, specitifity_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(x_axis_list, specitifity_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(x_axis_list, specitifity_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(x_axis_list, specitifity_npin, marker='o', c='black', ms=2, lw=0.1)
+
+    ax.set_xlabel('{}'.format(x_axis))
+    ax.set_ylabel('Specitifity')
+
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+
+def plot_AUC():
+    print()
+
+def plot_momentum(file):
+    dropout=[]
+    momentum=set()
+    lr=set()
+    stage=set()
+
+    mean_pa=[]
+    mean_npa=[]
+    mean_pin = []
+    mean_npin = []
+
+    sd_of_means_pa=[]
+    sd_of_means_npa = []
+    sd_of_means_pin = []
+    sd_of_means_npin = []
+
+    mean_of_sd_pa=[]
+    mean_of_sd_npa = []
+    mean_of_sd_pin = []
+    mean_of_sd_npin = []
+
+    with open(file, 'r') as f:
+        reader = csv.reader(f, delimiter="\t")
+        next(reader, None)
+        for line in reader:
+            line=line[0].split()
+            dropout.append(line[1])
+            momentum.add(line[2])
+            lr.add(line[3])
+            stage.add(line[0])
+
+            mean_pa.append(line[4])
+            mean_npa.append(line[5])
+            mean_pin.append(line[6])
+            mean_npin.append(line[7])
+
+            sd_of_means_pa.append(line[8])
+            sd_of_means_npa.append(line[9])
+            sd_of_means_pin.append(line[10])
+            sd_of_means_npin.append(line[11])
+
+            mean_of_sd_pa.append(line[12])
+            mean_of_sd_npa.append(line[13])
+            mean_of_sd_pin.append(line[14])
+            mean_of_sd_npin.append(line[15])
+
+    momentum=list(momentum)
+    sort_index=sorted(range(len(momentum)), key=lambda k: momentum[k])
+
+
+
+    momentum.sort()
+
+    sort_index= [x for _, x in sorted(zip(sort_index, range(len(sort_index))))]
+
+
+
+    mean_pa=list(map(float, mean_pa))
+    mean_pa = [x for _, x in sorted(zip(sort_index, mean_pa))]
+
+    mean_npa = list(map(float, mean_npa))
+    mean_npa = [x for _, x in sorted(zip(sort_index, mean_npa))]
+    mean_pin = list(map(float, mean_pin))
+    mean_pin = [x for _, x in sorted(zip(sort_index, mean_pin))]
+    mean_npin = list(map(float, mean_npin))
+    mean_npin = [x for _, x in sorted(zip(sort_index, mean_npin))]
+
+
+
+    sd_of_means_pa=list(map(float, sd_of_means_pa))
+    sd_of_means_pa = [x for _, x in sorted(zip(sort_index, sd_of_means_pa))]
+    sd_of_means_npa = list(map(float, sd_of_means_npa))
+    sd_of_means_npa = [x for _, x in sorted(zip(sort_index, sd_of_means_npa))]
+    sd_of_means_pin = list(map(float, sd_of_means_pin))
+    sd_of_means_pin = [x for _, x in sorted(zip(sort_index, sd_of_means_pin))]
+    sd_of_means_npin = list(map(float, sd_of_means_npin))
+    sd_of_means_npin = [x for _, x in sorted(zip(sort_index, sd_of_means_npin))]
+
+    mean_of_sd_pa = list(map(float, mean_of_sd_pa))
+    mean_of_sd_pa = [x for _, x in sorted(zip(sort_index, mean_of_sd_pa))]
+    mean_of_sd_npa = list(map(float, mean_of_sd_npa))
+    mean_of_sd_npa = [x for _, x in sorted(zip(sort_index, mean_of_sd_npa))]
+    mean_of_sd_pin = list(map(float, mean_of_sd_pin))
+    mean_of_sd_pin = [x for _, x in sorted(zip(sort_index, mean_of_sd_pin))]
+    mean_of_sd_npin = list(map(float, mean_of_sd_npin))
+    mean_of_sd_npin = [x for _, x in sorted(zip(sort_index, mean_of_sd_npin))]
+
+    fig, ax = plt.subplots()
+
+    #fig.suptitle('bold figure suptitle', fontsize=14, fontweight='bold')
+    ax.plot(momentum, mean_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(momentum, mean_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(momentum, mean_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(momentum, mean_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel('momentum')
+    ax.set_ylabel('Mean value of Cross-entropy loss')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch],prop={'size': 6})
+
+    plt.show()
+
+    fig, ax = plt.subplots()
+
+    # fig.suptitle('bold figure suptitle', fontsize=14, fontweight='bold')
+    ax.plot(dropout, sd_of_means_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(dropout, sd_of_means_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(dropout, sd_of_means_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(dropout, sd_of_means_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel('momentum')
+    ax.set_ylabel('Standard deviation of mean value of Cross-entropy loss')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+    fig, ax = plt.subplots()
+
+    #fig.suptitle('stage: {} momentum', fontsize=14, fontweight='bold')
+    ax.plot(dropout, mean_of_sd_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(dropout, mean_of_sd_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(dropout, mean_of_sd_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(dropout, mean_of_sd_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel('momentum')
+    ax.set_ylabel('Mean of Standard deviation for trajectory for Cross-entropy loss')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+
+
 #plot_conv_dropout_vs_no_conv_dropout(65, 76, 36, 38, cepoch=200, namespace='custom',
                                          #train=False, epoch=150)
 
