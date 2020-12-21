@@ -83,7 +83,7 @@ def plot_all_result(run,namespace='custom',trainset=True):
         print('no such directory {}'.format(dir_path))
 
 
-#plot_all_result(36,namespace='custom',trainset=True)
+plot_all_result(82,namespace='custom',trainset=False)
 
 #function for ploting train results starting from given epoch
 def plot_after_some_epoch(run,namespace='custom', epoch=150,trainset=True):
@@ -727,8 +727,8 @@ def plot_conv_dropout_vs_no_conv_dropout(crun_start,crun_end,run_start, run_end,
 
     plt.show()
 
-plot_conv_dropout_vs_no_conv_dropout(65, 76, 36, 38, cepoch=200, namespace='custom',
-                                         train=False, epoch=150)
+#plot_conv_dropout_vs_no_conv_dropout(65, 76, 36, 38, cepoch=200, namespace='custom',
+                                         #train=False, epoch=150)
 
 
 
