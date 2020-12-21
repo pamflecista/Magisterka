@@ -51,6 +51,7 @@ def plot_all_result(run,namespace='custom',trainset=True):
 
         Dane=np.array(Dane)
         a=Dane[1]=='train'
+
         train=Dane[:,a]
         valid=Dane[:,~a]
 
@@ -83,7 +84,7 @@ def plot_all_result(run,namespace='custom',trainset=True):
         print('no such directory {}'.format(dir_path))
 
 
-plot_all_result(82,namespace='custom',trainset=False)
+#plot_all_result(36,namespace='custom',trainset=False)
 
 #function for ploting train results starting from given epoch
 def plot_after_some_epoch(run,namespace='custom', epoch=150,trainset=True):
@@ -261,8 +262,8 @@ def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
             f.write(str_to_write)
 
 
-#for i in range(75,35,-1):
-   #pamfl_write_result(i,epoch=150,namespace='custom', train=False)
+for i in range(50,40,-1):
+   pamfl_write_result(i,epoch=150,namespace='custom', train=False)
 
 #function which creates file which consists of means of many runs for each value of dropout
 
@@ -373,7 +374,7 @@ def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom
 
 
 
-#pamfl_mean_and_sd_of_many_runs(36,61,epoch=175,namespace='custom', train=False)
+pamfl_mean_and_sd_of_many_runs(36,70,epoch=175,namespace='custom', train=False)
 
 #function  for plotting loss vs dropout
 
@@ -767,6 +768,7 @@ def read_data(run,namespace='custom',trainset=True):
             tsvreader = csv.reader(tsvfile, delimiter="\t")
             next(tsvreader, None)
             for line in tsvreader:
+
                 a, b, c, d = line[2].split(' ')
                 Dane[0].append(line[0])
                 Dane[1].append(line[1])
@@ -799,9 +801,18 @@ def read_data(run,namespace='custom',trainset=True):
                 Dane[23].append(b.strip(','))
                 Dane[24].append(c.strip(','))
                 Dane[25].append(d.strip(','))
+                a, b, c, d = line[8].split(' ')
+                Dane[26].append(a.strip(','))
+                Dane[27].append(b.strip(','))
+                Dane[28].append(c.strip(','))
+                Dane[29].append(d.strip(','))
+
 
         Dane = np.array(Dane)
+
         a = Dane[1] == 'train'
+
+
         train = Dane[:, a]
         valid = Dane[:, ~a]
 
@@ -812,36 +823,99 @@ def read_data(run,namespace='custom',trainset=True):
         else:
             dane = valid
         parameters=[dropout_val,momentum_val,lr,conv_dropout, stage]
-        return dane, parameters
 
 
-def plot_sensitivity(run_start,run_end,x_axis='dropout',namespace='custom',trainset=True):
+        return dane,parameters
+    else:
+        return False,False
+
+read_data(56)
+
+
+
+def plot_sensitivity(run_start,run_end,x_axis='dropout',namespace='custom', trainset=True):
     x_axis_list=[]
     sensitivity_pa=[]
     sensitivity_npa=[]
     sensitivity_pin=[]
     sensitivity_npin=[]
+    result_dictionary={}
 
     for run in range(run_start,run_end+1):
-        dane,parameters=read_data(run,namespace,trainset)
-        if x_axis=='dropout':
-            x_axis_list.append(float(parameters[0]))
-            parameters[0]='x-axis'
+        run_catalog = namespace + str(run)
+        dir_path = Path.cwd().parents[0] / 'results' / run_catalog
+        if os.path.isdir(dir_path):
 
-        elif x_axis=='conv_dropout':
-            x_axis_list.append(float(parameters[3]))
-            parameters[3] = 'x-axis'
-        elif x_axis == 'momentum':
-            x_axis_list.append(float(parameters[1]))
-            parameters[1] = 'x-axis'
-        elif x_axis == 'lr':
-            x_axis_list.append(float(parameters[2]))
-            parameters[2] = 'x-axis'
+            dane,parameters=read_data(run,namespace,trainset)
 
-        sensitivity_pa.append(float(dane[6][len(dane[6])]))
-        sensitivity_npa.append(float(dane[7][len(dane[7])]))
-        sensitivity_pin.append(float(dane[8][len(dane[8])]))
-        sensitivity_npin.append(float(dane[9][len(dane[9])]))
+
+
+            if x_axis=='dropout':
+                if parameters[0] not in result_dictionary.keys():
+
+                    result_dictionary[parameters[0]]=[[],[],[],[]]
+                    result_dictionary[parameters[0]][0].append(float(dane[6][len(dane[6])-1]))
+                    result_dictionary[parameters[0]][1].append(float(dane[7][len(dane[7]) - 1]))
+                    result_dictionary[parameters[0]][2].append(float(dane[8][len(dane[8]) - 1]))
+                    result_dictionary[parameters[0]][3].append(float(dane[9][len(dane[9]) - 1]))
+                else:
+                    result_dictionary[parameters[0]][0].append(float(dane[6][len(dane[6])-1]))
+                    result_dictionary[parameters[0]][1].append(float(dane[7][len(dane[7]) - 1]))
+                    result_dictionary[parameters[0]][2].append(float(dane[8][len(dane[8]) - 1]))
+                    result_dictionary[parameters[0]][3].append(float(dane[9][len(dane[9]) - 1]))
+                parameters[0]='x-axis'
+
+            elif x_axis=='conv_dropout':
+                if parameters[3] not in result_dictionary.keys():
+                    result_dictionary[parameters[3]]=[[float(dane[6][len(dane[6])-1])],
+                                                      [float(dane[7][len(dane[7])-1])],
+                                                      [float(dane[8][len(dane[8])-1])],
+                                                      [float(dane[9][len(dane[9])-1])]]
+                else:
+                    result_dictionary[parameters[3]][0].append(float(dane[6][len(dane[6])-1]))
+                    result_dictionary[parameters[3]][1].append(float(dane[7][len(dane[7]) - 1]))
+                    result_dictionary[parameters[3]][2].append(float(dane[8][len(dane[8]) - 1]))
+                    result_dictionary[parameters[3]][3].append(float(dane[9][len(dane[9]) - 1]))
+                parameters[3] = 'x-axis'
+            elif x_axis == 'momentum':
+                if parameters[1] not in result_dictionary.keys():
+                    result_dictionary[parameters[1]]=[[float(dane[6][len(dane[6])-1])],
+                                                      [float(dane[7][len(dane[7])-1])],
+                                                      [float(dane[8][len(dane[8])-1])],
+                                                      [float(dane[9][len(dane[9])-1])]]
+                else:
+                    result_dictionary[parameters[1]][0].append(float(dane[6][len(dane[6])-1]))
+                    result_dictionary[parameters[1]][1].append(float(dane[7][len(dane[7]) - 1]))
+                    result_dictionary[parameters[1]][2].append(float(dane[8][len(dane[8]) - 1]))
+                    result_dictionary[parameters[1]][3].append(float(dane[9][len(dane[9]) - 1]))
+                parameters[1] = 'x-axis'
+            elif x_axis == 'lr':
+                if parameters[2] not in result_dictionary.keys():
+                    result_dictionary[parameters[2]]=[[float(dane[6][len(dane[6])-1])],
+                                                      [float(dane[7][len(dane[7])-1])],
+                                                      [float(dane[8][len(dane[8])-1])],
+                                                      [float(dane[9][len(dane[9])-1])]]
+                else:
+                    result_dictionary[parameters[2]][0].append(float(dane[6][len(dane[6])-1]))
+                    result_dictionary[parameters[2]][1].append(float(dane[7][len(dane[7]) - 1]))
+                    result_dictionary[parameters[2]][2].append(float(dane[8][len(dane[8]) - 1]))
+                    result_dictionary[parameters[2]][3].append(float(dane[9][len(dane[9]) - 1]))
+                parameters[2] = 'x-axis'
+
+    for key in result_dictionary.keys():
+        result_dictionary[key][0]=sum(result_dictionary[key][0])/len(result_dictionary[key][0])
+        result_dictionary[key][1] = sum(result_dictionary[key][1] )/ len(result_dictionary[key][1])
+        result_dictionary[key][2] = sum(result_dictionary[key][2] )/ len(result_dictionary[key][2])
+        result_dictionary[key][3] = sum(result_dictionary[key][3] )/ len(result_dictionary[key][3])
+
+    for key in result_dictionary.keys():
+        x_axis_list.append(float(key))
+        sensitivity_pa.append(float(result_dictionary[key][0]))
+        sensitivity_npa.append(float(result_dictionary[key][1]))
+        sensitivity_pin.append(float(result_dictionary[key][2]))
+        sensitivity_npin.append(float(result_dictionary[key][3]))
+
+
 
     sort_index = sorted(range(len(x_axis_list)), key=lambda k: x_axis_list[k])
 
@@ -859,7 +933,7 @@ def plot_sensitivity(run_start,run_end,x_axis='dropout',namespace='custom',train
     fig, ax = plt.subplots()
 
     fig.suptitle('dropout={}, lr={}, momentum={}, stage: {}, conv dropout={}'.format(parameters[0],
-                    parameters[2], parameters[1], parameters[5], parameters[3]), fontsize=8,
+                    parameters[2], parameters[1], parameters[4], parameters[3]), fontsize=8,
                  fontweight='bold')
     ax.plot(x_axis_list, sensitivity_pa, marker='o', c='blue', ms=2, lw=0.1)
     ax.plot(x_axis_list, sensitivity_npa, marker='o', c='green', ms=2, lw=0.1)
@@ -879,35 +953,91 @@ def plot_sensitivity(run_start,run_end,x_axis='dropout',namespace='custom',train
     plt.show()
 
 
+#plot_sensitivity(36,57,trainset=False, x_axis='momentum')
 
-
-def plot_specificity(run_start,run_end,x_axis='dropout',namespace='custom',trainset=True):
+def plot_specitifity(run_start,run_end,x_axis='dropout',namespace='custom', trainset=True):
     x_axis_list=[]
-    specitifity_pa=[]
-    specitifity_npa=[]
-    specitifity_pin=[]
-    specitifity_npin=[]
+    sensitivity_pa=[]
+    sensitivity_npa=[]
+    sensitivity_pin=[]
+    sensitivity_npin=[]
+    result_dictionary={}
 
     for run in range(run_start,run_end+1):
-        dane,parameters=read_data(run,namespace,trainset)
-        if x_axis=='dropout':
-            x_axis_list.append(float(parameters[0]))
-            parameters[0]='x-axis'
+        run_catalog = namespace + str(run)
+        dir_path = Path.cwd().parents[0] / 'results' / run_catalog
+        if os.path.isdir(dir_path):
 
-        elif x_axis=='conv_dropout':
-            x_axis_list.append(float(parameters[3]))
-            parameters[3] = 'x-axis'
-        elif x_axis == 'momentum':
-            x_axis_list.append(float(parameters[1]))
-            parameters[1] = 'x-axis'
-        elif x_axis == 'lr':
-            x_axis_list.append(float(parameters[2]))
-            parameters[2] = 'x-axis'
+            dane,parameters=read_data(run,namespace,trainset)
 
-        specitifity_pa.append(float(dane[10][len(dane[10])]))
-        specitifity_npa.append(float(dane[11][len(dane[11])]))
-        specitifity_pin.append(float(dane[12][len(dane[12])]))
-        specitifity_npin.append(float(dane[13][len(dane[13])]))
+
+
+            if x_axis=='dropout':
+                if parameters[0] not in result_dictionary.keys():
+
+                    result_dictionary[parameters[0]]=[[],[],[],[]]
+                    result_dictionary[parameters[0]][0].append(float(dane[10][len(dane[10])-1]))
+                    result_dictionary[parameters[0]][1].append(float(dane[11][len(dane[11]) - 1]))
+                    result_dictionary[parameters[0]][2].append(float(dane[12][len(dane[12]) - 1]))
+                    result_dictionary[parameters[0]][3].append(float(dane[13][len(dane[13]) - 1]))
+                else:
+                    result_dictionary[parameters[0]][0].append(float(dane[10][len(dane[10])-1]))
+                    result_dictionary[parameters[0]][1].append(float(dane[11][len(dane[11]) - 1]))
+                    result_dictionary[parameters[0]][2].append(float(dane[12][len(dane[12]) - 1]))
+                    result_dictionary[parameters[0]][3].append(float(dane[13][len(dane[13]) - 1]))
+                parameters[0]='x-axis'
+
+            elif x_axis=='conv_dropout':
+                if parameters[3] not in result_dictionary.keys():
+                    result_dictionary[parameters[3]]=[[float(dane[10][len(dane[10])-1])],
+                                                      [float(dane[11][len(dane[11])-1])],
+                                                      [float(dane[12][len(dane[12])-1])],
+                                                      [float(dane[13][len(dane[13])-1])]]
+                else:
+                    result_dictionary[parameters[3]][0].append(float(dane[10][len(dane[10])-1]))
+                    result_dictionary[parameters[3]][1].append(float(dane[11][len(dane[11]) - 1]))
+                    result_dictionary[parameters[3]][2].append(float(dane[12][len(dane[12]) - 1]))
+                    result_dictionary[parameters[3]][3].append(float(dane[13][len(dane[13]) - 1]))
+                parameters[3] = 'x-axis'
+            elif x_axis == 'momentum':
+                if parameters[1] not in result_dictionary.keys():
+                    result_dictionary[parameters[1]]=[[float(dane[10][len(dane[10])-1])],
+                                                      [float(dane[11][len(dane[11])-1])],
+                                                      [float(dane[12][len(dane[12])-1])],
+                                                      [float(dane[13][len(dane[13])-1])]]
+                else:
+                    result_dictionary[parameters[1]][0].append(float(dane[10][len(dane[10])-1]))
+                    result_dictionary[parameters[1]][1].append(float(dane[11][len(dane[11]) - 1]))
+                    result_dictionary[parameters[1]][2].append(float(dane[12][len(dane[12]) - 1]))
+                    result_dictionary[parameters[1]][3].append(float(dane[13][len(dane[13]) - 1]))
+                parameters[1] = 'x-axis'
+            elif x_axis == 'lr':
+                if parameters[2] not in result_dictionary.keys():
+                    result_dictionary[parameters[2]]=[[float(dane[6][len(dane[10])-1])],
+                                                      [float(dane[7][len(dane[11])-1])],
+                                                      [float(dane[8][len(dane[12])-1])],
+                                                      [float(dane[9][len(dane[13])-1])]]
+                else:
+                    result_dictionary[parameters[2]][0].append(float(dane[10][len(dane[10])-1]))
+                    result_dictionary[parameters[2]][1].append(float(dane[11][len(dane[11]) - 1]))
+                    result_dictionary[parameters[2]][2].append(float(dane[12][len(dane[12]) - 1]))
+                    result_dictionary[parameters[2]][3].append(float(dane[13][len(dane[13]) - 1]))
+                parameters[2] = 'x-axis'
+
+    for key in result_dictionary.keys():
+        result_dictionary[key][0]=sum(result_dictionary[key][0])/len(result_dictionary[key][0])
+        result_dictionary[key][1] = sum(result_dictionary[key][1] )/ len(result_dictionary[key][1])
+        result_dictionary[key][2] = sum(result_dictionary[key][2] )/ len(result_dictionary[key][2])
+        result_dictionary[key][3] = sum(result_dictionary[key][3] )/ len(result_dictionary[key][3])
+
+    for key in result_dictionary.keys():
+        x_axis_list.append(float(key))
+        sensitivity_pa.append(float(result_dictionary[key][0]))
+        sensitivity_npa.append(float(result_dictionary[key][1]))
+        sensitivity_pin.append(float(result_dictionary[key][2]))
+        sensitivity_npin.append(float(result_dictionary[key][3]))
+
+
 
     sort_index = sorted(range(len(x_axis_list)), key=lambda k: x_axis_list[k])
 
@@ -915,20 +1045,22 @@ def plot_specificity(run_start,run_end,x_axis='dropout',namespace='custom',train
 
     sort_index = [x for _, x in sorted(zip(sort_index, range(len(sort_index))))]
 
-    specitifity_pa = [x for _, x in sorted(zip(sort_index, specitifity_pa))]
-    specitifity_npa = [x for _, x in sorted(zip(sort_index, specitifity_npa))]
-    specitifity_pin = [x for _, x in sorted(zip(sort_index, specitifity_pin))]
-    specitifity_npin = [x for _, x in sorted(zip(sort_index, specitifity_npin))]
+    sensitivity_pa = [x for _, x in sorted(zip(sort_index, sensitivity_pa))]
+    sensitivity_npa = [x for _, x in sorted(zip(sort_index, sensitivity_npa))]
+    sensitivity_pin = [x for _, x in sorted(zip(sort_index, sensitivity_pin))]
+    sensitivity_npin = [x for _, x in sorted(zip(sort_index, sensitivity_npin))]
+
+
 
     fig, ax = plt.subplots()
 
     fig.suptitle('dropout={}, lr={}, momentum={}, stage: {}, conv dropout={}'.format(parameters[0],
-                    parameters[2], parameters[1], parameters[5], parameters[3]), fontsize=8,
+                    parameters[2], parameters[1], parameters[4], parameters[3]), fontsize=8,
                  fontweight='bold')
-    ax.plot(x_axis_list, specitifity_pa, marker='o', c='blue', ms=2, lw=0.1)
-    ax.plot(x_axis_list, specitifity_npa, marker='o', c='green', ms=2, lw=0.1)
-    ax.plot(x_axis_list, specitifity_pin, marker='o', c='red', ms=2, lw=0.1)
-    ax.plot(x_axis_list, specitifity_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.plot(x_axis_list, sensitivity_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(x_axis_list, sensitivity_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(x_axis_list, sensitivity_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(x_axis_list, sensitivity_npin, marker='o', c='black', ms=2, lw=0.1)
 
     ax.set_xlabel('{}'.format(x_axis))
     ax.set_ylabel('Specitifity')
@@ -941,6 +1073,9 @@ def plot_specificity(run_start,run_end,x_axis='dropout',namespace='custom',train
     plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
 
     plt.show()
+
+
+#plot_specitifity(36,57,trainset=False, x_axis='dropout')
 
 
 def plot_AUC():
@@ -1054,10 +1189,10 @@ def plot_momentum(file):
     fig, ax = plt.subplots()
 
     # fig.suptitle('bold figure suptitle', fontsize=14, fontweight='bold')
-    ax.plot(dropout, sd_of_means_pa, marker='o', c='blue', ms=2, lw=0.1)
-    ax.plot(dropout, sd_of_means_npa, marker='o', c='green', ms=2, lw=0.1)
-    ax.plot(dropout, sd_of_means_pin, marker='o', c='red', ms=2, lw=0.1)
-    ax.plot(dropout, sd_of_means_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.plot(momentum, sd_of_means_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(momentum, sd_of_means_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(momentum, sd_of_means_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(momentum, sd_of_means_npin, marker='o', c='black', ms=2, lw=0.1)
     ax.set_xlabel('momentum')
     ax.set_ylabel('Standard deviation of mean value of Cross-entropy loss')
     blue_patch = mpatches.Patch(color='blue', label='promoter active')
@@ -1072,10 +1207,10 @@ def plot_momentum(file):
     fig, ax = plt.subplots()
 
     #fig.suptitle('stage: {} momentum', fontsize=14, fontweight='bold')
-    ax.plot(dropout, mean_of_sd_pa, marker='o', c='blue', ms=2, lw=0.1)
-    ax.plot(dropout, mean_of_sd_npa, marker='o', c='green', ms=2, lw=0.1)
-    ax.plot(dropout, mean_of_sd_pin, marker='o', c='red', ms=2, lw=0.1)
-    ax.plot(dropout, mean_of_sd_npin, marker='o', c='black', ms=2, lw=0.1)
+    ax.plot(momentum, mean_of_sd_pa, marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(momentum, mean_of_sd_npa, marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(momentum, mean_of_sd_pin, marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(momentum, mean_of_sd_npin, marker='o', c='black', ms=2, lw=0.1)
     ax.set_xlabel('momentum')
     ax.set_ylabel('Mean of Standard deviation for trajectory for Cross-entropy loss')
     blue_patch = mpatches.Patch(color='blue', label='promoter active')
@@ -1086,6 +1221,9 @@ def plot_momentum(file):
     plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
 
     plt.show()
+
+plot_momentum('pamfl_mean_results.tsv')
+
 
 
 
@@ -1107,3 +1245,4 @@ def plot_momentum(file):
 
 
 
+#pamfl_plot_mean_vs_dropout('pamfl_mean_results.tsv')
