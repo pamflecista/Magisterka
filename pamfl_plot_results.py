@@ -262,8 +262,8 @@ def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
             f.write(str_to_write)
 
 
-for i in range(50,40,-1):
-   pamfl_write_result(i,epoch=150,namespace='custom', train=False)
+#for i in range(36,64):
+ #  pamfl_write_result(i,epoch=150,namespace='custom', train=False)
 
 #function which creates file which consists of means of many runs for each value of dropout
 
@@ -374,7 +374,7 @@ def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom
 
 
 
-pamfl_mean_and_sd_of_many_runs(36,70,epoch=175,namespace='custom', train=False)
+#pamfl_mean_and_sd_of_many_runs(36,63,epoch=175,namespace='custom', train=False)
 
 #function  for plotting loss vs dropout
 
@@ -728,6 +728,8 @@ def plot_conv_dropout_vs_no_conv_dropout(crun_start,crun_end,run_start, run_end,
 
     plt.show()
 
+#plot_conv_dropout_vs_no_conv_dropout(65,76,36, 38,cepoch=200,namespace='custom',
+                                         #train=False,  epoch=150, file='pamfl_mean_results.tsv')
 
 def read_data(run,namespace='custom',trainset=True):
     Dane = [[], [],
@@ -829,7 +831,7 @@ def read_data(run,namespace='custom',trainset=True):
     else:
         return False,False
 
-read_data(56)
+#read_data(56)
 
 
 
@@ -953,7 +955,7 @@ def plot_sensitivity(run_start,run_end,x_axis='dropout',namespace='custom', trai
     plt.show()
 
 
-#plot_sensitivity(36,57,trainset=False, x_axis='momentum')
+#plot_sensitivity(77,86,trainset=False, x_axis='momentum')
 
 def plot_specitifity(run_start,run_end,x_axis='dropout',namespace='custom', trainset=True):
     x_axis_list=[]
@@ -1075,15 +1077,131 @@ def plot_specitifity(run_start,run_end,x_axis='dropout',namespace='custom', trai
     plt.show()
 
 
-#plot_specitifity(36,57,trainset=False, x_axis='dropout')
+plot_specitifity(77,86,trainset=False, x_axis='momentum')
 
 
 def plot_AUC():
     print()
 
+
+
+def pamfl_mean_and_sd_of_many_runs_(run_start,run_end,epoch=150,namespace='custom', train=False,
+                                   cdrop=False, momentum_bool=False):
+    my_file = Path("pamfl_results.tsv")
+    if train:
+        stage = 'train'
+    else:
+        stage = 'valid'
+
+    results={}
+    for run in range(run_start,run_end+1):
+        pamfl_write_result(run, epoch, namespace, train)
+    with open(my_file, 'r') as file:
+        reader = csv.reader(file, delimiter="\t")
+        next(reader, None)
+        for line in reader:
+            line=line[0].split()
+            if cdrop:
+                key_dropout=line[5]
+                kind_of_dropout='conv-dropout'
+            elif momentum_bool:
+                key_dropout=line[3]
+                kind_of_dropout = 'momentum'
+            else:
+                kind_of_dropout='dropout'
+                key_dropout=line[2]
+            momentum=line[3]
+            lr=line[4]
+            dropout=line[2]
+            conv_dropout=line[5]
+            mean_pa=float(line[6])
+            mean_npa = float(line[7])
+            mean_pin = float(line[8])
+            mean_npin = float(line[9])
+
+            sd_pa=float(line[10])
+            sd_npa = float(line[11])
+            sd_pin = float(line[12])
+            sd_npin = float(line[13])
+
+            if key_dropout not in results:
+                results[key_dropout]={'params':[dropout,momentum,lr],'mean_pa':[mean_pa],
+                                  'mean_npa':[mean_npa],'mean_pin':[mean_pin],
+                                  'mean_npin':[mean_npin],'sd_pa':[sd_pa],'sd_npa':[sd_npa],
+                                  'sd_pin':[sd_pin],'sd_npin':[sd_npin]}
+            else:
+                results[key_dropout]['mean_pa'].append(mean_pa)
+                results[key_dropout]['mean_npa'].append(mean_npa)
+                results[key_dropout]['mean_pin'].append(mean_pin)
+                results[key_dropout]['mean_npin'].append(mean_npin)
+
+                results[key_dropout]['sd_pa'].append(sd_pa)
+                results[key_dropout]['sd_npa'].append(sd_npa)
+                results[key_dropout]['sd_pin'].append(sd_pin)
+                results[key_dropout]['sd_npin'].append(sd_npin)
+
+
+
+
+
+
+
+        for key in results.keys():
+
+            results[key]['sd_of_mean_pa']=np.std(results[key]['mean_pa'])
+            results[key]['sd_of_mean_npa'] = np.std(results[key]['mean_npa'])
+            results[key]['sd_of_mean_pin'] = np.std(results[key]['mean_pin'])
+            results[key]['sd_of_mean_npin'] = np.std(results[key]['mean_npin'])
+            length=len(results[key]['mean_pa'])
+
+
+            results[key]['mean_pa']=sum(results[key]['mean_pa'])/length
+            results[key]['mean_npa'] = sum(results[key]['mean_npa']) / length
+            results[key]['mean_pin'] = sum(results[key]['mean_pin']) / length
+            results[key]['mean_npin'] = sum(results[key]['mean_npin']) / length
+
+            results[key]['sd_pa'] = sum(results[key]['sd_pa']) / length
+            results[key]['sd_npa'] = sum(results[key]['sd_npa']) / length
+            results[key]['sd_pin'] = sum(results[key]['sd_pin']) / length
+            results[key]['sd_npin'] = sum(results[key]['sd_npin']) / length
+
+        my_file=Path("pamfl_mean_results.tsv")
+
+        with open(my_file, 'w') as f:
+            f.write(
+                "Stage      {}  Momentum    lr  Mean of  PA  NPA PIN NPIN    Mean_Sd of   PA  NPA PIN NPIN    "
+                " Sd of   PA  NPA PIN NPIN\n".format(kind_of_dropout))
+            for key in results.keys():
+                str_to_write = '{}    {}  {}  {}        {:.4f}  {:.4f}  {:.4f}  {:.4f}       {:.4f}  {:.4f}  {:.4f}  {:.4f}          {:.4f}    {:.4f}  {:.4f}  {:.4f}\n'.format(
+                stage, results[key]['params'][0], results[key]['params'][1], results[key]['params'][2],
+                results[key]['mean_pa'],
+                results[key]['mean_npa'],
+                results[key]['mean_pin'],
+                results[key]['mean_npin'],
+
+                results[key]['sd_of_mean_pa'],
+                results[key]['sd_of_mean_npa'],
+                results[key]['sd_of_mean_pin'],
+                results[key]['sd_of_mean_npin'],
+
+                results[key]['sd_pa'],
+                results[key]['sd_npa'],
+                results[key]['sd_pin'],
+                results[key]['sd_npin'],
+
+
+
+
+                )
+                f.write(str_to_write)
+
+
+pamfl_mean_and_sd_of_many_runs_(77,87,epoch=230,namespace='custom', train=False,
+                                   cdrop=False, momentum_bool=True)
+
 def plot_momentum(file):
     dropout=[]
-    momentum=set()
+    momentum=[]
     lr=set()
     stage=set()
 
@@ -1108,7 +1226,7 @@ def plot_momentum(file):
         for line in reader:
             line=line[0].split()
             dropout.append(line[1])
-            momentum.add(line[2])
+            momentum.append(line[2])
             lr.add(line[3])
             stage.add(line[0])
 
@@ -1130,7 +1248,7 @@ def plot_momentum(file):
     momentum=list(momentum)
     sort_index=sorted(range(len(momentum)), key=lambda k: momentum[k])
 
-
+    print(momentum)
 
     momentum.sort()
 
@@ -1139,6 +1257,7 @@ def plot_momentum(file):
 
 
     mean_pa=list(map(float, mean_pa))
+    print(mean_pa)
     mean_pa = [x for _, x in sorted(zip(sort_index, mean_pa))]
 
     mean_npa = list(map(float, mean_npa))
@@ -1221,6 +1340,10 @@ def plot_momentum(file):
     plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
 
     plt.show()
+
+
+#pamfl_mean_and_sd_of_many_runs(77, 86, epoch=250, namespace='custom',
+                                  # train=False, cdrop=True)
 
 plot_momentum('pamfl_mean_results.tsv')
 
