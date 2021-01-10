@@ -1248,7 +1248,6 @@ def plot_momentum(file):
     momentum=list(momentum)
     sort_index=sorted(range(len(momentum)), key=lambda k: momentum[k])
 
-    print(momentum)
 
     momentum.sort()
 
@@ -1257,7 +1256,6 @@ def plot_momentum(file):
 
 
     mean_pa=list(map(float, mean_pa))
-    print(mean_pa)
     mean_pa = [x for _, x in sorted(zip(sort_index, mean_pa))]
 
     mean_npa = list(map(float, mean_npa))
@@ -1346,6 +1344,9 @@ def plot_momentum(file):
                                   # train=False, cdrop=True)
 
 plot_momentum('pamfl_mean_results.tsv')
+
+
+
 
 
 
