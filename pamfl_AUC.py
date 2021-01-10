@@ -107,12 +107,17 @@ def read_data(run,namespace='custom',trainset=True):
 
 def calculate_mean_AUC(run, namespace='custom', epoch=200, trainset=False):
     dane, parameters = read_data(run, namespace=namespace, trainset=trainset)
-    dane=dane[14:]
-    dane=np.array(dane)
-    dane=dane[:,epoch:]
-    dane=list(dane)
-    for i in range(len(dane)):
-        dane[i]=sum(dane[i])/len(dane[i])
+
+    if type(dane) != type(False):
+        dane=dane[14:]
+        temp_dane=[]
+        dane=np.array(dane)
+        dane=dane[:,epoch:]
+
+        for i in range(len(dane)):
+            temp_dane.append(sum(list(map(float,dane[i,:])))/len(list(map(float,dane[i,:]))))
+
+        dane=temp_dane
 
     return dane,parameters
 
@@ -133,77 +138,78 @@ def pamfl_mean_and_sd_of_many_runs_AUC(run_start,run_end,epoch=150,namespace='cu
     for run in range(run_start,run_end+1):
 
         dane,params = calculate_mean_AUC(run, namespace, epoch, train)
-        if cdrop:
-            key_parameter = params[3]
-            name_of_parameter = 'conv-dropout'
-        elif momentum_bool:
-            key_parameter = params[1]
-            name_of_parameter = 'momentum'
-        else:
-            key_parameter = params[0]
-            name_of_parameter = 'dropout'
-        momentum = params[1]
-        lr = params[2]
-        dropout = params[0]
-        conv_dropout = params[3]
+        if type(dane) != type(False):
+            if cdrop:
+                key_parameter = params[3]
+                name_of_parameter = 'conv-dropout'
+            elif momentum_bool:
+                key_parameter = params[1]
+                name_of_parameter = 'momentum'
+            else:
+                key_parameter = params[0]
+                name_of_parameter = 'dropout'
+            momentum = params[1]
+            lr = params[2]
+            dropout = params[0]
+            conv_dropout = params[3]
 
 
-        #AUC promoter active
+            #AUC promoter active
 
-        pa1=float(dane[0])
-        pa2=float(dane[1])
-        pa3=float(dane[2])
-        pa4=float(dane[3])
+            pa1=float(dane[0])
+            pa2=float(dane[1])
+            pa3=float(dane[2])
+            pa4=float(dane[3])
 
-        # AUC nonpromoter active
+            # AUC nonpromoter active
 
-        npa1 = float(dane[4])
-        npa2 = float(dane[5])
-        npa3 = float(dane[6])
-        npa4 = float(dane[7])
+            npa1 = float(dane[4])
+            npa2 = float(dane[5])
+            npa3 = float(dane[6])
+            npa4 = float(dane[7])
 
-        # AUC promoter inactive
+            # AUC promoter inactive
 
-        pin1 = float(dane[8])
-        pin2 = float(dane[9])
-        pin3 = float(dane[10])
-        pin4 = float(dane[11])
+            pin1 = float(dane[8])
+            pin2 = float(dane[9])
+            pin3 = float(dane[10])
+            pin4 = float(dane[11])
 
-        # AUC nonpromoter inactive
+            # AUC nonpromoter inactive
 
-        npin1 = float(dane[12])
-        npin2 = float(dane[13])
-        npin3 = float(dane[14])
-        npin4 = float(dane[15])
+            npin1 = float(dane[12])
+            npin2 = float(dane[13])
+            npin3 = float(dane[14])
+            npin4 = float(dane[15])
 
 
-        if key_parameter not in results:
-            results[key_parameter]={'params':[dropout,momentum,conv_dropout,lr],'AUC_pa1':[pa1],
-                                    'AUC_pa2': [pa2],'AUC_pa3':[pa3],'AUC_pa4':[pa4],
-                        'AUC_npa1': [npa1],'AUC_npa2': [npa2], 'AUC_npa3': [npa3], 'AUC_npa4': [npa4],
-                        'AUC_pin1': [pin1], 'AUC_pin2': [pin2], 'AUC_pin3': [pin3], 'AUC_pin4': [pin4],
-                        'AUC_npin1': [npin1], 'AUC_npin2': [npin2], 'AUC_npin3': [npin3], 'AUC_npin4': [npin4]
-                             }
-        else:
-            results[key_parameter]['AUC_pa1'].append(pa1)
-            results[key_parameter]['AUC_pa2'].append(pa2)
-            results[key_parameter]['AUC_pa3'].append(pa3)
-            results[key_parameter]['AUC_pa4'].append(pa4)
+            if key_parameter not in results:
+                results[key_parameter]={'params':[dropout,momentum,conv_dropout,lr],'AUC_pa1':[pa1],
+                                        'AUC_pa2': [pa2],'AUC_pa3':[pa3],'AUC_pa4':[pa4],
+                            'AUC_npa1': [npa1],'AUC_npa2': [npa2], 'AUC_npa3': [npa3], 'AUC_npa4': [npa4],
+                            'AUC_pin1': [pin1], 'AUC_pin2': [pin2], 'AUC_pin3': [pin3], 'AUC_pin4': [pin4],
+                            'AUC_npin1': [npin1], 'AUC_npin2': [npin2], 'AUC_npin3': [npin3], 'AUC_npin4': [npin4]
+                                 }
+            else:
+                results[key_parameter]['AUC_pa1'].append(pa1)
+                results[key_parameter]['AUC_pa2'].append(pa2)
+                results[key_parameter]['AUC_pa3'].append(pa3)
+                results[key_parameter]['AUC_pa4'].append(pa4)
 
-            results[key_parameter]['AUC_npa1'].append(npa1)
-            results[key_parameter]['AUC_npa2'].append(npa2)
-            results[key_parameter]['AUC_npa3'].append(npa3)
-            results[key_parameter]['AUC_npa4'].append(npa4)
+                results[key_parameter]['AUC_npa1'].append(npa1)
+                results[key_parameter]['AUC_npa2'].append(npa2)
+                results[key_parameter]['AUC_npa3'].append(npa3)
+                results[key_parameter]['AUC_npa4'].append(npa4)
 
-            results[key_parameter]['AUC_pin1'].append(pin1)
-            results[key_parameter]['AUC_pin2'].append(pin2)
-            results[key_parameter]['AUC_pin3'].append(pin3)
-            results[key_parameter]['AUC_pin4'].append(pin4)
+                results[key_parameter]['AUC_pin1'].append(pin1)
+                results[key_parameter]['AUC_pin2'].append(pin2)
+                results[key_parameter]['AUC_pin3'].append(pin3)
+                results[key_parameter]['AUC_pin4'].append(pin4)
 
-            results[key_parameter]['AUC_npin1'].append(npin1)
-            results[key_parameter]['AUC_npin2'].append(npin2)
-            results[key_parameter]['AUC_npin3'].append(npin3)
-            results[key_parameter]['AUC_npin4'].append(npin4)
+                results[key_parameter]['AUC_npin1'].append(npin1)
+                results[key_parameter]['AUC_npin2'].append(npin2)
+                results[key_parameter]['AUC_npin3'].append(npin3)
+                results[key_parameter]['AUC_npin4'].append(npin4)
 
 
 
@@ -314,4 +320,6 @@ def pamfl_mean_and_sd_of_many_runs_AUC(run_start,run_end,epoch=150,namespace='cu
 
 
 
+results, name_of_parameter, params = pamfl_mean_and_sd_of_many_runs_AUC(36,59,epoch=100,namespace='custom', train=False,
+                                   cdrop=False, momentum_bool=False)
 
