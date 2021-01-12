@@ -955,7 +955,7 @@ def plot_sensitivity(run_start,run_end,x_axis='dropout',namespace='custom', trai
     plt.show()
 
 
-#plot_sensitivity(77,86,trainset=False, x_axis='momentum')
+plot_sensitivity(77,104,trainset=False, x_axis='momentum')
 
 def plot_specitifity(run_start,run_end,x_axis='dropout',namespace='custom', trainset=True):
     x_axis_list=[]
@@ -1077,7 +1077,7 @@ def plot_specitifity(run_start,run_end,x_axis='dropout',namespace='custom', trai
     plt.show()
 
 
-plot_specitifity(77,86,trainset=False, x_axis='momentum')
+plot_specitifity(77,104,trainset=False, x_axis='momentum')
 
 
 def plot_AUC():
@@ -1196,7 +1196,7 @@ def pamfl_mean_and_sd_of_many_runs_(run_start,run_end,epoch=150,namespace='custo
                 f.write(str_to_write)
 
 
-pamfl_mean_and_sd_of_many_runs_(77,87,epoch=230,namespace='custom', train=False,
+pamfl_mean_and_sd_of_many_runs_(77,104,epoch=230,namespace='custom', train=False,
                                    cdrop=False, momentum_bool=True)
 
 def plot_momentum(file):

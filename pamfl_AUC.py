@@ -315,11 +315,142 @@ def pamfl_mean_and_sd_of_many_runs_AUC(run_start,run_end,epoch=150,namespace='cu
     results=[pa1,pa2,pa3,pa4,npa1,npa2,npa3,npa4,pin1,pin2,pin3,pin4,npin1,npin2,npin3,npin4]
 
 
-    return results, name_of_parameter, params
+    return results, x_axis, name_of_parameter, params
 
 
+def plot_AUC_vs_all(run_start,run_end,epoch=150,namespace='custom', train=False,
+                                   cdrop=False, momentum_bool=False):
+    results, x_axis, name_of_parameter, params = pamfl_mean_and_sd_of_many_runs_AUC(run_start,
+    run_end, epoch=epoch,namespace=namespace, train=train,
+        cdrop=cdrop, momentum_bool=momentum_bool)
+    if train:
+        stage = 'train'
+    else:
+        stage = 'valid'
+
+    if cdrop:
+        description='stage: {}, dropout: {}, momentum: {}'.format(stage, params[0], params[1])
+    elif momentum_bool:
+        description='stage: {}, dropout: {}, conv dropout: {}'.format(stage, params[0], params[3])
+    else:
+        description='stage: {}, momentum: {}, conv dropout: {}'.format(stage, params[1], params[3])
 
 
-results, name_of_parameter, params = pamfl_mean_and_sd_of_many_runs_AUC(36,59,epoch=100,namespace='custom', train=False,
-                                   cdrop=False, momentum_bool=False)
+    fig, ax = plt.subplots()
 
+    fig.suptitle(description, fontsize=14, fontweight='bold')
+    ax.plot(x_axis, results[0], marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(x_axis, results[5], marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(x_axis, results[10], marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(x_axis, results[15], marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel(name_of_parameter)
+    ax.set_ylabel('Mean value of AUC')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+
+#results, name_of_parameter, params = pamfl_mean_and_sd_of_many_runs_AUC(36,59,epoch=100,namespace='custom', train=False,
+                             #      cdrop=False, momentum_bool=False)
+
+plot_AUC_vs_all(77,104, epoch=225, momentum_bool=True)
+
+
+def plot_AUC_for_one(run_start,run_end,epoch=150,namespace='custom', train=False,
+                                   cdrop=False, momentum_bool=False):
+    results, x_axis, name_of_parameter, params = pamfl_mean_and_sd_of_many_runs_AUC(run_start,
+    run_end, epoch=epoch,namespace=namespace, train=train,
+        cdrop=cdrop, momentum_bool=momentum_bool)
+    if train:
+        stage = 'train'
+    else:
+        stage = 'valid'
+
+    if cdrop:
+        description ='stage: {}, dropout: {}, momentum: {}'.format(stage, params[0], params[1])
+    elif momentum_bool:
+        description='stage: {}, dropout: {}, conv dropout: {}'.format(stage, params[0], params[3])
+    else:
+        description='stage: {}, momentum: {}, conv dropout: {}'.format(stage, params[1], params[3])
+
+
+    fig, ax = plt.subplots()
+
+    fig.suptitle(description, fontsize=14, fontweight='bold')
+    ax.plot(x_axis, results[0], marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(x_axis, results[1], marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(x_axis, results[2], marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(x_axis, results[3], marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel(name_of_parameter)
+    ax.set_ylabel('Mean value of AUC')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active vs all')
+    green_patch = mpatches.Patch(color='green', label='promoter active vs all npa')
+
+    red_patch = mpatches.Patch(color='red', label='promoter active vs pin')
+    black_patch = mpatches.Patch(color='black', label='promoter active vs npin')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+    fig, ax = plt.subplots()
+
+    fig.suptitle(description, fontsize=14, fontweight='bold')
+    ax.plot(x_axis, results[4], marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(x_axis, results[5], marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(x_axis, results[6], marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(x_axis, results[7], marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel(name_of_parameter)
+    ax.set_ylabel('Mean value of AUC')
+    blue_patch = mpatches.Patch(color='blue', label='nonpromoter active vs pa')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active vs all ')
+
+    red_patch = mpatches.Patch(color='red', label='nonpromoter active vs pin')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter active vs npin')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+    fig, ax = plt.subplots()
+
+    fig.suptitle(description, fontsize=14, fontweight='bold')
+    ax.plot(x_axis, results[8], marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(x_axis, results[9], marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(x_axis, results[10], marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(x_axis, results[11], marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel(name_of_parameter)
+    ax.set_ylabel('Mean value of AUC')
+    blue_patch = mpatches.Patch(color='blue', label='promoter inactive vs pa')
+    green_patch = mpatches.Patch(color='green', label='promoter inactive vs npa ')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive vs all')
+    black_patch = mpatches.Patch(color='black', label='promoter inactive vs npin')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+
+    fig, ax = plt.subplots()
+
+    fig.suptitle(description, fontsize=14, fontweight='bold')
+    ax.plot(x_axis, results[12], marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(x_axis, results[13], marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(x_axis, results[14], marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(x_axis, results[15], marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel(name_of_parameter)
+    ax.set_ylabel('Mean value of AUC')
+    blue_patch = mpatches.Patch(color='blue', label='nonpromoter inactive vs pa')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter inactive vs npa ')
+
+    red_patch = mpatches.Patch(color='red', label='nonpromoter inactive vs pin')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive vs all')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+
+plot_AUC_for_one(77,104, epoch=225, momentum_bool= True)
