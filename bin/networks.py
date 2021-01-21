@@ -173,15 +173,22 @@ class TestNetwork(torch.nn.Module):
         return torch.sigmoid(x)
 
 
-class ConvBlock(nn.Module):
 
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, pooling, dropout):
+
+
+
+#####################################################################################################
+
+class ConvBlock(torch.nn.Module):
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, dropout):
         super(ConvBlock, self).__init__()
 
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
         self.bn = nn.BatchNorm2d(out_channels)
         self.act = nn.ReLU()
-        self.drop= nn.Dropout(p=dropout)
+        self.drop = nn.Dropout(p=dropout)
+
 
     def forward(self, x):
         x = self.conv(x)
@@ -191,9 +198,9 @@ class ConvBlock(nn.Module):
         return x
 
 
-class InceptionModule(nn.Module):
+class InceptionModule(torch.nn.Module):
 
-    def __init__(self, in_channels, f_1x1, f_3x3_r, f_3x3, f_7x7_r, f_7x7,
+    def __init__(self, in_channels, f_1x1, f_5x5_r, f_5x5,
          f_11x11_r, f_11x11,  f_19x19_r, f_19x19, f_pp, dropout):
         super(InceptionModule, self).__init__()
 
@@ -201,29 +208,26 @@ class InceptionModule(nn.Module):
             ConvBlock(in_channels, f_1x1, kernel_size=1, stride=1, padding=0, dropout=dropout)
         )
 
+
+
         self.branch2 = nn.Sequential(
-            ConvBlock(in_channels, f_3x3_r, kernel_size=1, stride=1, padding=0,, dropout=0),
-            ConvBlock(f_3x3_r, f_3x3, kernel_size=3, stride=1, padding=1, , dropout=dropout)
+            ConvBlock(in_channels, f_5x5_r, kernel_size=1, stride=1, padding=0,  dropout=0),
+            ConvBlock(f_5x5_r, f_5x5, kernel_size=5, stride=1, padding=2,  dropout=dropout)
         )
 
         self.branch3 = nn.Sequential(
-            ConvBlock(in_channels, f_7x7_r, kernel_size=1, stride=1, padding=0, , dropout=0),
-            ConvBlock(f_7x7_r, f_7x7, kernel_size=7, stride=1, padding=3, , dropout=dropout)
+            ConvBlock(in_channels, f_11x11_r, kernel_size=1, stride=1, padding=0,  dropout=0),
+            ConvBlock(f_11x11_r, f_11x11, kernel_size=11, stride=1, padding=5,  dropout=dropout)
         )
 
         self.branch4 = nn.Sequential(
-            ConvBlock(in_channels, f_11x11_r, kernel_size=1, stride=1, padding=0, , dropout=0),
-            ConvBlock(f_11x11_r, f_11x11, kernel_size=11, stride=1, padding=5, , dropout=dropout)
+            ConvBlock(in_channels, f_19x19_r, kernel_size=1, stride=1, padding=0,  dropout=0),
+            ConvBlock(f_19x19_r, f_19x19, kernel_size=19, stride=1, padding=9,  dropout=dropout)
         )
 
         self.branch5 = nn.Sequential(
-            ConvBlock(in_channels, f_19x19_r, kernel_size=1, stride=1, padding=0, , dropout=0),
-            ConvBlock(f_19x19_r, f_19x19, kernel_size=19, stride=1, padding=9, , dropout=dropout)
-        )
-
-        self.branch6 = nn.Sequential(
             nn.MaxPool2d(3, stride=1, padding=1, ceil_mode=True),
-            ConvBlock(in_channels, f_pp, kernel_size=1, stride=1, padding=0)
+            ConvBlock(in_channels, f_pp, kernel_size=1, stride=1, padding=0, dropout=0)
         )
 
     def forward(self, x):
@@ -232,82 +236,83 @@ class InceptionModule(nn.Module):
         branch3 = self.branch3(x)
         branch4 = self.branch4(x)
         branch5 = self.branch5(x)
-        branch6 = self.branch6(x)
 
-        return torch.cat([branch1, branch2, branch3, branch4, branch5, branch6], 1)
 
-class InceptionExit(nn.Module):
+        return torch.cat([branch1, branch2, branch3, branch4, branch5], 1)
+
+class InceptionExit(torch.nn.Module):
 
     def __init__(self, in_channels, out_channels, input1, output1, output2, pooling, dropout):
         super(InceptionExit, self).__init__()
         self.fc_input = input1
 
         self.layer1 = ConvBlock(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dropout=0)
-        self.layer2 = nn.sequential(
+        self.layer2 = nn.Sequential(
             nn.Linear(in_features=input1, out_features=output1),
             nn.ReLU(),
             nn.Dropout(p=dropout))
-        self.layer3 = nn.sequential(
+        self.layer3 = nn.Sequential(
             nn.Linear(in_features=output1, out_features=output2),
             nn.ReLU(),
             nn.Dropout(p=dropout))
-        self.pool =  nn.MaxPool2d(kernel_size=pooling, ceil_mode=True),
+        self.pool = nn.MaxPool2d(kernel_size=pooling, ceil_mode=True)
 
 
 
     def forward(self, x):
         x = self.pool(x)
         x = self.layer1(x)
-        x = x.view(-1, self.input1)
+        x = x.view(-1, self.fc_input)
         x = self.layer2(x)
         x = self.layer3(x)
 
         return torch.sigmoid(x)
 
 
-class PamflNet(nn.Module):
-    def __init__(self):
+class PamflNet(torch.nn.Module):
+    def __init__(self, seq_len):
         super(PamflNet, self).__init__()
 
-        self.inception1 = InceptionModule(in_channels=1, f_1x1=64, f_3x3_r=32,
-                                          f_3x3=64,
-                                          f_7x7_r=32,
-                                          f_7x7=64,
-                                          f_11x11_r=32,
-                                          f_11x11=64,
-                                          f_19x19_r=32,
-                                          f_19x19=64,
-                                          f_pp=32,
+        self.params = {
+            'input sequence length': seq_len,
+            'convolutional layers': 3,
+            'fully connected': 2,
+            'number of channels': 'test',
+            'kernels widths': 'test',
+            'pooling widths': 'test',
+            'units in fc': 'test',
+            'dropout': 'test'
+
+        }
+
+        self.inception1 = InceptionModule(in_channels=1, f_1x1=8,
+                                          f_5x5_r=4,
+                                          f_5x5=8,
+                                          f_11x11_r=4,
+                                          f_11x11=8,
+                                          f_19x19_r=4,
+                                          f_19x19=8,
+                                          f_pp=8,
                                           dropout=0.2)
-        self.inception2 = InceptionModule(in_channels=352, f_1x1=64, f_3x3_r=32,
-                                          f_3x3=64,
-                                          f_7x7_r=32,
-                                          f_7x7=64,
-                                          f_11x11_r=32,
-                                          f_11x11=64,
-                                          f_19x19_r=32,
-                                          f_19x19=64,
-                                          f_pp=32,
+
+        self.inception2 = InceptionModule(in_channels=40, f_1x1=8,
+                                          f_5x5_r=4,
+                                          f_5x5=8,
+                                          f_11x11_r=4,
+                                          f_11x11=8,
+                                          f_19x19_r=4,
+                                          f_19x19=8,
+                                          f_pp=8,
                                           dropout=0.2)
-        self.inception3 = InceptionModule(in_channels=352, f_1x1=64, f_3x3_r=32,
-                                          f_3x3=64,
-                                          f_7x7_r=32,
-                                          f_7x7=64,
-                                          f_11x11_r=32,
-                                          f_11x11=64,
-                                          f_19x19_r=32,
-                                          f_19x19=64,
-                                          f_pp=32,
-                                          dropout=0.2)
-        self.inexit = InceptionExit(in_channels=352, out_channels=256,
+
+        self.inexit = InceptionExit(in_channels=40, out_channels=16,
                                     pooling=4,
-                                    input1=132000,
                                     output1=2000,
                                     output2=4,
+                                    input1=8000,
                                     dropout=0.5)
-        def forward(self, x):
-            x = self.inception1(x)
-            x = self.inception2(x)
-            x = self.inception3(x)
-            x = self.inexit(x)
-            return x
+    def forward(self, x):
+        x = self.inception1(x)
+        x = self.inception2(x)
+        x = self.inexit(x)
+        return x

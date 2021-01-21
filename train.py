@@ -266,6 +266,7 @@ write_params(globals(), os.path.join(output, '{}_params.txt'.format(namespace)))
 logger.info('\n--- TRAINING ---\nEpoch 0 is a data validation without training step')
 t = time()
 for epoch in range(num_epochs+1):
+
     t0 = time()
     confusion_matrix = np.zeros((num_classes, num_classes))
     train_loss_neurons = [[] for _ in range(num_classes)]
