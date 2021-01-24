@@ -414,11 +414,16 @@ class PamflNet(torch.nn.Module):
         kernels1 = [(4, 1), (4, 5), (4, 11), (4, 19), (4, 3)]
         paddings1 = [(0, 0), (0, 2), (0, 5), (0, 9), (0, 1)]
         f_in1 = [1, 1, 1]
-        f_out1 = [60, 60, 60, 60, 60]
-        f_in2 = [20, 20, 20]
-        f_out2 = [40, 40, 40, 40, 40]
+        f_out1 = [300, 300, 300, 300, 300]
+        f_in2 = [100, 100, 100]
+        f_out2 = [200, 200, 200, 200, 200]
         kernels2 = [(1, 1), (1, 5), (1, 11), (1, 19), (1, 3)]
         paddings2 = [(0, 0), (0, 2), (0, 5), (0, 9), (0, 1)]
+
+        f_in3 = [100, 100, 100]
+        f_out3 = [200, 200, 200, 200, 200]
+        kernels3 = [(1, 1), (1, 5), (1, 11), (1, 19), (1, 3)]
+        paddings3 = [(0, 0), (0, 2), (0, 5), (0, 9), (0, 1)]
         self.inception1 = InceptionModule(in_channels=1, f_1x1=f_out1[0],
                                           f_5x5_r=f_in1[0],
                                           f_5x5=f_out1[1],
@@ -445,10 +450,22 @@ class PamflNet(torch.nn.Module):
                                           paddings=paddings2,
                                           kernels=kernels2)
 
-        self.inexit = InceptionExit(in_channels=sum(f_out2), out_channels=100,
+        self.inception3 = InceptionModule(in_channels=sum(f_out2), f_1x1=f_out3[0],
+                                          f_5x5_r=f_in3[0],
+                                          f_5x5=f_out3[1],
+                                          f_11x11_r=f_in3[1],
+                                          f_11x11=f_out3[2],
+                                          f_19x19_r=f_in3[2],
+                                          f_19x19=f_out3[3],
+                                          f_pp=f_out3[4],
+                                          dropout=0.2,
+                                          paddings=paddings2,
+                                          kernels=kernels2)
+
+        self.inexit = InceptionExit(in_channels=sum(f_out2), out_channels=200,
                                     output1=2000,
                                     output2=4,
-                                    input1=12500,
+                                    input1=25000,
                                     dropout=0.2)
 
     def forward(self, x):
