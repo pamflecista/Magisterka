@@ -49,10 +49,10 @@ def adjust_learning_rate(epoch, optimizer):
 
     if epoch > 300:
         lr = lr / 10000
-    elif epoch > 250:
+    elif epoch > 100:
         lr = lr / 1000
-    elif epoch > 200:
-        lr = lr / 150
+    elif epoch > 75:
+        lr = lr / 100
     elif epoch > 50:
         lr = lr / 10
 
