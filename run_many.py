@@ -8,5 +8,4 @@ command=' '.join(['python ',str(path_to_script),'dataset3','--path',str(path_to_
                      '--network pamfl --run {}'])
 
 for i in range(1):
-    os.system(command.format(number+i)
-)
+    os.system(command.format(number+i))
