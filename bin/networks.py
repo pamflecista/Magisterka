@@ -329,7 +329,7 @@ class PamflNet(torch.nn.Module):
                                           kernels=kernels3)
 
         self.inexit = InceptionExit(in_channels=sum(f_out2), out_channels=200,
-                                    output1=2000,
+                                    output1=4000,
                                     output2=4,
                                     input1=25000,
                                     dropout=params.dropout_value)
