@@ -358,7 +358,7 @@ def plot_AUC_vs_all(run_start,run_end,epoch=150,namespace='custom', train=False,
 #results, name_of_parameter, params = pamfl_mean_and_sd_of_many_runs_AUC(36,59,epoch=100,namespace='custom', train=False,
                              #      cdrop=False, momentum_bool=False)
 
-plot_AUC_vs_all(77,104, epoch=225, momentum_bool=True)
+#plot_AUC_vs_all(77,104, epoch=225, momentum_bool=True)
 
 
 def plot_AUC_for_one(run_start,run_end,epoch=150,namespace='custom', train=False,
@@ -453,4 +453,101 @@ def plot_AUC_for_one(run_start,run_end,epoch=150,namespace='custom', train=False
     plt.show()
 
 
-plot_AUC_for_one(77,104, epoch=225, momentum_bool= True)
+#plot_AUC_for_one(77,104, epoch=225, momentum_bool= True)
+
+def sensitivity(start=1, end=8, namespace="pamfl"):
+    sens=[[],[],[],[]]
+
+    for i in range(start,end+1):
+        data,_=read_data(i, namespace=namespace,trainset=False)
+        sens[0].append(float(data[6][len(data[6])-1]))
+        sens[1].append(float(data[7][len(data[7])-1]))
+        sens[2].append(float(data[8][len(data[8] )-1]))
+        sens[3].append(float(data[9][len(data[9] )-1]))
+
+    x_axis=list(range(start, end+1))
+
+    fig, ax = plt.subplots()
+
+    #fig.suptitle(description, fontsize=14, fontweight='bold')
+    ax.plot(x_axis, sens[0], marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(x_axis, sens[1], marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(x_axis, sens[2], marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(x_axis, sens[3], marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel("run")
+    ax.set_ylabel('Sensitivity')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+sensitivity(1,8)
+
+def specificity(start=1, end=8, namespace="pamfl"):
+    spec=[[],[],[],[]]
+
+    for i in range(start,end+1):
+        data,_=read_data(i, namespace=namespace,trainset=False)
+        spec[0].append(float(data[10][len(data[10])-1]))
+        spec[1].append(float(data[11][len(data[11])-1]))
+        spec[2].append(float(data[12][len(data[12] )-1]))
+        spec[3].append(float(data[13][len(data[13] )-1]))
+
+    x_axis=list(range(start, end+1))
+
+    fig, ax = plt.subplots()
+
+    #fig.suptitle(description, fontsize=14, fontweight='bold')
+    ax.plot(x_axis, spec[0], marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(x_axis, spec[1], marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(x_axis, spec[2], marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(x_axis, spec[3], marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel("run")
+    ax.set_ylabel('Specificity')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+specificity(1,8)
+
+def AUC(start=1, end=8, namespace="pamfl"):
+    auc=[[],[],[],[]]
+
+    for i in range(start,end+1):
+        data,_=read_data(i, namespace=namespace,trainset=False)
+        auc[0].append(float(data[14][len(data[14])-1]))
+        auc[1].append(float(data[19][len(data[19])-1]))
+        auc[2].append(float(data[24][len(data[24] )-1]))
+        auc[3].append(float(data[29][len(data[29] )-1]))
+
+    x_axis=list(range(start, end+1))
+
+    fig, ax = plt.subplots()
+
+    #fig.suptitle(description, fontsize=14, fontweight='bold')
+    ax.plot(x_axis, auc[0], marker='o', c='blue', ms=2, lw=0.1)
+    ax.plot(x_axis, auc[1], marker='o', c='green', ms=2, lw=0.1)
+    ax.plot(x_axis, auc[2], marker='o', c='red', ms=2, lw=0.1)
+    ax.plot(x_axis, auc[3], marker='o', c='black', ms=2, lw=0.1)
+    ax.set_xlabel("run")
+    ax.set_ylabel('AUC')
+    blue_patch = mpatches.Patch(color='blue', label='promoter active')
+    green_patch = mpatches.Patch(color='green', label='nonpromoter active')
+
+    red_patch = mpatches.Patch(color='red', label='promoter inactive')
+    black_patch = mpatches.Patch(color='black', label='nonpromoter inactive')
+    plt.legend(handles=[red_patch, blue_patch, green_patch, black_patch], prop={'size': 6})
+
+    plt.show()
+
+AUC(1,8)
+
