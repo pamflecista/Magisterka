@@ -10,7 +10,7 @@ NET_TYPES = {
     'custom': CustomNetwork,
     'test': TestNetwork,
     'pamfl': PamflNet,
-    'pamfl2': PamflNet2,
+    'pamfl_v2_': PamflNet2,
     'random-forest': 'RandomForest'
 }
 
