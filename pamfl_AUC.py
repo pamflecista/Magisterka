@@ -331,9 +331,9 @@ def plot_AUC_vs_all(run_start,run_end,epoch=150,namespace='custom', train=False,
     if cdrop:
         description='stage: {}, dropout: {}, momentum: {}'.format(stage, params[0], params[1])
     elif momentum_bool:
-        description='stage: {}, dropout: {}, conv dropout: {}'.format(stage, params[0], params[3])
+        description='stage: {}, dropout: {}, conv dropout: {}'.format(stage, params[0], params[2])
     else:
-        description='stage: {}, momentum: {}, conv dropout: {}'.format(stage, params[1], params[3])
+        description='stage: {}, momentum: {}, conv dropout: {}'.format(stage, params[1], params[2])
 
 
     fig, ax = plt.subplots()
@@ -358,7 +358,7 @@ def plot_AUC_vs_all(run_start,run_end,epoch=150,namespace='custom', train=False,
 #results, name_of_parameter, params = pamfl_mean_and_sd_of_many_runs_AUC(36,59,epoch=100,namespace='custom', train=False,
                              #      cdrop=False, momentum_bool=False)
 
-#plot_AUC_vs_all(77,104, epoch=225, momentum_bool=True)
+#plot_AUC_vs_all(65,76, epoch=190, cdrop=True)
 
 
 def plot_AUC_for_one(run_start,run_end,epoch=150,namespace='custom', train=False,
@@ -453,7 +453,7 @@ def plot_AUC_for_one(run_start,run_end,epoch=150,namespace='custom', train=False
     plt.show()
 
 
-#plot_AUC_for_one(77,104, epoch=225, momentum_bool= True)
+
 
 def sensitivity(start=1, end=8, namespace="pamfl"):
     sens=[[],[],[],[]]
@@ -476,6 +476,8 @@ def sensitivity(start=1, end=8, namespace="pamfl"):
     ax.plot(x_axis, sens[3], marker='o', c='black', ms=2, lw=0.1)
     ax.set_xlabel("run")
     ax.set_ylabel('Sensitivity')
+    plt.ylim([0.55,1])
+
     blue_patch = mpatches.Patch(color='blue', label='promoter active')
     green_patch = mpatches.Patch(color='green', label='nonpromoter active')
 
@@ -485,7 +487,11 @@ def sensitivity(start=1, end=8, namespace="pamfl"):
 
     plt.show()
 
-sensitivity(1,8)
+
+#sensitivity(1,9, namespace='pamfl')
+sensitivity(10,19, namespace='pamfl')
+#sensitivity(36,38, namespace='custom')
+sensitivity(66,68, namespace='custom')
 
 def specificity(start=1, end=8, namespace="pamfl"):
     spec=[[],[],[],[]]
@@ -508,6 +514,8 @@ def specificity(start=1, end=8, namespace="pamfl"):
     ax.plot(x_axis, spec[3], marker='o', c='black', ms=2, lw=0.1)
     ax.set_xlabel("run")
     ax.set_ylabel('Specificity')
+    plt.ylim([0.70,1])
+
     blue_patch = mpatches.Patch(color='blue', label='promoter active')
     green_patch = mpatches.Patch(color='green', label='nonpromoter active')
 
@@ -517,7 +525,15 @@ def specificity(start=1, end=8, namespace="pamfl"):
 
     plt.show()
 
-specificity(1,8)
+
+
+#specificity(1,9, namespace='pamfl')
+specificity(10,19, namespace='pamfl')
+#specificity(36,38, namespace='custom')
+specificity(66,68, namespace='custom')
+exit()
+
+
 
 def AUC(start=1, end=8, namespace="pamfl"):
     auc=[[],[],[],[]]
@@ -540,6 +556,7 @@ def AUC(start=1, end=8, namespace="pamfl"):
     ax.plot(x_axis, auc[3], marker='o', c='black', ms=2, lw=0.1)
     ax.set_xlabel("run")
     ax.set_ylabel('AUC')
+    #plt.ylim([0.70,1])
     blue_patch = mpatches.Patch(color='blue', label='promoter active')
     green_patch = mpatches.Patch(color='green', label='nonpromoter active')
 
@@ -549,5 +566,12 @@ def AUC(start=1, end=8, namespace="pamfl"):
 
     plt.show()
 
-AUC(1,8)
+#AUC(7,19)
+
+#AUC(1,9, namespace='pamfl')
+AUC(10,19, namespace='pamfl')
+#AUC(36,38, namespace='custom')
+AUC(66,68, namespace='custom')
+
+
 
