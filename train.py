@@ -47,14 +47,14 @@ RESULTS_COLS = OrderedDict({
 def adjust_learning_rate(epoch, optimizer):
     lr = params.lr_value
 
-    if epoch > 300:
-        lr = lr / 10000
+    if epoch > 275:
+        lr = lr / 16
     elif epoch > 250:
-        lr = lr / 1000
+        lr = lr / 8
     elif epoch > 200:
-        lr = lr / 100
+        lr = lr / 4
     elif epoch > 150:
-        lr = lr / 10
+        lr = lr / 2
 
     for param_group in optimizer.param_groups:
         param_group["lr"] = lr
