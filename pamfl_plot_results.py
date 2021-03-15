@@ -83,12 +83,10 @@ def plot_all_result(run,namespace='custom',trainset=True):
     else:
         print('no such directory {}'.format(dir_path))
 
+for i in range(10,20):
+   plot_all_result(i,namespace='pamfl',trainset=False)
 
-plot_all_result(4,namespace='pamfl',trainset=True)
-plot_all_result(5,namespace='pamfl',trainset=True)
-plot_all_result(6,namespace='pamfl',trainset=True)
-plot_all_result(7,namespace='pamfl',trainset=True)
-plot_all_result(8,namespace='pamfl',trainset=True)
+exit()
 
 #function for ploting train results starting from given epoch
 def plot_after_some_epoch(run,namespace='custom', epoch=150,trainset=True):
@@ -267,7 +265,7 @@ def pamfl_write_result(run,epoch=150,namespace='custom', train=False):
 
 
 #for i in range(36,64):
- #  pamfl_write_result(i,epoch=150,namespace='custom', train=False)
+   #pamfl_write_result(i,epoch=150,namespace='custom', train=False)
 
 #function which creates file which consists of means of many runs for each value of dropout
 
@@ -378,7 +376,7 @@ def pamfl_mean_and_sd_of_many_runs(run_start,run_end,epoch=150,namespace='custom
 
 
 
-#pamfl_mean_and_sd_of_many_runs(36,63,epoch=175,namespace='custom', train=False)
+#pamfl_mean_and_sd_of_many_runs(65,76,epoch=175,namespace='custom', train=False, cdrop=True)
 
 #function  for plotting loss vs dropout
 
@@ -524,7 +522,6 @@ def pamfl_plot_mean_vs_dropout(file):
 
 
 #pamfl_plot_mean_vs_dropout('pamfl_mean_results.tsv')
-
 
 
 
@@ -733,7 +730,7 @@ def plot_conv_dropout_vs_no_conv_dropout(crun_start,crun_end,run_start, run_end,
     plt.show()
 
 #plot_conv_dropout_vs_no_conv_dropout(65,76,36, 38,cepoch=200,namespace='custom',
-                                         #train=False,  epoch=150, file='pamfl_mean_results.tsv')
+ #                                        train=False,  epoch=150, file='pamfl_mean_results.tsv')
 
 def read_data(run,namespace='custom',trainset=True):
     Dane = [[], [],
@@ -959,7 +956,8 @@ def plot_sensitivity(run_start,run_end,x_axis='dropout',namespace='custom', trai
     plt.show()
 
 
-#plot_sensitivity(77,104,trainset=False, x_axis='momentum')
+#plot_sensitivity(65,76,trainset=False, x_axis='conv_dropout')
+
 
 def plot_specitifity(run_start,run_end,x_axis='dropout',namespace='custom', trainset=True):
     x_axis_list=[]
@@ -1081,8 +1079,8 @@ def plot_specitifity(run_start,run_end,x_axis='dropout',namespace='custom', trai
     plt.show()
 
 
-#plot_specitifity(77,104,trainset=False, x_axis='momentum')
-
+#plot_specitifity(65,76,trainset=False, x_axis='conv_dropout')
+#exit()
 
 def plot_AUC():
     print()
@@ -1200,7 +1198,7 @@ def pamfl_mean_and_sd_of_many_runs_(run_start,run_end,epoch=150,namespace='custo
                 f.write(str_to_write)
 
 
-#pamfl_mean_and_sd_of_many_runs_(77,104,epoch=230,namespace='custom', train=False,cdrop=False, momentum_bool=True)
+#pamfl_mean_and_sd_of_many_runs_(77,109,epoch=230,namespace='custom', train=False,cdrop=False, momentum_bool=True)
 
 def plot_momentum(file):
     dropout=[]
@@ -1343,8 +1341,8 @@ def plot_momentum(file):
     plt.show()
 
 
-#pamfl_mean_and_sd_of_many_runs(77, 86, epoch=250, namespace='custom',
-                                  # train=False, cdrop=True)
+pamfl_mean_and_sd_of_many_runs_(77, 109, epoch=250, namespace='custom',
+                                   train=False, cdrop=False, momentum_bool=True)
 
 #plot_momentum('pamfl_mean_results.tsv')
 

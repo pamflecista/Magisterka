@@ -341,3 +341,126 @@ class PamflNet(torch.nn.Module):
         x = self.pool1(x)
         x = self.inexit(x)
         return x
+
+
+class InceptionModuleMod(torch.nn.Module):
+
+    def __init__(self, in_channels, f_1x1, f_5x5_r, f_5x5,
+                 f_11x11_r, f_11x11, f_19x19_r, f_19x19, f_pp, dropout, paddings, kernels):
+        super(InceptionModuleMod, self).__init__()
+
+        self.branch1 = nn.Sequential(
+            ConvBlock(in_channels, f_1x1, kernel_size=kernels[0], stride=1, padding=paddings[0], dropout=dropout)
+        )
+
+        self.branch2 = nn.Sequential(
+
+            ConvBlock(in_channels, f_5x5, kernel_size=kernels[1], stride=1, padding=paddings[1], dropout=dropout)
+        )
+
+        self.branch3 = nn.Sequential(
+
+            ConvBlock(in_channels, f_11x11, kernel_size=kernels[2], stride=1, padding=paddings[2], dropout=dropout)
+        )
+
+        self.branch4 = nn.Sequential(
+
+            ConvBlock(in_channels, f_19x19, kernel_size=kernels[3], stride=1, padding=paddings[3], dropout=dropout)
+        )
+
+        self.branch5 = nn.Sequential(
+            nn.MaxPool2d(kernel_size=kernels[4], stride=1, padding=paddings[4], ceil_mode=True),
+
+        )
+
+    def forward(self, x):
+        branch1 = self.branch1(x)
+        branch2 = self.branch2(x)
+        branch3 = self.branch3(x)
+        branch4 = self.branch4(x)
+        branch5 = self.branch5(x)
+
+        return torch.cat([branch1, branch2, branch3, branch4, branch5], 1)
+
+
+
+
+class PamflNet2(torch.nn.Module):
+    def __init__(self, seq_len):
+        super(PamflNet2, self).__init__()
+
+        self.params = {
+            'input sequence length': seq_len,
+            'convolutional layers': 3,
+            'fully connected': 2,
+            'number of channels': 'test',
+            'kernels widths': 'test',
+            'pooling widths': 'test',
+            'units in fc': 'test',
+            'dropout': 'test'
+
+        }
+        kernels1 = [(4, 1), (4, 5), (4, 11), (4, 19), (4, 3)]
+        paddings1 = [(0, 0), (0, 2), (0, 5), (0, 9), (0, 1)]
+        f_in1 = [1, 1, 1]
+        f_out1 = [300, 300, 300, 300, 300]
+        f_in2 = [100, 100, 100]
+        f_out2 = [200, 200, 200, 200, 200]
+        kernels2 = [(1, 1), (1, 3), (1, 9), (1, 15), (1, 3)]
+        paddings2 = [(0, 0), (0, 1), (0, 4), (0, 7), (0, 1)]
+
+        f_in3 = [100, 100, 100]
+        f_out3 = [200, 200, 200, 200, 200]
+        kernels3 = [(1, 1), (1, 3), (1, 7), (1, 11), (1, 3)]
+        paddings3 = [(0, 0), (0, 1), (0, 3), (0, 5), (0, 1)]
+        self.inception1 = InceptionModuleMod(in_channels=1, f_1x1=f_out1[0],
+                                          f_5x5_r=f_in1[0],
+                                          f_5x5=f_out1[1],
+                                          f_11x11_r=f_in1[1],
+                                          f_11x11=f_out1[2],
+                                          f_19x19_r=f_in1[2],
+                                          f_19x19=f_out1[3],
+                                          f_pp=f_out1[4],
+                                          dropout=params.conv_dropout_value,
+                                          paddings=paddings1,
+                                          kernels=kernels1)
+        self.pool1 = nn.MaxPool2d(kernel_size=(1, 4), ceil_mode=True)
+
+
+        self.inception2 = InceptionModule(in_channels=sum(f_out1), f_1x1=f_out2[0],
+                                          f_5x5_r=f_in2[0],
+                                          f_5x5=f_out2[1],
+                                          f_11x11_r=f_in2[1],
+                                          f_11x11=f_out2[2],
+                                          f_19x19_r=f_in2[2],
+                                          f_19x19=f_out2[3],
+                                          f_pp=f_out2[4],
+                                          dropout=params.conv_dropout_value,
+                                          paddings=paddings2,
+                                          kernels=kernels2)
+
+        self.inception3 = InceptionModule(in_channels=sum(f_out2), f_1x1=f_out3[0],
+                                          f_5x5_r=f_in3[0],
+                                          f_5x5=f_out3[1],
+                                          f_11x11_r=f_in3[1],
+                                          f_11x11=f_out3[2],
+                                          f_19x19_r=f_in3[2],
+                                          f_19x19=f_out3[3],
+                                          f_pp=f_out3[4],
+                                          dropout=params.conv_dropout_value,
+                                          paddings=paddings3,
+                                          kernels=kernels3)
+
+        self.inexit = InceptionExit(in_channels=sum(f_out2), out_channels=200,
+                                    output1=4000,
+                                    output2=4,
+                                    input1=25000,
+                                    dropout=params.dropout_value)
+
+    def forward(self, x):
+        x = self.inception1(x)
+        x = self.pool1(x)
+        x = self.inception2(x)
+        x = self.pool1(x)
+        x = self.inexit(x)
+        return x
